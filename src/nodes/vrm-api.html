@@ -1,0 +1,126 @@
+
+<script type="text/javascript">
+
+    function checkStats() {
+
+    if ( $('select#node-input-installations').val() === 'stats' ) {
+        $('#input-stats').show()
+    } else {
+        $('#input-stats').hide()
+    }
+    }
+
+    RED.nodes.registerType('vrm-api', {
+        category: 'Victron Energy',
+        paletteLabel: 'VRM API',
+        color: '#f7ab3e',
+        defaults: {
+            vrm: {value:"", type: "config-vrm-api"},
+            name: { value: "" },
+            idSite: { value: "", validate: RED.validators.regex(/^[0-9]{1,12}$/)},
+            installations: { value: "", required: true},
+            attribute: {value: "", required: false},
+            verbose: { value: false }
+        },
+        inputs: 1,
+        outputs: 1,
+        icon: "victronenergy.svg",
+        label: function () {
+            if (this.name) {
+                return this.name
+            }
+
+            var label =  this.idSite
+            if ( this.installations === 'stats' ) {
+                label += ' - Stats: ' + this.attribute
+            } else {
+                label += ' - ' + this.installations
+            }
+
+            return label;
+        },
+        oneditprepare: function oneditprepare() {
+
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="vrm-api">
+    <div class="form-row">
+        <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-input-vrm"><i class="fa fa-tag"></i> VRM</label>
+        <input type="text" id="node-input-vrm" placeholder="VRM">
+    </div>
+    <div class="form-row">
+        <label for="node-input-idSite"><i class="fa fa-id-card"></i> VRM site id</label>
+        <input type="text" id="node-input-idSite" placeholder="VRM site id" required>
+    </div>    
+    <div class="form-row">
+        <label for="node-input-installations"><i class="fa fa-location-arrow"></i> Installation</label>
+        <select id="node-input-installations" required onchange="checkStats()">
+            <option value="alarms">Get Alarms</option>
+            <option value="post-alarms">Add Alarm</option>
+            <option value="system-overview">Connected devices for a given installation</option>
+            <option value="diagnostics">Diagnostic data for an installation</option>
+            <option value="tags">Get installation tags</option>
+            <option value="stats">Installation stats</option>
+        </select>
+    </div>
+    <div id="input-stats">
+        <div class="form-row">
+            <label for="node-input-attribute"><i class="fa fa-location-pencil"></i> Attribute</label>
+            <select id="node-input-attribute" required>
+                <option value="vrm_pv_inverter_yield_fc">PV Inverter Yield Forecast</option>
+                <option value="vrm_pv_charger_yield_fc">PV Yield Solar Charger Forecast</option>
+                <option value="vrm_solar_irradiance_fc">Solar Irradiance Forecast</option>
+                <option value="vrm_solar_irradiance">Solar Irradiance</option>
+            </select>
+        </div>    
+    </div>
+    <div class="form-row" style="margin-bottom:0px;">
+        <input type="checkbox" checked id="node-input-verbose" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+        <label style="min-width:390px" for="node-input-verbose"><i class="fa fa-power"></i> Verbose: show the used <em>url</em> in the debug tab?</label>
+    </div>
+</script>
+
+<script type="text/markdown" data-help-name="vrm-api">
+Interface with the Victron Energy VRM API.
+
+### Inputs
+
+: payload (string|number|json) :  the trigger to query the VRM API
+
+### Outputs
+
+: payload (json) : the vrm answer
+
+### Configuration
+
+: Name (string) : The name of the node
+: VRM (config) : The configuration node
+: VRM site id (number) : The site to query
+: Installation (string) : The query type
+: Attribute (string) : Only in case of installation `stats`, which attribute to fetch
+: Verbose (boolean) : Show the used _url_ in the debug tab?
+
+### Details
+
+This node makes it easy to use the VRM API for data retrieval. Though not all possible API calls have been implemented, it can
+be used for retrieving and creating alarms and fetching installations statistics. It can also be used to retrieve the solar forecast
+data.
+
+In order to allow the node to query your site, an [access-token](https://vrm.victronenergy.com/access-tokens) needs to be created and filled
+out in the configuration node.
+
+### References
+
+Please use either the issues on the GitHub site or the Node-RED space on our community for questions, troubleshooting and suggestions.
+- [GitHub](https://github.com/dirkjanfaber/victron-vrm-api) - The nodes GitHub repository.
+- [Community](https://community.victronenergy.com/smart-spaces/71/node-red.html) - Node-RED space in the Victron Energy community.
+- [VRM API documentation](https://vrm-api-docs.victronenergy.com/#) - The VRM API documentation.
+
+</script>
+

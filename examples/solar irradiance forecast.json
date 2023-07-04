@@ -1,0 +1,80 @@
+[
+    {
+        "id": "b24b2dec8fdc9aa0",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "0dbb21fe89834ae3",
+        "type": "debug",
+        "z": "b24b2dec8fdc9aa0",
+        "name": "Solar irradiance forecast",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 910,
+        "y": 220,
+        "wires": []
+    },
+    {
+        "id": "cffab199512fce7d",
+        "type": "inject",
+        "z": "b24b2dec8fdc9aa0",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 340,
+        "y": 220,
+        "wires": [
+            [
+                "ee3376fc040c17f9"
+            ]
+        ]
+    },
+    {
+        "id": "ee3376fc040c17f9",
+        "type": "vrm-api",
+        "z": "b24b2dec8fdc9aa0",
+        "vrm": "87c32be49619e588",
+        "name": "",
+        "idSite": "",
+        "installations": "stats",
+        "attribute": "vrm_solar_irradiance_fc",
+        "verbose": false,
+        "x": 600,
+        "y": 220,
+        "wires": [
+            [
+                "0dbb21fe89834ae3"
+            ]
+        ]
+    },
+    {
+        "id": "87c32be49619e588",
+        "type": "config-vrm-api",
+        "name": "VRM",
+        "token": ""
+    }
+]

@@ -1,0 +1,23 @@
+<script type="text/javascript">
+    RED.nodes.registerType('config-vrm-api',{
+        category: 'config',
+        defaults: {
+            name: { value: "" },
+            token: { value: "", validate: RED.validators.regex(/^[a-z0-9]{64}$/) }    
+        },
+        label: function() {
+            return this.name || 'VRM API';
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="config-vrm-api">
+    <div class="form-row">
+        <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+        <input type="text" id="node-config-input-name" placeholder="Name">
+    </div>
+    <div class="form-row">
+        <label for="node-config-input-token"><i class="fa fa-user-secret"></i> VRM token</label>
+        <input type="password" id="node-config-input-token" placeholder="VRM token" required>
+    </div>
+</script>

@@ -1,0 +1,71 @@
+[
+    {
+        "id": "0852d0e7d36fbf5d",
+        "type": "vrm-api",
+        "z": "b24b2dec8fdc9aa0",
+        "vrm": "87c32be49619e588",
+        "name": "",
+        "idSite": "",
+        "installations": "post-alarms",
+        "attribute": "",
+        "verbose": false,
+        "x": 620,
+        "y": 420,
+        "wires": [
+            [
+                "b706e1207c2b5a18"
+            ]
+        ]
+    },
+    {
+        "id": "b706e1207c2b5a18",
+        "type": "debug",
+        "z": "b24b2dec8fdc9aa0",
+        "name": "debug 2",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "false",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 840,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "ab91b9c7a1dece06",
+        "type": "inject",
+        "z": "b24b2dec8fdc9aa0",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"AlarmEnabled\":1,\"NotifyAfterSeconds\":60,\"highAlarm\":30,\"highAlarmHysteresis\":2,\"idDataAttribute\":450,\"instance\":41,\"lowAlarm\":-10,\"lowAlarmHysteresis\":1.5}",
+        "payloadType": "json",
+        "x": 350,
+        "y": 420,
+        "wires": [
+            [
+                "0852d0e7d36fbf5d"
+            ]
+        ]
+    },
+    {
+        "id": "87c32be49619e588",
+        "type": "config-vrm-api",
+        "name": "VRM",
+        "token": ""
+    }
+]
