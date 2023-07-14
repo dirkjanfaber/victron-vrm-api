@@ -36,7 +36,9 @@ module.exports = function (RED) {
       url += '/installations/' + config.idSite + '/' + installations;
 
       if ( installations === 'stats' ) {
+        let d = new Date()
         url += '?type=custom&attributeCodes[]=' + config.attribute
+        url += '&interval=hours&end=' + Math.floor((d.getTime() / 1000 ) + 24 * 3600 )
       }
 
       if (config.verbose === true) {
