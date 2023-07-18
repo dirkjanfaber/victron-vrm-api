@@ -17,14 +17,22 @@ and filled out in the configuration node.
 
 * payload (`json`) : the VRM answer
 
-## Configuration
+The output of the answer depends on the selected configuration. See the [VRM API documentation](https://vrm-api-docs.victronenergy.com/#)
+in case you need assistance with interpreting the output.
 
-* Name (`string`) : The name of the node
-* VRM (`config`) : The configuration node
-* VRM site id (`number`) : The site to query
-* Installation (`string`) : The query type
-* Attribute (`string`) : Only in case of installation `stats`, which attribute to fetch
-* Verbose (`boolean`) : Show the used _url_ in the debug tab?
+### Configuration
+
+: Name (string) : The name of the node
+: VRM (config) : The configuration node
+: VRM site id (number) : The site to query
+: Installation (string) : The query type
+: Verbose (boolean) : Show the used _url_ in the debug tab?
+
+In case of installation `stats` there appear some extra configuration options
+: Attribute (string) : Which attribute to fetch
+: Interval (string) : Time between retrieved data points
+: Start (integer) : Timestamp from which to fetch data
+: End (integer) : Timestamp to which to fetch data
 
 ![VRM API edit panel](./img/vrm-api-edit-panel.png)
 
