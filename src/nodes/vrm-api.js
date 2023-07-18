@@ -16,9 +16,9 @@ module.exports = function (RED) {
     node.lastValidUpdate = Date.now()
 
     node.on('input', function (msg) {
-      var url = msg.url || 'https://vrmapi.victronenergy.com/v2'
-      var installations = config.installations
-      var method = 'get'
+      let url = msg.url || 'https://vrmapi.victronenergy.com/v2'
+      let installations = config.installations
+      let method = 'get'
 
       const options = {
       }
@@ -33,19 +33,19 @@ module.exports = function (RED) {
         method = 'post'
       }
 
-      url += '/installations/' + config.idSite + '/' + installations;
+      url += '/installations/' + config.idSite + '/' + installations
 
-      if ( installations === 'stats' ) {
-        let d = new Date()
+      if (installations === 'stats') {
+        const d = new Date()
         url += '?type=custom&attributeCodes[]=' + config.attribute
         if (config.stats_interval) {
           url += '&interval=' + config.stats_interval
         }
         if (config.stats_start !== 'undefined') {
-          url += '&start=' + Math.floor((d.getTime() / 1000 ) + Number(config.stats_start) )
+          url += '&start=' + Math.floor((d.getTime() / 1000) + Number(config.stats_start))
         }
         if (config.stats_end !== 'undefined') {
-          url += '&end=' + Math.floor((d.getTime() / 1000 ) + Number(config.stats_end) )
+          url += '&end=' + Math.floor((d.getTime() / 1000) + Number(config.stats_end))
         }
       }
 
@@ -68,16 +68,16 @@ module.exports = function (RED) {
               msg.payload.options = options
 
               if (msg.payload.success === false) {
-                node.status({ fill: 'yellow', shape: 'dot', text: msg.payload.error_code})
+                node.status({ fill: 'yellow', shape: 'dot', text: msg.payload.error_code })
               } else {
                 node.status({ fill: 'green', shape: 'dot', text: 'Ok' })
               }
             } else {
               node.status({ fill: 'yellow', shape: 'dot', text: response.status })
             }
-    
+
             node.lastValidUpdate = Date.now()
-    
+
             node.send(msg)
           }).catch(function (error) {
             if (error.response && error.response.data && error.response.data.errors) {
@@ -85,12 +85,12 @@ module.exports = function (RED) {
             } else {
               node.status({ fill: 'red', shape: 'dot', text: 'Error fetching VRM data' })
             }
-    
+
             if (error.response) {
               node.send({ payload: error.response })
             }
           })
-          break;
+          break
         default: // get
           axios.get(url, { params: options, headers }).then(function (response) {
             if (response.status === 200) {
@@ -100,9 +100,9 @@ module.exports = function (RED) {
             } else {
               node.status({ fill: 'yellow', shape: 'dot', text: response.status })
             }
-    
+
             node.lastValidUpdate = Date.now()
-    
+
             node.send(msg)
           }).catch(function (error) {
             if (error.response && error.response.data && error.response.data.errors) {
@@ -110,14 +110,12 @@ module.exports = function (RED) {
             } else {
               node.status({ fill: 'red', shape: 'dot', text: 'Error fetching VRM data' })
             }
-    
+
             if (error.response) {
               node.send({ payload: error.response })
             }
           })
       }
-
-      
     })
 
     node.on('close', function () {
