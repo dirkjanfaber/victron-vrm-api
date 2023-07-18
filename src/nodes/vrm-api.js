@@ -38,7 +38,15 @@ module.exports = function (RED) {
       if ( installations === 'stats' ) {
         let d = new Date()
         url += '?type=custom&attributeCodes[]=' + config.attribute
-        url += '&interval=hours&end=' + Math.floor((d.getTime() / 1000 ) + 24 * 3600 )
+        if (config.stats_interval) {
+          url += '&interval=' + config.stats_interval
+        }
+        if (config.stats_start !== 'undefined') {
+          url += '&start=' + Math.floor((d.getTime() / 1000 ) + Number(config.stats_start) )
+        }
+        if (config.stats_end !== 'undefined') {
+          url += '&end=' + Math.floor((d.getTime() / 1000 ) + Number(config.stats_end) )
+        }
       }
 
       if (config.verbose === true) {

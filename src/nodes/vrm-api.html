@@ -20,6 +20,17 @@
             idSite: { value: "", validate: RED.validators.regex(/^[0-9]{1,12}$/)},
             installations: { value: "", required: true},
             attribute: {value: "", required: false},
+            stats_interval: {value: ""},
+            stats_start: {value: "", validate:function(v) {
+                    let end=$('#node-input-stats_end').val()
+                    return Number(v) < Number(end)
+                }
+            },
+            stats_end: {value: "", validate:function(v) {
+                    let start=$('#node-input-stats_start').val()
+                    return Number(v) > Number(start)
+                }
+            },
             verbose: { value: false }
         },
         inputs: 1,
@@ -79,6 +90,28 @@
                 <option value="vrm_solar_irradiance">Solar Irradiance</option>
             </select>
         </div>    
+        <div class="form-row">
+            <label for="node-input-stats_interval"><i class="fa fa-barcode"></i> Interval</label>
+            <select id="node-input-stats_interval">
+                <option selected="selected" value="hours">1 hour</option>
+                <option value="2hours">2 hours</option>
+                <option value="days">1 day</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="node-input-stats_start"><i class="fa fa-calendar"></i> Start</label>
+            <select id="node-input-stats_start">
+                <option value="-86400">-24 hours</option>
+                <option selected="selected" value="0">now</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="node-input-stats_end"><i class="fa fa-calendar"></i> End</label>
+            <select id="node-input-stats_end">
+                <option value="0">now</option>
+                <option selected="selected" value="86400">+24 hours</option>
+            </select>
+        </div>
     </div>
     <div class="form-row" style="margin-bottom:0px;">
         <input type="checkbox" checked id="node-input-verbose" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
@@ -97,14 +130,22 @@ Interface with the Victron Energy VRM API.
 
 : payload (json) : the vrm answer
 
+The output of the answer depends on the selected configuration. See the [VRM API documentation](https://vrm-api-docs.victronenergy.com/#)
+in case you need assistance with interpreting the output.
+
 ### Configuration
 
 : Name (string) : The name of the node
 : VRM (config) : The configuration node
 : VRM site id (number) : The site to query
 : Installation (string) : The query type
-: Attribute (string) : Only in case of installation `stats`, which attribute to fetch
 : Verbose (boolean) : Show the used _url_ in the debug tab?
+
+In case of installation `stats` there appear some extra configuration options
+: Attribute (string) : Which attribute to fetch
+: Interval (string) : Time between retrieved data points
+: Start (integer) : Timestamp from which to fetch data
+: End (integer) : Timestamp to which to fetch data
 
 ### Details
 
