@@ -1,33 +1,8 @@
 [
     {
-        "id": "b24b2dec8fdc9aa0",
-        "type": "tab",
-        "label": "Flow 1",
-        "disabled": false,
-        "info": "",
-        "env": []
-    },
-    {
-        "id": "0dbb21fe89834ae3",
-        "type": "debug",
-        "z": "b24b2dec8fdc9aa0",
-        "name": "Solar irradiance forecast",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "payload",
-        "targetType": "msg",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 910,
-        "y": 220,
-        "wires": []
-    },
-    {
-        "id": "cffab199512fce7d",
+        "id": "45f46876fd1c9713",
         "type": "inject",
-        "z": "b24b2dec8fdc9aa0",
+        "z": "e0ce27b4a32b7b91",
         "name": "",
         "props": [
             {
@@ -45,29 +20,49 @@
         "topic": "",
         "payload": "",
         "payloadType": "date",
-        "x": 340,
-        "y": 220,
+        "x": 120,
+        "y": 120,
         "wires": [
             [
-                "ee3376fc040c17f9"
+                "2e1210763ad545b0"
             ]
         ]
     },
     {
-        "id": "ee3376fc040c17f9",
+        "id": "730e7a6d88a245d7",
+        "type": "debug",
+        "z": "e0ce27b4a32b7b91",
+        "name": "Solar irradiance forecast",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 650,
+        "y": 120,
+        "wires": []
+    },
+    {
+        "id": "2e1210763ad545b0",
         "type": "vrm-api",
-        "z": "b24b2dec8fdc9aa0",
+        "z": "e0ce27b4a32b7b91",
         "vrm": "87c32be49619e588",
         "name": "",
         "idSite": "",
         "installations": "stats",
         "attribute": "vrm_solar_irradiance_fc",
-        "verbose": false,
-        "x": 600,
-        "y": 220,
+        "stats_interval": "hours",
+        "stats_start": "0",
+        "stats_end": "86400",
+        "verbose": true,
+        "x": 360,
+        "y": 120,
         "wires": [
             [
-                "0dbb21fe89834ae3"
+                "730e7a6d88a245d7"
             ]
         ]
     },
