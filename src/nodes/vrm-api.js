@@ -45,7 +45,11 @@ module.exports = function (RED) {
           url += '&start=' + Math.floor((d.getTime() / 1000) + Number(config.stats_start))
         }
         if (config.stats_end !== 'undefined') {
-          url += '&end=' + Math.floor((d.getTime() / 1000) + Number(config.stats_end))
+          let end = config.stats_end
+          if (config.stats_end === 'eod' ) {
+            end = (new Date().setUTCHours(24,0,0,0) - Date.now() )/ 1000
+          }
+          url += '&end=' + Math.floor((d.getTime() / 1000) + Number(end))
         }
       }
 
