@@ -93,6 +93,12 @@
         <div class="form-row">
             <label for="node-input-stats_start"><i class="fa fa-calendar"></i> Start</label>
             <select id="node-input-stats_start">
+### tfx: add more interval options
+                <option value="-604800">-1 week</option>
+                <option value="-259200">-72 hours</option>
+                <option value="-172800">-48 hours</option>
+### /tfx
+
                 <option value="-86400">-24 hours</option>
                 <option selected="selected" value="0">now</option>
             </select>
@@ -103,6 +109,11 @@
                 <option value="0">now</option>
                 <option value="eod">end of day</option>
                 <option selected="selected" value="86400">+24 hours</option>
+### tfx add more interval options
+                <option selected="selected" value="172800">+48 hours</option>
+                <option selected="selected" value="259200">+72 hours</option>
+                <option selected="selected" value="604800">+1 week</option>
+### /tfx
             </select>
         </div>
     </div>
