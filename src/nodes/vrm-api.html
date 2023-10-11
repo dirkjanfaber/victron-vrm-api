@@ -137,6 +137,8 @@ Interface with the Victron Energy VRM API.
 The output of the answer depends on the selected configuration. See the [VRM API documentation](https://vrm-api-docs.victronenergy.com/#)
 in case you need assistance with interpreting the output.
 
+Note that the site id is the multi-digit number you see in the url of your vrm-site.
+
 ### Configuration
 
 : Name (string) : The name of the node
@@ -145,7 +147,7 @@ in case you need assistance with interpreting the output.
 : Installation (string) : The query type
 : Verbose (boolean) : Show the used _url_ in the debug tab?
 
-In case of installation `stats` there appear some extra configuration options
+In case of installation `stats` there appear some extra configuration options  
 : Attribute (string) : Which attribute to fetch
 : Interval (string) : Time between retrieved data points
 : Start (integer) : Timestamp from which to fetch data

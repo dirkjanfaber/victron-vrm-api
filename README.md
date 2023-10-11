@@ -22,17 +22,17 @@ in case you need assistance with interpreting the output.
 
 ### Configuration
 
-: Name (string) : The name of the node
-: VRM (config) : The configuration node
-: VRM site id (number) : The site to query
-: Installation (string) : The query type
-: Verbose (boolean) : Show the used _url_ in the debug tab?
+- Name (`string`) : The name of the node
+- VRM (`config`) : The configuration node
+- VRM site id (`number`) : The site to query. Note that this is the multi-digit number you see in the url of your vrm-site like this: `https://vrm.victronenergy.com/installation/123456/`
+- Installation (`string`) : The query type
+- Verbose (`boolean`) : Show the used _url_ in the debug tab?
 
 In case of installation `stats` there appear some extra configuration options
-: Attribute (string) : Which attribute to fetch
-: Interval (string) : Time between retrieved data points
-: Start (integer) : Timestamp from which to fetch data
-: End (integer) : Timestamp to which to fetch data
+- Attribute (`string`) : Which attribute to fetch
+- Interval (`string`) : Time between retrieved data points
+- Start (`integer`) : Timestamp from which to fetch data
+- End (`integer`) : Timestamp to which to fetch data
 
 ![VRM API edit panel](./img/vrm-api-edit-panel.png)
 
