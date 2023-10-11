@@ -46,8 +46,8 @@ module.exports = function (RED) {
         }
         if (config.stats_end !== 'undefined') {
           let end = config.stats_end
-          if (config.stats_end === 'eod' ) {
-            end = (new Date().setUTCHours(24,0,0,0) - Date.now() )/ 1000
+          if (config.stats_end === 'eod') {
+            end = (new Date().setUTCHours(24, 0, 0, 0) - Date.now()) / 1000
           }
           url += '&end=' + Math.floor((d.getTime() / 1000) + Number(end))
         }
