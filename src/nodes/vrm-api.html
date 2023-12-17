@@ -77,10 +77,19 @@
         <div class="form-row">
             <label for="node-input-attribute"><i class="fa fa-location-pencil"></i> Attribute</label>
             <select id="node-input-attribute" required>
+                <option value="Bc">Battery direct use</option>
+                <option value="Bg">Battery to grid</option>
+                <option value="Gc">Grid direct use</option>
+                <option value="Gb">Grid to battery</option>
+                <option value="Pc">Solar direct use</option>
+                <option value="Pb">Solar to battery</option>
+                <option value="kwh">Total kWh</option>
+                <option value="vrm_consumption_fc">Consumption Forecast</option>
                 <option value="vrm_pv_inverter_yield_fc">PV Inverter Yield Forecast</option>
                 <option value="vrm_pv_charger_yield_fc">PV Yield Solar Charger Forecast</option>
                 <option value="vrm_solar_irradiance_fc">Solar Irradiance Forecast</option>
                 <option value="vrm_solar_irradiance">Solar Irradiance</option>
+                <option value="solar_yield_forecast">Solar Yield Forecast</option>
             </select>
         </div>    
         <div class="form-row">
