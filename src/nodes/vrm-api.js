@@ -42,7 +42,11 @@ module.exports = function (RED) {
           url += '&interval=' + config.stats_interval
         }
         if (config.stats_start !== 'undefined') {
-          url += '&start=' + Math.floor((d.getTime() / 1000) + Number(config.stats_start))
+          let start = config.stats_start
+          if (config.stats_start === 'bod') {
+            start = (new Date().setUTCHours(0, 0, 0, 0) - Date.now()) / 1000
+          }
+          url += '&start=' + Math.floor((d.getTime() / 1000) + Number(start))
         }
         if (config.stats_end !== 'undefined') {
           let end = config.stats_end
