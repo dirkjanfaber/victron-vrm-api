@@ -43,14 +43,18 @@ module.exports = function (RED) {
         }
         if (config.stats_start !== 'undefined') {
           let start = config.stats_start
-          if (config.stats_start === 'bod') {
+          if (start === 'boy') {
+            start = (new Date().setUTCHours(0, 0, 0, 0) - Date.now() - 86400000) / 1000
+          } else if (start === 'bod') {
             start = (new Date().setUTCHours(0, 0, 0, 0) - Date.now()) / 1000
           }
           url += '&start=' + Math.floor((d.getTime() / 1000) + Number(start))
         }
         if (config.stats_end !== 'undefined') {
           let end = config.stats_end
-          if (config.stats_end === 'eod') {
+          if (end === 'eoy') {
+            end = (new Date().setUTCHours(23, 59, 59, 0) - Date.now() - 86400000) / 1000
+          } else if (end === 'eod') {
             end = (new Date().setUTCHours(23, 59, 59, 0) - Date.now()) / 1000
           }
           url += '&end=' + Math.floor((d.getTime() / 1000) + Number(end))
