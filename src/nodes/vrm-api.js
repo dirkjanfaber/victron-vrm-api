@@ -43,19 +43,27 @@ module.exports = function (RED) {
         }
         if (config.stats_start !== 'undefined') {
           let start = config.stats_start
+          let d_start = new Date().setHours(0, 0, 0, 0) - Date.now()
+          if (config.use_utc === true) {
+            d_start = new Date().setUTCHours(0, 0, 0, 0) - Date.now()
+          }
           if (start === 'boy') {
-            start = (new Date().setUTCHours(0, 0, 0, 0) - Date.now() - 86400000) / 1000
+            start = (d_start - 86400000) / 1000
           } else if (start === 'bod') {
-            start = (new Date().setUTCHours(0, 0, 0, 0) - Date.now()) / 1000
+            start = (d_start - Date.now()) / 1000
           }
           url += '&start=' + Math.floor((d.getTime() / 1000) + Number(start))
         }
         if (config.stats_end !== 'undefined') {
           let end = config.stats_end
+          let d_end = new Date().setHours(23, 59, 59, 0) - Date.now()
+          if (config.use_utc === true) {
+            d_end = new Date().setUTCHours(23, 59, 59, 0) - Date.now()
+          }
           if (end === 'eoy') {
-            end = (new Date().setUTCHours(23, 59, 59, 0) - Date.now() - 86400000) / 1000
+            end = (d_end - 86400000) / 1000
           } else if (end === 'eod') {
-            end = (new Date().setUTCHours(23, 59, 59, 0) - Date.now()) / 1000
+            end = (d_end) / 1000
           }
           url += '&end=' + Math.floor((d.getTime() / 1000) + Number(end))
         }
