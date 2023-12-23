@@ -41,6 +41,9 @@ module.exports = function (RED) {
         if (config.stats_interval) {
           url += '&interval=' + config.stats_interval
         }
+        if (config.show_instance === true) {
+          url += '&show_instance=1'
+        }
         if (config.stats_start !== 'undefined') {
           let start = config.stats_start
           let d_start = new Date().setHours(0, 0, 0, 0)
