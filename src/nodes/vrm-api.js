@@ -43,12 +43,12 @@ module.exports = function (RED) {
         }
         if (config.stats_start !== 'undefined') {
           let start = config.stats_start
-          let d_start = new Date().setHours(0, 0, 0, 0) - Date.now()
+          let d_start = new Date().setHours(0, 0, 0, 0)
           if (config.use_utc === true) {
-            d_start = new Date().setUTCHours(0, 0, 0, 0) - Date.now()
+            d_start = new Date().setUTCHours(0, 0, 0, 0)
           }
           if (start === 'boy') {
-            start = (d_start - 86400000) / 1000
+            start = (d_start - Date.now() - 86400000) / 1000
           } else if (start === 'bod') {
             start = (d_start - Date.now()) / 1000
           }
@@ -56,14 +56,14 @@ module.exports = function (RED) {
         }
         if (config.stats_end !== 'undefined') {
           let end = config.stats_end
-          let d_end = new Date().setHours(23, 59, 59, 0) - Date.now()
+          let d_end = new Date().setHours(23, 59, 59, 0)
           if (config.use_utc === true) {
-            d_end = new Date().setUTCHours(23, 59, 59, 0) - Date.now()
+            d_end = new Date().setUTCHours(23, 59, 59, 0)
           }
           if (end === 'eoy') {
-            end = (d_end - 86400000) / 1000
+            end = (d_end - Date.now() - 86400000) / 1000
           } else if (end === 'eod') {
-            end = (d_end) / 1000
+            end = (d_end - Date.now()) / 1000
           }
           url += '&end=' + Math.floor((d.getTime() / 1000) + Number(end))
         }
