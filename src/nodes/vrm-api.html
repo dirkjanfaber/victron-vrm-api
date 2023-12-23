@@ -21,6 +21,7 @@
             installations: { value: "", required: true},
             attribute: {value: "", required: false},
             stats_interval: {value: ""},
+            show_instance: {value: false},
             stats_start: {value: ""},
             stats_end: {value: ""},
             use_utc: { value: false },
@@ -141,6 +142,10 @@
             <input type="checkbox" checked id="node-input-use_utc" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
             <label style="min-width:390px" for="node-input-use_utc"><i class="fa fa-power"></i> Use universal time (UTC) instead of the local time?</label>
         </div>
+        <div class="form-row" style="margin-bottom:0px;">
+            <input type="checkbox" checked id="node-input-show_instance" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+            <label style="min-width:390px" for="node-input-show_instance"><i class="fa fa-power"></i> Group attributes by instance?</label>
+        </div>
     </div>
     <div class="form-row" style="margin-bottom:0px;">
         <input type="checkbox" checked id="node-input-verbose" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
@@ -175,6 +180,7 @@ Note that the site id is the multi-digit number you see in the url of your vrm-s
 In case of installation `stats` there appear some extra configuration options  
 : Attribute (string) : Which attribute to fetch
 : Interval (string) : Time between retrieved data points
+: Show instance (boolean) : If checked, attributes will be grouped by instance
 : Start (integer) : Timestamp from which to fetch data
 : End (integer) : Timestamp to which to fetch data
 : UTC (boolean) : Use universal time (UTC) instead of the local time?
