@@ -23,7 +23,7 @@ module.exports = function (RED) {
       const options = {
       }
       const headers = {
-        'X-Authorization': 'Token ' + this.vrm.token,
+        'X-Authorization': 'Token ' + this.vrm.credentials.token,
         accept: 'application/json',
         'User-Agent': 'nrc-vrm-api/' + packageJson.version
       }
