@@ -1,23 +1,23 @@
 module.exports = function (RED) {
-    'use strict'
-    function ConfigVRMAPI (config) {
-        RED.nodes.createNode(this, config);
-        this.name = config.name;
+  'use strict'
+  function ConfigVRMAPI (config) {
+    RED.nodes.createNode(this, config)
+    this.name = config.name
 
-        // Transfer data from previous versions
-        if (this.credentials && !this.credentials.token && config.token) {
-            RED.nodes.addCredentials(this.id, { token: config.token });
-        }
-
-        // Delete deprecated properties
-        delete config.token;
-        delete this.token;
+    // Transfer data from previous versions
+    if (this.credentials && !this.credentials.token && config.token) {
+      RED.nodes.addCredentials(this.id, { token: config.token })
     }
-    RED.nodes.registerType('config-vrm-api', ConfigVRMAPI, {
-        credentials: {
-            token: {
-                type: 'password'
-            },
-        },
-    });
+
+    // Delete deprecated properties
+    delete config.token
+    delete this.token
+  }
+  RED.nodes.registerType('config-vrm-api', ConfigVRMAPI, {
+    credentials: {
+      token: {
+        type: 'password'
+      }
+    }
+  })
 }

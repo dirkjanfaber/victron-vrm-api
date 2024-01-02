@@ -20,7 +20,7 @@ module.exports = function (RED) {
       let installations = config.installations
       let method = 'get'
 
-      const options = {
+      let options = {
       }
       const headers = {
         'X-Authorization': 'Token ' + this.vrm.credentials.token,
@@ -33,42 +33,61 @@ module.exports = function (RED) {
         method = 'post'
       }
 
-      url += '/installations/' + config.idSite + '/' + installations
+      if (config.installations === 'dess') {
+        url = 'https://vrm-dynamic-ess-api.victronenergy.com'
+        options = {
+          vrm_id: (config.vrm_id).toString(),
+          b_max: (config.b_max).toString(),
+          tb_max: (config.tb_max).toString(),
+          fb_max: (config.fb_max).toString(),
+          tg_max: (config.tg_max).toString(),
+          fg_max: (config.fg_max).toString(),
+          b_cycle_cost: (config.b_cycle_cost).toString(),
+          buy_price_formula: (config.buy_price_formula).toString(),
+          sell_price_formula: (config.sell_price_formula).toString(),
+          feed_in_possible: (config.feed_in_possible).toString(),
+          feed_in_control_on: (config.feed_in_control_on).toString(),
+          country: (config.country).toUpperCase()
+        }
+        headers['User-Agent'] = 'dynamic-ess/0.1.10'
+      } else {
+        url += '/installations/' + config.idSite + '/' + installations
 
-      if (installations === 'stats') {
-        const d = new Date()
-        url += '?type=custom&attributeCodes[]=' + config.attribute
-        if (config.stats_interval) {
-          url += '&interval=' + config.stats_interval
-        }
-        if (config.show_instance === true) {
-          url += '&show_instance=1'
-        }
-        if (config.stats_start !== 'undefined') {
-          let start = config.stats_start
-          let d_start = new Date().setHours(0, 0, 0, 0)
-          if (config.use_utc === true) {
-            d_start = new Date().setUTCHours(0, 0, 0, 0)
+        if (installations === 'stats') {
+          const d = new Date()
+          url += '?type=custom&attributeCodes[]=' + config.attribute
+          if (config.stats_interval) {
+            url += '&interval=' + config.stats_interval
           }
-          if (start === 'boy') {
-            start = (d_start - Date.now() - 86400000) / 1000
-          } else if (start === 'bod') {
-            start = (d_start - Date.now()) / 1000
+          if (config.show_instance === true) {
+            url += '&show_instance=1'
           }
-          url += '&start=' + Math.floor((d.getTime() / 1000) + Number(start))
-        }
-        if (config.stats_end !== 'undefined') {
-          let end = config.stats_end
-          let d_end = new Date().setHours(23, 59, 59, 0)
-          if (config.use_utc === true) {
-            d_end = new Date().setUTCHours(23, 59, 59, 0)
+          if (config.stats_start !== 'undefined') {
+            let start = config.stats_start
+            let dayStart = new Date().setHours(0, 0, 0, 0)
+            if (config.use_utc === true) {
+              dayStart = new Date().setUTCHours(0, 0, 0, 0)
+            }
+            if (start === 'boy') {
+              start = (dayStart - Date.now() - 86400000) / 1000
+            } else if (start === 'bod') {
+              start = (dayStart - Date.now()) / 1000
+            }
+            url += '&start=' + Math.floor((d.getTime() / 1000) + Number(start))
           }
-          if (end === 'eoy') {
-            end = (d_end - Date.now() - 86400000) / 1000
-          } else if (end === 'eod') {
-            end = (d_end - Date.now()) / 1000
+          if (config.stats_end !== 'undefined') {
+            let end = config.stats_end
+            let dayEnd = new Date().setHours(23, 59, 59, 0)
+            if (config.use_utc === true) {
+              dayEnd = new Date().setUTCHours(23, 59, 59, 0)
+            }
+            if (end === 'eoy') {
+              end = (dayEnd - Date.now() - 86400000) / 1000
+            } else if (end === 'eod') {
+              end = (dayEnd - Date.now()) / 1000
+            }
+            url += '&end=' + Math.floor((d.getTime() / 1000) + Number(end))
           }
-          url += '&end=' + Math.floor((d.getTime() / 1000) + Number(end))
         }
       }
 
@@ -83,6 +102,7 @@ module.exports = function (RED) {
       node.status({ fill: 'yellow', shape: 'ring', text: 'Connecting to VRM API' })
 
       msg.topic = config.idSite + ': ' + config.installations
+
       switch (method) {
         case 'post':
           axios.post(url, msg.payload, { headers }).then(function (response) {
@@ -99,7 +119,10 @@ module.exports = function (RED) {
               node.status({ fill: 'yellow', shape: 'dot', text: response.status })
             }
 
-            node.lastValidUpdate = Date.now()
+            if (config.store_in_global_context === true) {
+              const globalContext = node.context().global
+              globalContext.set(`${config.idSite}_${config.installations}`, response.data)
+            }
 
             node.send(msg)
           }).catch(function (error) {
@@ -124,7 +147,10 @@ module.exports = function (RED) {
               node.status({ fill: 'yellow', shape: 'dot', text: response.status })
             }
 
-            node.lastValidUpdate = Date.now()
+            if (config.store_in_global_context === true) {
+              const globalContext = node.context().global
+              globalContext.set(`vrm_api.${config.idSite}_${config.installations}`, response.data)
+            }
 
             node.send(msg)
           }).catch(function (error) {

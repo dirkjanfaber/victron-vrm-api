@@ -1,13 +1,20 @@
 
 <script type="text/javascript">
 
-    function checkStats() {
+    function checkSelectedAPI() {
 
-    if ( $('select#node-input-installations').val() === 'stats' ) {
-        $('#input-stats').show()
-    } else {
         $('#input-stats').hide()
-    }
+        $('#input-dess').hide()
+
+        switch ( $('select#node-input-installations').val() ){
+            case 'stats':
+                $('#input-stats').show()
+                break;
+            case 'dess':
+                $('#input-dess').show()
+                break;
+            default:
+        }
     }
 
     RED.nodes.registerType('vrm-api', {
@@ -25,6 +32,20 @@
             stats_start: {value: ""},
             stats_end: {value: ""},
             use_utc: { value: false },
+            // dess
+            vrm_id: {value: "", validate: RED.validators.regex(/^[0-9a-zA-Z]{1,16}$/), required: false},
+            country: {value: "", required: false},
+            b_max: {value: "", required: false},
+            tb_max: {value: "", required: false},
+            fb_max: {value: "", required: false},
+            tg_max: {value: "", required: false},
+            fg_max: {value: "", required: false},
+            b_cycle_cost: {value: "", required: false},
+            buy_price_formula: {value: "", required: false},
+            sell_price_formula: {value: "", required: false},
+            feed_in_possible: {value: "", required: false},
+            feed_in_control_on: {value: "", required: false},
+            store_in_global_context: {value: false},
             verbose: { value: false }
         },
         inputs: 1,
@@ -45,7 +66,7 @@
             return label;
         },
         oneditprepare: function oneditprepare() {
-
+            checkSelectedAPI()
         }
     });
 </script>
@@ -65,13 +86,14 @@
     </div>    
     <div class="form-row">
         <label for="node-input-installations"><i class="fa fa-location-arrow"></i> Installation</label>
-        <select id="node-input-installations" required onchange="checkStats()">
+        <select id="node-input-installations" required onchange="checkSelectedAPI()">
             <option value="alarms">Get Alarms</option>
             <option value="post-alarms">Add Alarm</option>
             <option value="system-overview">Connected devices for a given installation</option>
             <option value="diagnostics">Diagnostic data for an installation</option>
             <option value="tags">Get installation tags</option>
             <option value="stats">Installation stats</option>
+            <option value="dess">Dynamic ESS</option>
             <option value="dynamic-ess-settings">Dynamic ESS settings</option>
         </select>
     </div>
@@ -147,9 +169,111 @@
             <label style="min-width:390px" for="node-input-show_instance"><i class="fa fa-power"></i> Group attributes by instance?</label>
         </div>
     </div>
+    <div id="input-dess">
+        <div class="form-row">
+            <label for="node-input-vrm_id"><i class="fa fa-id-card"></i> VRM id</label>
+            <input type="text" id="node-input-vrm_id" placeholder="VRM id" required>
+        </div>
+        <div class="form-row">
+            <label for="node-input-country">Country / Energy region</label>
+                <select id="node-input-country" required>
+                    <option value="at">Austria (at)</option>
+                    <option value="be">Belgium (be)</option>
+                    <option value="bg">Bulgaria (bg)</option>
+                    <option value="hr">Croatia (hr)</option>
+                    <option value="cz">Czech Republic (cz)</option>
+                    <option value="dk-1">Denmark (dk-1)</option>
+                    <option value="dk-2">Denmark (dk-2)</option>
+                    <option value="ee">Estonia (ee)</option>
+                    <option value="fi">Finland (fi)</option>
+                    <option value="fr">France (fr)</option>
+                    <option value="de">Germany (de)</option>
+                    <option value="gr">Greece (gr)</option>
+                    <option value="hu">Hungary (hu)</option>
+                    <option value="it-calabria">Italy - Calabria (it-calabria)</option>
+                    <option value="it-centre-north">Italy - Centre-North (it-centre-north)</option>
+                    <option value="it-centre-south">Italy - Centre-South (it-centre-south)</option>
+                    <option value="it-north">Italy - North (it-north)</option>
+                    <option value="it-sacoac">Italy - SACOAC (it-sacoac)</option>
+                    <option value="it-sadodc">Italy - SACODC (it-sacodc)</option>
+                    <option value="it-sardinia">Italy - Sardinia (it-sardinia)</option>
+                    <option value="it-sicily">Italy - Sicily (it-sicily)</option>
+                    <option value="it-south">Italy - South (it-south)</option>
+                    <option value="lv">Latvia (lv)</option>
+                    <option value="lt">Lithuania (lt)</option>
+                    <option value="lu">Luxembourg (lu)</option>
+                    <option value="me">Montenegro (me)</option>
+                    <option value="nl">Netherlands (nl)</option>
+                    <option value="mk">North Macedonia (mk)</option>
+                    <option value="no-1">Norway (no-1)</option>
+                    <option value="no-2">Norway (no-2)</option>
+                    <option value="no-2nsl">Norway (no-2nsl)</option>
+                    <option value="no-3">Norway (no-3)</option>
+                    <option value="no-4">Norway (no-4)</option>
+                    <option value="no-5">Norway (no-5)</option>
+                    <option value="pl">Poland (pl)</option>
+                    <option value="pt">Portugal (pt)</option>
+                    <option value="ro">Romania (ro)</option>
+                    <option value="rs">Serbia (rs)</option>
+                    <option value="sk">Slovakia (sk)</option>
+                    <option value="si">Slovenia (si)</option>
+                    <option value="es">Spain (es)</option>
+                    <option value="se-1">Sweden - SE1 (se-1)</option>
+                    <option value="se-2">Sweden - SE2 (se-2)</option>
+                    <option value="se-3">Sweden - SE3 (se-3)</option>
+                    <option value="se-4">Sweden - SE4 (se-4)</option>
+                    <option value="ch">Switzerland (ch)</option>
+                    <option value="ua-ips">Ukraine - IPS (ua-ips)</option>
+                </select>
+        </div>
+        <div class="form-row">
+            <label for="node-input-b_max"><i class="fa fa-battery-full"></i> B max</label>
+            <input type="text" id="node-input-b_max" placeholder="Usable battery capacity (kWh)">
+        </div>
+        <div class="form-row">
+            <label for="node-input-tb_max"><i class="fa fa-battery-full"></i> TB max</label>
+            <input type="text" id="node-input-tb_max" placeholder="Amount the battery charges in one hour (kW)">
+        </div>
+        <div class="form-row">
+            <label for="node-input-fb_max"><i class="fa fa-battery-full"></i> FB max</label>
+            <input type="text" id="node-input-fb_max" placeholder="Amount the battery discharges in one hour (kW)">
+        </div>
+        <div class="form-row">
+            <label for="node-input-tg_max"><i class="fa fa-battery-full"></i> TG max</label>
+            <input type="text" id="node-input-tg_max" placeholder="Amount the grid can receive (to grid) in one hour (kW)">
+        </div>
+        <div class="form-row">
+            <label for="node-input-fg_max"><i class="fa fa-battery-full"></i> FG max</label>
+            <input type="text" id="node-input-fg_max" placeholder="Amount the grid can provide (from grid) in one hour (kW)">
+        </div>
+        <div class="form-row">
+            <label for="node-input-b_cycle_cost"><i class="fa fa-money"></i> Battery cycle costs</label>
+            <input type="text" id="node-input-b_cycle_cost" placeholder="Battery cycle costs">
+        </div>
+        <div class="form-row">
+            <label for="node-input-buy_price_formula"><i class="fa fa-pencil"></i> Buy price</label>
+            <input type="text" id="node-input-buy_price_formula" placeholder="The buy price formula">
+        </div>
+        <div class="form-row">
+            <label for="node-input-sell_price_formula"><i class="fa fa-pencil"></i> Sell price</label>
+            <input type="text" id="node-input-sell_price_formula" placeholder="The sell price formula">
+        </div>
+        <div class="form-row" style="margin-bottom:0px;">
+            <input type="checkbox" checked id="node-input-feed_in_possible" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+            <label style="width: 70%" for="node-input-feed_in_possible"> Feed in possible: Can you sell back to the grid?</label>
+        </div>
+        <div class="form-row" style="margin-bottom:0px;">
+            <input type="checkbox" checked id="node-input-feed_in_control_on" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+            <label style="min-width:390px" for="node-input-feed_in_control_on"> Feed-in control: Allow control over the feed-in variable (turn it off automatically when the prices are negative)?</label>
+        </div>
+    </div>
+    <div class="form-row" style="margin-bottom:0px;">
+        <input type="checkbox" id="node-input-store_in_global_context" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+        <label style="min-width:390px" for="node-input-store_in_global_context"> Store the response in the global context?</label>
+    </div>
     <div class="form-row" style="margin-bottom:0px;">
         <input type="checkbox" id="node-input-verbose" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
-        <label style="min-width:390px" for="node-input-verbose"><i class="fa fa-power"></i> Verbose: show the used <em>url</em> in the debug tab?</label>
+        <label style="min-width:390px" for="node-input-verbose"> Verbose: show the used <em>url</em> in the debug tab?</label>
     </div>
 </script>
 
@@ -175,6 +299,7 @@ Note that the site id is the multi-digit number you see in the url of your vrm-s
 : VRM (config) : The configuration node
 : VRM site id (number) : The site to query
 : Installation (string) : The query type
+: Store (boolean) : Store the respones in the global context?
 : Verbose (boolean) : Show the used _url_ in the debug tab?
 
 In case of installation `stats` there appear some extra configuration options  
@@ -184,6 +309,8 @@ In case of installation `stats` there appear some extra configuration options
 : Start (integer) : Timestamp from which to fetch data
 : End (integer) : Timestamp to which to fetch data
 : UTC (boolean) : Use universal time (UTC) instead of the local time?
+
+In case of installation `dess` there are even more configuration options
 
 ### Details
 
