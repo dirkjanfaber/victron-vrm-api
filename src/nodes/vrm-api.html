@@ -33,7 +33,7 @@
             stats_end: {value: ""},
             use_utc: { value: false },
             // dess
-            vrm_id: {value: "", validate: RED.validators.regex(/^[0-9a-zA-Z]{1,16}$/), required: false},
+            vrm_id: {value: "", validate: RED.validators.regex(/^([0-9a-zA-Z]{1,16}|)$/),required: false},
             country: {value: "", required: false},
             b_max: {value: "", required: false},
             tb_max: {value: "", required: false},
