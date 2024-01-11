@@ -55,6 +55,9 @@ module.exports = function (RED) {
 
         if (installations === 'stats') {
           const d = new Date()
+          const hour = (config.use_utc === true) ? d.getUTCHours() : d.getHours()
+          const hourStart = (config.use_utc === true) ? d.setUTCHours(hour, 0, 0, 0) : d.setHours(hour, 0, 0, 0)
+          const hourEnd = (config.use_utc === true) ? d.setUTCHours(hour, 59, 59, 0) : d.setHours(hour, 59, 59, 0)
           url += '?type=custom&attributeCodes[]=' + config.attribute
           if (config.stats_interval) {
             url += '&interval=' + config.stats_interval
@@ -64,29 +67,23 @@ module.exports = function (RED) {
           }
           if (config.stats_start !== 'undefined') {
             let start = config.stats_start
-            let dayStart = new Date().setHours(0, 0, 0, 0)
-            if (config.use_utc === true) {
-              dayStart = new Date().setUTCHours(0, 0, 0, 0)
-            }
+            const dayStart = (config.use_utc === true) ? d.setUTCHours(0, 0, 0, 0) : d.setHours(0, 0, 0, 0)
             if (start === 'boy') {
-              start = (dayStart - Date.now() - 86400000) / 1000
+              start = (dayStart - hourStart - 86400000) / 1000
             } else if (start === 'bod') {
-              start = (dayStart - Date.now()) / 1000
+              start = (dayStart - hourStart) / 1000
             }
-            url += '&start=' + Math.floor((d.getTime() / 1000) + Number(start))
+            url += '&start=' + Math.floor((hourStart / 1000) + Number(start))
           }
           if (config.stats_end !== 'undefined') {
             let end = config.stats_end
-            let dayEnd = new Date().setHours(23, 59, 59, 0)
-            if (config.use_utc === true) {
-              dayEnd = new Date().setUTCHours(23, 59, 59, 0)
-            }
+            const dayEnd = (config.use_utc === true) ? d.setUTCHours(23, 59, 59, 0) : d.setHours(23, 59, 59, 0)
             if (end === 'eoy') {
-              end = (dayEnd - Date.now() - 86400000) / 1000
+              end = (dayEnd - hourEnd - 86400000) / 1000
             } else if (end === 'eod') {
-              end = (dayEnd - Date.now()) / 1000
+              end = (dayEnd - hourEnd) / 1000
             }
-            url += '&end=' + Math.floor((d.getTime() / 1000) + Number(end))
+            url += '&end=' + Math.floor((hourEnd / 1000) + Number(end))
           }
         }
       }
