@@ -24,7 +24,7 @@
         defaults: {
             vrm: {value: "", type: "config-vrm-api"},
             name: { value: "" },
-            idSite: { value: "", validate: RED.validators.regex(/^[0-9]{1,12}$/)},
+            idSite: { value: "", validate: RED.validators.regex(/^([0-9]{1,12}||\{\{flow\.idSite\}\})$/)},
             installations: { value: "", required: true},
             attribute: {value: "", required: false},
             stats_interval: {value: ""},
@@ -311,6 +311,10 @@ In case of installation `stats` there appear some extra configuration options
 : UTC (boolean) : Use universal time (UTC) instead of the local time?
 
 In case of installation `dess` there are even more configuration options
+
+Note that instead of filling out the number of the VRM site id in the box, you can also use context variables, e.g. `{{flow.siteId}}`
+or `{{global.vrmId}}`. This allows to query the site that has been set in this context field. Of course you
+need to make sure that context contains a valid VRM site id first.
 
 ### Details
 

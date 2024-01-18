@@ -51,7 +51,15 @@ module.exports = function (RED) {
         }
         headers['User-Agent'] = 'dynamic-ess/0.1.10'
       } else {
-        url += '/installations/' + config.idSite + '/' + installations
+        url += '/installations/'
+        const match = config.idSite.match(/^\{\{(node|flow|global)\.(.*)\}\}$/)
+        if (match) {
+          const Context = this.context()[match[1]]
+          url += Context.get([match[2]])
+        } else {
+          url += config.idSite
+        }
+        url += '/' + installations
 
         if (installations === 'stats') {
           const d = new Date()

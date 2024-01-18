@@ -34,7 +34,11 @@ In case of installation `stats` there appear some extra configuration options
 - Start (`integer`) : Timestamp from which to fetch data
 - End (`integer`) : Timestamp to which to fetch data
 
+In case of installation `dess`` there are even more configuration options.
+
 ![VRM API edit panel](./img/vrm-api-edit-panel.png)
+
+Note that instead of filling out the number of the VRM site id in the box, you can also use context variables, e.g. `{{flow.siteId}}` or `{{global.vrmId}}`. This allows to query the site that has been set in this context field. Of course you need to make sure that context contains a valid VRM site id first.
 
 ## Examples
 
