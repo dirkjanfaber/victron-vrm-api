@@ -28,73 +28,132 @@ module.exports = function (RED) {
         'User-Agent': 'nrc-vrm-api/' + packageJson.version
       }
 
-      if (config.installations === 'post-alarms') {
-        installations = 'alarms'
-        method = 'post'
+      const parameters = {}
+      const topic = [config.api_type]
+      switch (config.api_type) {
+        case 'installations': {
+          topic.push(config.installations)
+          if (config.installations === 'post-alarms') {
+            installations = 'alarms'
+            method = 'post'
+          }
+
+          url += '/' + config.api_type + '/'
+          const match = config.idSite.match(/^\{\{(node|flow|global)\.(.*)\}\}$/)
+          if (match) {
+            const Context = this.context()[match[1]]
+            if (Context.get([match[2]])[0] !== undefined) {
+              url += Context.get([match[2]]).toString()
+              topic.push(Context.get([match[2]]).toString())
+            } else {
+              node.status({ fill: 'red', shape: 'ring', text: `Unable to retrieve ${config.idSite} from context` })
+              return
+            }
+          } else {
+            url += config.idSite
+            topic.push(config.idSite)
+          }
+          url += '/' + installations
+
+          if (installations === 'stats') {
+            const d = new Date()
+            const hour = (config.use_utc === true) ? d.getUTCHours() : d.getHours()
+            const hourStart = (config.use_utc === true) ? d.setUTCHours(hour, 0, 0, 0) : d.setHours(hour, 0, 0, 0)
+            const hourEnd = (config.use_utc === true) ? d.setUTCHours(hour, 59, 59, 0) : d.setHours(hour, 59, 59, 0)
+            url += '?type=custom&attributeCodes[]=' + config.attribute
+            parameters.type = 'custom'
+            parameters['attributeCodes[]'] = config.attribute
+            if (config.stats_interval) {
+              parameters.interval = config.stats_interval
+            }
+            if (config.show_instance === true) {
+              parameters.show_instance = 1
+            }
+            if (config.stats_start !== 'undefined') {
+              let start = config.stats_start
+              const dayStart = (config.use_utc === true) ? d.setUTCHours(0, 0, 0, 0) : d.setHours(0, 0, 0, 0)
+              if (start === 'boy') {
+                start = (dayStart - hourStart - 86400000) / 1000
+              } else if (start === 'bod') {
+                start = (dayStart - hourStart) / 1000
+              }
+              parameters.start = Math.floor((hourStart / 1000) + Number(start))
+            }
+            if (config.stats_end !== 'undefined') {
+              let end = config.stats_end
+              const dayEnd = (config.use_utc === true) ? d.setUTCHours(23, 59, 59, 0) : d.setHours(23, 59, 59, 0)
+              if (end === 'eoy') {
+                end = (dayEnd - hourEnd - 86400000) / 1000
+              } else if (end === 'eod') {
+                end = (dayEnd - hourEnd) / 1000
+              }
+              parameters.end = Math.floor((hourEnd / 1000) + Number(end))
+            }
+          }
+          url += '&' + Object.entries(parameters)
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&')
+        }
+          break
+        case 'users':
+          url += '/' + config.api_type
+          if (config.users === 'installations') {
+            url += '/' + config.idUser
+            topic.push(config.users, config.idUser)
+          }
+          url += '/' + config.users
+          break
+        case 'widgets': {
+          topic.push(config.widgets)
+          url += '/installations/'
+          const match = config.idSite.match(/^\{\{(node|flow|global)\.(.*)\}\}$/)
+          if (match) {
+            const Context = this.context()[match[1]]
+            if (Context.get([match[2]])[0] !== undefined) {
+              url += Context.get([match[2]]).toString()
+              topic.push(Context.get([match[2]]).toString())
+            } else {
+              node.status({ fill: 'red', shape: 'ring', text: `Unable to retrieve ${config.idSite} from context` })
+              return
+            }
+          } else {
+            url += config.idSite + '/'
+            topic.push(config.idSite)
+          }
+          url += config.api_type + '/' + config.widgets
+
+          // instance
+          if (config.instance) {
+            parameters.instance = config.instance
+          }
+          url += '&' + Object.entries(parameters)
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&')
+        }
+          break
+
+        case 'dynamic-ess':
+          topic.push('dynamic-ess')
+          url = 'https://vrm-dynamic-ess-api.victronenergy.com'
+          options = {
+            vrm_id: (config.vrm_id).toString(),
+            b_max: (config.b_max).toString(),
+            tb_max: (config.tb_max).toString(),
+            fb_max: (config.fb_max).toString(),
+            tg_max: (config.tg_max).toString(),
+            fg_max: (config.fg_max).toString(),
+            b_cycle_cost: (config.b_cycle_cost).toString(),
+            buy_price_formula: (config.buy_price_formula).toString(),
+            sell_price_formula: (config.sell_price_formula).toString(),
+            feed_in_possible: (config.feed_in_possible).toString(),
+            feed_in_control_on: (config.feed_in_control_on).toString(),
+            country: (config.country).toUpperCase()
+          }
+          headers['User-Agent'] = 'dynamic-ess/0.1.10'
+          break
       }
 
-      if (config.installations === 'dess') {
-        url = 'https://vrm-dynamic-ess-api.victronenergy.com'
-        options = {
-          vrm_id: (config.vrm_id).toString(),
-          b_max: (config.b_max).toString(),
-          tb_max: (config.tb_max).toString(),
-          fb_max: (config.fb_max).toString(),
-          tg_max: (config.tg_max).toString(),
-          fg_max: (config.fg_max).toString(),
-          b_cycle_cost: (config.b_cycle_cost).toString(),
-          buy_price_formula: (config.buy_price_formula).toString(),
-          sell_price_formula: (config.sell_price_formula).toString(),
-          feed_in_possible: (config.feed_in_possible).toString(),
-          feed_in_control_on: (config.feed_in_control_on).toString(),
-          country: (config.country).toUpperCase()
-        }
-        headers['User-Agent'] = 'dynamic-ess/0.1.10'
-      } else {
-        url += '/installations/'
-        const match = config.idSite.match(/^\{\{(node|flow|global)\.(.*)\}\}$/)
-        if (match) {
-          const Context = this.context()[match[1]]
-          url += Context.get([match[2]])
-        } else {
-          url += config.idSite
-        }
-        url += '/' + installations
-
-        if (installations === 'stats') {
-          const d = new Date()
-          const hour = (config.use_utc === true) ? d.getUTCHours() : d.getHours()
-          const hourStart = (config.use_utc === true) ? d.setUTCHours(hour, 0, 0, 0) : d.setHours(hour, 0, 0, 0)
-          const hourEnd = (config.use_utc === true) ? d.setUTCHours(hour, 59, 59, 0) : d.setHours(hour, 59, 59, 0)
-          url += '?type=custom&attributeCodes[]=' + config.attribute
-          if (config.stats_interval) {
-            url += '&interval=' + config.stats_interval
-          }
-          if (config.show_instance === true) {
-            url += '&show_instance=1'
-          }
-          if (config.stats_start !== 'undefined') {
-            let start = config.stats_start
-            const dayStart = (config.use_utc === true) ? d.setUTCHours(0, 0, 0, 0) : d.setHours(0, 0, 0, 0)
-            if (start === 'boy') {
-              start = (dayStart - hourStart - 86400000) / 1000
-            } else if (start === 'bod') {
-              start = (dayStart - hourStart) / 1000
-            }
-            url += '&start=' + Math.floor((hourStart / 1000) + Number(start))
-          }
-          if (config.stats_end !== 'undefined') {
-            let end = config.stats_end
-            const dayEnd = (config.use_utc === true) ? d.setUTCHours(23, 59, 59, 0) : d.setHours(23, 59, 59, 0)
-            if (end === 'eoy') {
-              end = (dayEnd - hourEnd - 86400000) / 1000
-            } else if (end === 'eod') {
-              end = (dayEnd - hourEnd) / 1000
-            }
-            url += '&end=' + Math.floor((hourEnd / 1000) + Number(end))
-          }
-        }
-      }
+      url = url.replace(/&$/, '')
 
       if (config.verbose === true) {
         node.warn({
@@ -106,7 +165,7 @@ module.exports = function (RED) {
 
       node.status({ fill: 'yellow', shape: 'ring', text: 'Connecting to VRM API' })
 
-      msg.topic = config.idSite + ': ' + config.installations
+      msg.topic = topic.join(' ')
 
       switch (method) {
         case 'post':
@@ -126,7 +185,7 @@ module.exports = function (RED) {
 
             if (config.store_in_global_context === true) {
               const globalContext = node.context().global
-              globalContext.set(`${config.idSite}_${config.installations}`, response.data)
+              globalContext.set(topic.join('.'), response.data)
             }
 
             node.send(msg)
@@ -154,7 +213,7 @@ module.exports = function (RED) {
 
             if (config.store_in_global_context === true) {
               const globalContext = node.context().global
-              globalContext.set(`vrm_api.${config.idSite}_${config.installations}`, response.data)
+              globalContext.set(topic.join('.'), response.data)
             }
 
             node.send(msg)

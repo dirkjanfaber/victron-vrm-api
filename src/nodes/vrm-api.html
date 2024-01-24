@@ -1,20 +1,31 @@
 
 <script type="text/javascript">
 
-    function checkSelectedAPI() {
-
-        $('#input-stats').hide()
-        $('#input-dess').hide()
-
-        switch ( $('select#node-input-installations').val() ){
-            case 'stats':
-                $('#input-stats').show()
-                break;
-            case 'dess':
-                $('#input-dess').show()
-                break;
-            default:
+    function checkSelectedAPIType() {
+        [
+            'users', 'installations', 'widgets', 'dynamic-ess', 'instalations_and_widgets'
+        ].map( x => { $('#input-'+x).hide() })
+        const selected = $('select#node-input-api_type').val()
+        $('#input-'+selected).show()
+        if (selected === 'installations' || selected === 'widgets') {
+            $('#input-instalations_and_widgets').show()
         }
+    }
+
+    function checkSelectedInstallations() {
+        [
+            'stats'
+        ].map( x => { $('#input-'+x).hide() })
+        const selected = $('select#node-input-installations').val()
+        if (selected === 'stats') { $('#input-stats').show() }
+    }
+
+    function checkSelectedUsers() {
+        [
+            'users-idUser'
+        ].map( x => { $('#input-'+x).hide() })
+        const selected = $('select#node-input-users').val()
+        if (selected !== 'me') { $('#input-users-idUser').show() }
     }
 
     RED.nodes.registerType('vrm-api', {
@@ -24,14 +35,27 @@
         defaults: {
             vrm: {value: "", type: "config-vrm-api"},
             name: { value: "" },
-            idSite: { value: "", validate: RED.validators.regex(/^([0-9]{1,12}||\{\{flow\.idSite\}\})$/)},
-            installations: { value: "", required: true},
+            api_type: { value: "", validate: RED.validators.regex(/^(users|installations|widgets|dynamic-ess)$/)},
+
+            // users
+            idUser: { value: "", validate: RED.validators.regex(/^[0-9]{1,12}$/)},
+            users: { value: "", required: false},
+
+            // installations
+            idSite: { value: "", validate: RED.validators.regex(/^([0-9]{1,12}||\{\{(node|flow|global)\..*\}\}|)$/)},
+            installations: { value: "", required: false},
             attribute: {value: "", required: false},
             stats_interval: {value: ""},
             show_instance: {value: false},
             stats_start: {value: ""},
             stats_end: {value: ""},
             use_utc: { value: false },
+
+            // widgets
+            // taking idSite from installations
+            widgets: { value: "", required: false},
+            instance: {value: "", required: false},
+
             // dess
             vrm_id: {value: "", validate: RED.validators.regex(/^([0-9a-zA-Z]{1,16}|)$/),required: false},
             country: {value: "", required: false},
@@ -56,17 +80,30 @@
                 return this.name
             }
 
-            var label =  this.idSite
-            if ( this.installations === 'stats' ) {
-                label += ' - Stats: ' + this.attribute
-            } else {
-                label += ' - ' + this.installations
+            var label =  this.api_type
+
+            switch (this.api_type) {
+                case 'users': {
+                    label += ' - ' + this.users
+                }
+                break;
+                case 'installations': {
+                    if ( this.installations === 'stats' ) {
+                        label += ' - Stats: ' + this.attribute
+                    } else {
+                        label += ' - ' + this.installations
+                    }
+                }
+                break;
+                case 'widgets': {
+                    label += ' - ' + this.widgets
+                }
             }
 
             return label;
         },
         oneditprepare: function oneditprepare() {
-            checkSelectedAPI()
+            checkSelectedAPIType()
         }
     });
 </script>
@@ -81,95 +118,146 @@
         <input type="text" id="node-input-vrm" placeholder="VRM">
     </div>
     <div class="form-row">
-        <label for="node-input-idSite"><i class="fa fa-id-card"></i> VRM site id</label>
-        <input type="text" id="node-input-idSite" placeholder="VRM site id" required>
-    </div>    
-    <div class="form-row">
-        <label for="node-input-installations"><i class="fa fa-location-arrow"></i> Installation</label>
-        <select id="node-input-installations" required onchange="checkSelectedAPI()">
-            <option value="alarms">Get Alarms</option>
-            <option value="post-alarms">Add Alarm</option>
-            <option value="system-overview">Connected devices for a given installation</option>
-            <option value="diagnostics">Diagnostic data for an installation</option>
-            <option value="tags">Get installation tags</option>
-            <option value="stats">Installation stats</option>
-            <option value="dess">Dynamic ESS</option>
-            <option value="dynamic-ess-settings">Dynamic ESS settings</option>
+        <label for="node-input-api_type"><i class="fa fa-location-arrow"></i> API type</label>
+        <select id="node-input-api_type" required onchange="checkSelectedAPIType()">
+            <option value="users">Users</option>
+            <option value="installations">Installations</option>
+            <option value="widgets">Widgets</option>
+            <option value="dynamic-ess">Dynamic ESS</option>
         </select>
     </div>
-    <div id="input-stats">
+    <div id="input-users">
         <div class="form-row">
-            <label for="node-input-attribute"><i class="fa fa-location-pencil"></i> Attribute</label>
-            <select id="node-input-attribute" required>
-                <option value="Bc">Battery direct use</option>
-                <option value="Bg">Battery to grid</option>
-                <option value="bs">Battery SoC</option>
-                <option value="Gc">Grid direct use</option>
-                <option value="Gb">Grid to battery</option>
-                <option value="Pc">Solar direct use</option>
-                <option value="Pb">Solar to battery</option>
-                <option value="kwh">Total kWh</option>
-                <option value="consumption">Consumption</option>
-                <option value="vrm_consumption_fc">Consumption Forecast</option>
-                <option value="vrm_pv_inverter_yield_fc">PV Inverter Yield Forecast</option>
-                <option value="vrm_pv_charger_yield_fc">PV Solar Charger Yield Forecast</option>
-                <option value="vrm_solar_irradiance">Solar Irradiance</option>
-                <option value="vrm_solar_irradiance_fc">Solar Irradiance Forecast</option>
-                <option value="solar_yield">Solar Yield</option>
-                <option value="solar_yield_forecast">Solar Yield Forecast</option>
-            </select>
-        </div>    
-        <div class="form-row">
-            <label for="node-input-stats_interval"><i class="fa fa-barcode"></i> Interval</label>
-            <select id="node-input-stats_interval">
-                <option value="15mins">15 minutes</option>
-                <option selected="selected" value="hours">hours</option>
-                <option value="2hours">2 hours</option>
-                <option value="days">days</option>
-                <option value="weeks">weeks</option>
-                <option value="months">months</option>
-                <option value="years">years</option>
+            <label for="node-input-users"><i class="fa fa-location-arrow"></i> Users</label>
+            <select id="node-input-users" onchange="checkSelectedUsers()">
+                <option value="installations">All installations/sites</option>
+                <option value="me">Basic user information</option>
             </select>
         </div>
-        <div class="form-row">
-            <label for="node-input-stats_start"><i class="fa fa-calendar"></i> Start</label>
-            <select id="node-input-stats_start">
-### tfx: add more interval options
-                <option value="-604800">-1 week</option>
-                <option value="-259200">-72 hours</option>
-                <option value="-172800">-48 hours</option>
-### /tfx
-
-                <option value="-86400">-24 hours</option>
-                <option value="boy">beginning of yesterday</option>
-                <option value="bod">beginning of day</option>
-                <option selected="selected" value="0">now</option>
-            </select>
-        </div>
-        <div class="form-row">
-            <label for="node-input-stats_end"><i class="fa fa-calendar"></i> End</label>
-            <select id="node-input-stats_end">
-                <option value="0">now</option>
-                <option value="eod">end of day</option>
-                <option value="eoy">end of yesterday</option>
-                <option selected="selected" value="86400">+24 hours</option>
-### tfx add more interval options
-                <option selected="selected" value="172800">+48 hours</option>
-                <option selected="selected" value="259200">+72 hours</option>
-                <option selected="selected" value="604800">+1 week</option>
-### /tfx
-            </select>
-        </div>
-        <div class="form-row" style="margin-bottom:0px;">
-            <input type="checkbox" id="node-input-use_utc" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
-            <label style="min-width:390px" for="node-input-use_utc"><i class="fa fa-power"></i> Use universal time (UTC) instead of the local time?</label>
-        </div>
-        <div class="form-row" style="margin-bottom:0px;">
-            <input type="checkbox" id="node-input-show_instance" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
-            <label style="min-width:390px" for="node-input-show_instance"><i class="fa fa-power"></i> Group attributes by instance?</label>
+        <div id="input-users-idUser">
+            <div class="form-row">
+                <label for="node-input-idUser"><i class="fa fa-id-card"></i> User id</label>
+                <input type="text" id="node-input-idUser" placeholder="User id">
+            </div>
         </div>
     </div>
-    <div id="input-dess">
+    <div id="input-instalations_and_widgets">
+        <div class="form-row">
+            <label for="node-input-idSite"><i class="fa fa-id-card"></i> VRM site id</label>
+            <input type="text" id="node-input-idSite" placeholder="VRM site id">
+        </div>
+    </div>
+    <div id="input-installations">
+        <div class="form-row">
+            <label for="node-input-installations"><i class="fa fa-location-arrow"></i> Installation</label>
+            <select id="node-input-installations" onchange="checkSelectedInstallations()">
+                <option value="alarms">Get Alarms</option>
+                <option value="post-alarms">Add Alarm</option>
+                <option value="system-overview">Connected devices for a given installation</option>
+                <option value="diagnostics">Diagnostic data for an installation</option>
+                <option value="tags">Get installation tags</option>
+                <option value="stats">Installation stats</option>
+            </select>
+        </div>
+        <div id="input-stats">
+            <div class="form-row">
+                <label for="node-input-attribute"><i class="fa fa-location-pencil"></i> Attribute</label>
+                <select id="node-input-attribute" required>
+                    <option value="Bc">Battery direct use</option>
+                    <option value="Bg">Battery to grid</option>
+                    <option value="bs">Battery SoC</option>
+                    <option value="Gc">Grid direct use</option>
+                    <option value="Gb">Grid to battery</option>
+                    <option value="Pc">Solar direct use</option>
+                    <option value="Pb">Solar to battery</option>
+                    <option value="kwh">Total kWh</option>
+                    <option value="consumption">Consumption</option>
+                    <option value="vrm_consumption_fc">Consumption Forecast</option>
+                    <option value="vrm_pv_inverter_yield_fc">PV Inverter Yield Forecast</option>
+                    <option value="vrm_pv_charger_yield_fc">PV Solar Charger Yield Forecast</option>
+                    <option value="vrm_solar_irradiance">Solar Irradiance</option>
+                    <option value="vrm_solar_irradiance_fc">Solar Irradiance Forecast</option>
+                    <option value="solar_yield">Solar Yield</option>
+                    <option value="solar_yield_forecast">Solar Yield Forecast</option>
+                </select>
+            </div>    
+            <div class="form-row">
+                <label for="node-input-stats_interval"><i class="fa fa-barcode"></i> Interval</label>
+                <select id="node-input-stats_interval">
+                    <option value="15mins">15 minutes</option>
+                    <option selected="selected" value="hours">hours</option>
+                    <option value="2hours">2 hours</option>
+                    <option value="days">days</option>
+                    <option value="weeks">weeks</option>
+                    <option value="months">months</option>
+                    <option value="years">years</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-stats_start"><i class="fa fa-calendar"></i> Start</label>
+                <select id="node-input-stats_start">
+    ### tfx: add more interval options
+                    <option value="-604800">-1 week</option>
+                    <option value="-259200">-72 hours</option>
+                    <option value="-172800">-48 hours</option>
+    ### /tfx
+                    <option value="-86400">-24 hours</option>
+                    <option value="boy">beginning of yesterday</option>
+                    <option value="bod">beginning of day</option>
+                    <option selected="selected" value="0">now</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="node-input-stats_end"><i class="fa fa-calendar"></i> End</label>
+                <select id="node-input-stats_end">
+                    <option value="0">now</option>
+                    <option value="eod">end of day</option>
+                    <option value="eoy">end of yesterday</option>
+                    <option selected="selected" value="86400">+24 hours</option>
+    ### tfx add more interval options
+                    <option selected="selected" value="172800">+48 hours</option>
+                    <option selected="selected" value="259200">+72 hours</option>
+                    <option selected="selected" value="604800">+1 week</option>
+    ### /tfx
+                </select>
+            </div>
+            <div class="form-row" style="margin-bottom:0px;">
+                <input type="checkbox" id="node-input-use_utc" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+                <label style="min-width:390px" for="node-input-use_utc"><i class="fa fa-power"></i> Use universal time (UTC) instead of the local time?</label>
+            </div>
+            <div class="form-row" style="margin-bottom:0px;">
+                <input type="checkbox" id="node-input-show_instance" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+                <label style="min-width:390px" for="node-input-show_instance"><i class="fa fa-power"></i> Group attributes by instance?</label>
+            </div>
+        </div>    
+    </div>
+    <div id="input-widgets">
+        <div class="form-row">
+            <label for="node-input-widgets"><i class="fa fa-location-arrow"></i> Widgets</label>
+            <select id="node-input-widgets">
+                <option value="BatterySummary">Battery summary data</option>
+                <option value="BMSDiagnostics">BMS diagnostics summary data</option>
+                <option value="HistoricData">Historic summary data</option>
+                <option value="IOExtenderInOut">IO extender input and output summary data</option>
+                <option value="LithiumBMS">Lithium BMS summary data</option>
+                <option value="DCMeter">DC meter summary data</option>
+                <option value="EvChargerSummary">EV charger summary data</option>
+                <option value="MeteorologicalSensor">Meteorological summary data</option>
+                <option value="GlobalLinkSummary">GlobalLink summary data</option>
+                <option value="MotorSummary">Motor summary data</option>
+                <option value="PVInverterStatus">PV inverter summary data</option>
+                <option value="SolarChargerSummary">Solar charger summary data</option>
+                <option value="Status">System overview summary data</option>
+                <option value="TankSummary">Tank summary data</option>
+                <option value="TempSummaryAndGraph">Temperature summary data</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <label for="node-input-instance"><i class="fa fa-id-card"></i> Instance</label>
+            <input type="text" id="node-input-instance" placeholder="Instance for which to retrieve data, defaults to 0">
+        </div>
+    </div>
+    <div id="input-dynamic-ess">
         <div class="form-row">
             <label for="node-input-vrm_id"><i class="fa fa-id-card"></i> VRM id</label>
             <input type="text" id="node-input-vrm_id" placeholder="VRM id" required>
@@ -291,16 +379,25 @@ Interface with the Victron Energy VRM API.
 The output of the answer depends on the selected configuration. See the [VRM API documentation](https://vrm-api-docs.victronenergy.com/#)
 in case you need assistance with interpreting the output.
 
-Note that the site id is the multi-digit number you see in the url of your vrm-site.
+Note that the site id is the multi-digit number you see in the url of your vrm-site. If you need the user id, query
+the _basic user information_ first.
 
 ### Configuration
 
 : Name (string) : The name of the node
 : VRM (config) : The configuration node
 : VRM site id (number) : The site to query
-: Installation (string) : The query type
+: API type (string) : The query type
 : Store (boolean) : Store the respones in the global context?
 : Verbose (boolean) : Show the used _url_ in the debug tab?
+
+There are currently 4 API types to choose from:
+- Users
+- Installations
+- Widgets
+- Dynamic ESS
+
+Depending on the API type, more or less extra fields appear.
 
 In case of installation `stats` there appear some extra configuration options  
 : Attribute (string) : Which attribute to fetch
@@ -309,12 +406,13 @@ In case of installation `stats` there appear some extra configuration options
 : Start (integer) : Timestamp from which to fetch data
 : End (integer) : Timestamp to which to fetch data
 : UTC (boolean) : Use universal time (UTC) instead of the local time?
+: Group by instance (boolean): Group attributes by instance?
 
-In case of installation `dess` there are even more configuration options
+In case of installation `dess` there are even more configuration options.
 
-Note that instead of filling out the number of the VRM site id in the box, you can also use context variables, e.g. `{{flow.siteId}}`
-or `{{global.vrmId}}`. This allows to query the site that has been set in this context field. Of course you
-need to make sure that context contains a valid VRM site id first.
+Note that instead of filling out the number of the VRM site id for installations and widgets in the box, you
+can also use context variables, e.g. `{{flow.siteId}}` or `{{global.vrmId}}`. This allows to query the site
+that has been set in this context field. Of course you need to make sure that context contains a valid VRM site id first.
 
 ### Details
 

@@ -25,8 +25,16 @@ in case you need assistance with interpreting the output.
 - Name (`string`) : The name of the node
 - VRM (`config`) : The configuration node
 - VRM site id (`number`) : The site to query. Note that this is the multi-digit number you see in the url of your vrm-site like this: `https://vrm.victronenergy.com/installation/123456/`
-- Installation (`string`) : The query type
+- API type (`string`) : The query type
 - Verbose (`boolean`) : Show the used _url_ in the debug tab?
+
+There are currently 4 API types to choose from:
+- Users
+- Installations
+- Widgets
+- Dynamic ESS
+
+Depending on the API type, more or less extra fields appear.
 
 In case of installation `stats` there appear some extra configuration options
 - Attribute (`string`) : Which attribute to fetch
@@ -38,7 +46,10 @@ In case of installation `dess`` there are even more configuration options.
 
 ![VRM API edit panel](./img/vrm-api-edit-panel.png)
 
-Note that instead of filling out the number of the VRM site id in the box, you can also use context variables, e.g. `{{flow.siteId}}` or `{{global.vrmId}}`. This allows to query the site that has been set in this context field. Of course you need to make sure that context contains a valid VRM site id first.
+Note that instead of filling out the number of the VRM site id for installations and widgets in the box, you
+can also use context variables, e.g. `{{flow.siteId}}` or `{{global.vrmId}}`. This allows to query the site
+that has been set in this context field. Of course you need to make sure that context contains a valid VRM site id first.
+
 
 ## Examples
 
