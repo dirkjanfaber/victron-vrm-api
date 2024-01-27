@@ -38,11 +38,11 @@
             api_type: { value: "", validate: RED.validators.regex(/^(users|installations|widgets|dynamic-ess)$/)},
 
             // users
-            idUser: { value: "", validate: RED.validators.regex(/^[0-9]{1,12}$/)},
+            idUser: { value: "", validate: RED.validators.regex(/^(|[0-9]{1,12})$/)},
             users: { value: "", required: false},
 
             // installations
-            idSite: { value: "", validate: RED.validators.regex(/^([0-9]{1,12}||\{\{(node|flow|global)\..*\}\}|)$/)},
+            idSite: { value: "", validate: RED.validators.regex(/^(|[0-9]{1,12}|\{\{(node|flow|global)\..*\}\}|)$/)},
             installations: { value: "", required: false},
             attribute: {value: "", required: false},
             stats_interval: {value: ""},
@@ -57,7 +57,7 @@
             instance: {value: "", required: false},
 
             // dess
-            vrm_id: {value: "", validate: RED.validators.regex(/^([0-9a-zA-Z]{1,16}|)$/),required: false},
+            vrm_id: {value: "", validate: RED.validators.regex(/^(|[0-9a-zA-Z]{1,16})$/),required: false},
             country: {value: "", required: false},
             b_max: {value: "", required: false},
             tb_max: {value: "", required: false},
@@ -162,7 +162,7 @@
         <div id="input-stats">
             <div class="form-row">
                 <label for="node-input-attribute"><i class="fa fa-location-pencil"></i> Attribute</label>
-                <select id="node-input-attribute" required>
+                <select id="node-input-attribute">
                     <option value="Bc">Battery direct use</option>
                     <option value="Bg">Battery to grid</option>
                     <option value="bs">Battery SoC</option>
@@ -260,11 +260,11 @@
     <div id="input-dynamic-ess">
         <div class="form-row">
             <label for="node-input-vrm_id"><i class="fa fa-id-card"></i> VRM id</label>
-            <input type="text" id="node-input-vrm_id" placeholder="VRM id" required>
+            <input type="text" id="node-input-vrm_id" placeholder="VRM id" >
         </div>
         <div class="form-row">
             <label for="node-input-country">Country / Energy region</label>
-                <select id="node-input-country" required>
+                <select id="node-input-country" >
                     <option value="at">Austria (at)</option>
                     <option value="be">Belgium (be)</option>
                     <option value="bg">Bulgaria (bg)</option>
