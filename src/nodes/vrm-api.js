@@ -50,8 +50,8 @@ module.exports = function (RED) {
               return
             }
           } else {
-            url += config.idSite
-            topic.push(config.idSite)
+            url += (msg.siteId || config.idSite)
+            topic.push((msg.siteId || config.idSite))
           }
           url += '/' + installations
 
@@ -117,8 +117,8 @@ module.exports = function (RED) {
               return
             }
           } else {
-            url += config.idSite + '/'
-            topic.push(config.idSite)
+            url += (msg.siteId || config.idSite) + '/'
+            topic.push((msg.siteId || config.idSite))
           }
           url += config.api_type + '/' + config.widgets
 
