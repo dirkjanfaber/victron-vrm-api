@@ -201,11 +201,12 @@
             <div class="form-row">
                 <label for="node-input-stats_start"><i class="fa fa-calendar"></i> Start</label>
                 <select id="node-input-stats_start">
-    ### tfx: add more interval options
+                    <option value="-31536000">-1 year</option>
+                    <option value="-7257600">-12 weeks</option>
+                    <option value="-2419200">-4 weeks</option>
                     <option value="-604800">-1 week</option>
                     <option value="-259200">-72 hours</option>
                     <option value="-172800">-48 hours</option>
-    ### /tfx
                     <option value="-86400">-24 hours</option>
                     <option value="boy">beginning of yesterday</option>
                     <option value="bod">beginning of day</option>
