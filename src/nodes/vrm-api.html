@@ -67,8 +67,12 @@
             b_cycle_cost: {value: "", required: false},
             buy_price_formula: {value: "", required: false},
             sell_price_formula: {value: "", required: false},
+            green_mode_on: {value: "", required: false},
             feed_in_possible: {value: "", required: false},
             feed_in_control_on: {value: "", required: false},
+            b_goal_hour: {value: "", required: false},
+            b_goal_SOC: {value: "", required: false},
+
             store_in_global_context: {value: false},
             verbose: { value: false }
         },
@@ -346,6 +350,20 @@
         <div class="form-row">
             <label for="node-input-sell_price_formula"><i class="fa fa-pencil"></i> Sell price</label>
             <input type="text" id="node-input-sell_price_formula" placeholder="The sell price formula">
+        </div>
+        <div class="form-row" style="margin-bottom:0px;">
+            <input type="checkbox" checked id="node-input-green_mode_on" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+            <label style="min-width:390px" for="node-input-green_mode_on">Green mode: <br /><ul><li>Only excess solar is fed back to grid</li><li>Avoid feeding in from battery</li><li>Use Smart-charging when needed</li></ul></label>
+        </div>
+        <div class="form-row">
+            <label for="node-input-b_goal_SOC"><i class="fa fa-battery-half"></i> b_goal SOC (%)</label>
+            <input type="text" id="node-input-b_goal_SOC" placeholder="Target SOC to reach at b_goal hour.">
+            <p> Must be above min SOC. Set to <code>0</code> to disable this feature.</p>
+        </div>
+        <div class="form-row">
+            <label for="node-input-b_goal_hour"><i class="fa fa-clock-o"></i> b_goal hour</label>
+            <input type="text" id="node-input-b_goal_hour" placeholder="Hour to reach b_goal SOC">
+            <p> Default: <code>0</code> = midnight</p>
         </div>
         <div class="form-row" style="margin-bottom:0px;">
             <input type="checkbox" checked id="node-input-feed_in_possible" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">

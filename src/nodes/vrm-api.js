@@ -145,11 +145,14 @@ module.exports = function (RED) {
             b_cycle_cost: (config.b_cycle_cost).toString(),
             buy_price_formula: (config.buy_price_formula).toString(),
             sell_price_formula: (config.sell_price_formula).toString(),
-            feed_in_possible: (config.feed_in_possible).toString(),
-            feed_in_control_on: (config.feed_in_control_on).toString(),
-            country: (config.country).toUpperCase()
+            green_mode_on: (config.green_mode_on || false).toString(),
+            feed_in_possible: (config.feed_in_possible || false).toString(),
+            feed_in_control_on: (config.feed_in_control_on || false).toString(),
+            country: (config.country).toUpperCase(),
+            b_goal_hour: (config.b_goal_hour).toString(),
+            b_goal_SOC: (config.b_goal_SOC).toString()
           }
-          headers['User-Agent'] = 'dynamic-ess/0.1.10'
+          headers['User-Agent'] = 'dynamic-ess/0.1.19'
           break
       }
 
