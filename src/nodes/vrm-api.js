@@ -37,6 +37,10 @@ module.exports = function (RED) {
             installations = 'alarms'
             method = 'post'
           }
+          if (config.installations === 'post-dynamic-ess-settings') {
+            installations = 'dynamic-ess-settings'
+            method = 'post'
+          }
 
           url += '/' + config.api_type + '/'
           const match = config.idSite.match(/^\{\{(node|flow|global)\.(.*)\}\}$/)
