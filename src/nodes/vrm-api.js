@@ -13,12 +13,19 @@ module.exports = function (RED) {
 
     const node = this
 
-    node.lastValidUpdate = Date.now()
+    let lastValidUpdate = null
 
     node.on('input', function (msg) {
       let url = msg.url || 'https://vrmapi.victronenergy.com/v2'
       let installations = config.installations
       let method = 'get'
+
+      const currentTime = Date.now()
+
+      if (lastValidUpdate && (currentTime - lastValidUpdate) < 5000) {
+        node.status({ fill: 'yellow', shape: 'dot', text: 'Limit queries quickly' })
+        return
+      }
 
       let options = {
       }
@@ -222,6 +229,8 @@ module.exports = function (RED) {
               const globalContext = node.context().global
               globalContext.set(topic.join('.'), response.data)
             }
+
+            lastValidUpdate = currentTime
 
             node.send(msg)
           }).catch(function (error) {
