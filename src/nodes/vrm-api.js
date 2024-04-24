@@ -167,7 +167,7 @@ module.exports = function (RED) {
             b_goal_hour: (config.b_goal_hour).toString(),
             b_goal_SOC: (config.b_goal_SOC).toString()
           }
-          headers['User-Agent'] = 'dynamic-ess/0.1.19'
+          headers['User-Agent'] = 'dynamic-ess/0.1.20'
           break
       }
 
