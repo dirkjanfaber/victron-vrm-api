@@ -71,14 +71,18 @@ module.exports = function (RED) {
             const hour = (config.use_utc === true) ? d.getUTCHours() : d.getHours()
             const hourStart = (config.use_utc === true) ? d.setUTCHours(hour, 0, 0, 0) : d.setHours(hour, 0, 0, 0)
             const hourEnd = (config.use_utc === true) ? d.setUTCHours(hour, 59, 59, 0) : d.setHours(hour, 59, 59, 0)
-            url += '?type=custom&attributeCodes[]=' + config.attribute
-            parameters.type = 'custom'
-            parameters['attributeCodes[]'] = config.attribute
-            if (config.stats_interval) {
-              parameters.interval = config.stats_interval
-            }
-            if (config.show_instance === true) {
-              parameters.show_instance = 1
+            if (config.attribute === 'dynamic_ess') {
+              url += '?type=' + config.attribute
+            } else {
+              url += '?type=custom&attributeCodes[]=' + config.attribute
+              parameters.type = 'custom'
+              parameters['attributeCodes[]'] = config.attribute
+              if (config.stats_interval) {
+                parameters.interval = config.stats_interval
+              }
+              if (config.show_instance === true) {
+                parameters.show_instance = 1
+              }
             }
             if (config.stats_start !== 'undefined') {
               let start = config.stats_start
