@@ -1,0 +1,128 @@
+[
+    {
+        "id": "d43c671bbee663d3",
+        "type": "vrm-api",
+        "z": "3c2887ba28fa1721",
+        "vrm": "4abb155acbffd907",
+        "name": "",
+        "api_type": "installations",
+        "idUser": "",
+        "users": "",
+        "idSite": "",
+        "installations": "patch-dynamic-ess-settings",
+        "attribute": "",
+        "stats_interval": "",
+        "show_instance": false,
+        "stats_start": "",
+        "stats_end": "",
+        "use_utc": false,
+        "widgets": "",
+        "instance": "",
+        "vrm_id": "",
+        "country": "",
+        "b_max": "",
+        "tb_max": "",
+        "fb_max": "",
+        "tg_max": "",
+        "fg_max": "",
+        "b_cycle_cost": "",
+        "buy_price_formula": "",
+        "sell_price_formula": "",
+        "green_mode_on": "",
+        "feed_in_possible": "",
+        "feed_in_control_on": "",
+        "b_goal_hour": "",
+        "b_goal_SOC": "",
+        "store_in_global_context": true,
+        "verbose": false,
+        "x": 720,
+        "y": 320,
+        "wires": [
+            [
+                "debd9326f6f2ec92"
+            ]
+        ]
+    },
+    {
+        "id": "6ec304b9437e9914",
+        "type": "inject",
+        "z": "3c2887ba28fa1721",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "url",
+                "v": "https://vrmapi.victronenergy.com/v2",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"isGreenModeOn\":false}",
+        "payloadType": "json",
+        "x": 370,
+        "y": 300,
+        "wires": [
+            [
+                "d43c671bbee663d3"
+            ]
+        ]
+    },
+    {
+        "id": "debd9326f6f2ec92",
+        "type": "debug",
+        "z": "3c2887ba28fa1721",
+        "name": "patch DESS configuration",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 1070,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "7ad1b3277c8f23ae",
+        "type": "inject",
+        "z": "3c2887ba28fa1721",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "url",
+                "v": "https://vrmapi.victronenergy.com/v2",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "{\"isGreenModeOn\":true}",
+        "payloadType": "json",
+        "x": 360,
+        "y": 340,
+        "wires": [
+            [
+                "d43c671bbee663d3"
+            ]
+        ]
+    },
+    {
+        "id": "4abb155acbffd907",
+        "type": "config-vrm-api",
+        "name": "VRM"
+    }
+]

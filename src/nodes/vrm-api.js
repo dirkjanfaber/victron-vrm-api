@@ -39,7 +39,6 @@ module.exports = function (RED) {
       const topic = [config.api_type]
       switch (config.api_type) {
         case 'installations': {
-          topic.push(config.installations)
           if (config.installations === 'post-alarms') {
             installations = 'alarms'
             method = 'post'
@@ -48,7 +47,11 @@ module.exports = function (RED) {
             installations = 'dynamic-ess-settings'
             method = 'post'
           }
-
+          if (config.installations === 'patch-dynamic-ess-settings') {
+            installations = 'dynamic-ess-settings'
+            method = 'patch'
+          }
+          topic.push(installations)
           url += '/' + config.api_type + '/'
           const match = config.idSite.match(/^\{\{(node|flow|global)\.(.*)\}\}$/)
           if (match) {
@@ -186,6 +189,39 @@ module.exports = function (RED) {
       msg.topic = topic.join(' ')
 
       switch (method) {
+        case 'patch':
+          axios.patch(url, msg.payload, { headers }).then(function (response) {
+            if (response.status === 200) {
+              msg.payload = response.data
+              msg.payload.options = options
+
+              if (msg.payload.success === false) {
+                node.status({ fill: 'yellow', shape: 'dot', text: msg.payload.error_code })
+              } else {
+                node.status({ fill: 'green', shape: 'dot', text: 'Ok' })
+              }
+            } else {
+              node.status({ fill: 'yellow', shape: 'dot', text: response.status })
+            }
+
+            if (config.store_in_global_context === true) {
+              const globalContext = node.context().global
+              globalContext.set(topic.join('.'), response.data)
+            }
+
+            node.send(msg)
+          }).catch(function (error) {
+            if (error.response && error.response.data && error.response.data.errors) {
+              node.status({ fill: 'red', shape: 'dot', text: error.response.data.errors })
+            } else {
+              node.status({ fill: 'red', shape: 'dot', text: 'Error fetching VRM data' })
+            }
+
+            if (error.response) {
+              node.send({ payload: error.response })
+            }
+          })
+          break
         case 'post':
           axios.post(url, msg.payload, { headers }).then(function (response) {
             if (response.status === 200) {
