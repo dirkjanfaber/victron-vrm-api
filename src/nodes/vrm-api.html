@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script type="text/javascript">
 
@@ -14,10 +16,11 @@
 
     function checkSelectedInstallations() {
         [
-            'stats'
+            'stats', 'gps-download'
         ].map( x => { $('#input-'+x).hide() })
         const selected = $('select#node-input-installations').val()
         if (selected === 'stats') { $('#input-stats').show() }
+        if (selected === 'gps-download' ) { $('#input-gps-download').show()}
     }
 
     function checkSelectedUsers() {
@@ -50,6 +53,9 @@
             stats_start: {value: ""},
             stats_end: {value: ""},
             use_utc: { value: false },
+
+            gps_start: {value: '', required: false },
+            gps_end: {value: '', required: false },
 
             // widgets
             // taking idSite from installations
@@ -108,6 +114,15 @@
         },
         oneditprepare: function oneditprepare() {
             checkSelectedAPIType()
+
+            flatpickr("#node-input-gps_start", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i"
+            })
+            flatpickr("#node-input-gps_end", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i"
+            })
         }
     });
 </script>
@@ -157,6 +172,7 @@
             <select id="node-input-installations" onchange="checkSelectedInstallations()">
                 <option value="alarms">Get Alarms</option>
                 <option value="post-alarms">Add Alarm</option>
+                <option value="gps-download">GPS tracks</option>
                 <option value="system-overview">Connected devices for a given installation</option>
                 <option value="diagnostics">Diagnostic data for an installation</option>
                 <option value="tags">Get installation tags</option>
@@ -240,6 +256,16 @@
                 <label style="min-width:390px" for="node-input-show_instance"><i class="fa fa-power"></i> Group attributes by instance?</label>
             </div>
         </div>    
+    </div>
+    <div id="input-gps-download">
+        <div class="form-row">
+            <label for="node-input-gps_start"><i class="fa fa-calendar"></i> Timestamp from which to fetch data</label>
+            <input type="text" id="node-input-gps_start" placeholder="Unix timestamp">
+        </div>
+        <div class="form-row">
+            <label for="node-input-gps_end"><i class="fa fa-calendar"></i> Timestamp tp which to fetch data</label>
+            <input type="text" id="node-input-gps_end" placeholder="Unix timestamp">
+        </div>
     </div>
     <div id="input-widgets">
         <div class="form-row">
