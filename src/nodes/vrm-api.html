@@ -1,4 +1,5 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-timepicker/1.10.0/jquery.timepicker.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
 <script type="text/javascript">
 
@@ -52,6 +53,9 @@
             stats_start: {value: ""},
             stats_end: {value: ""},
             use_utc: { value: false },
+
+            gps_start: {value: '', required: false },
+            gps_end: {value: '', required: false },
 
             // widgets
             // taking idSite from installations
@@ -111,12 +115,20 @@
         oneditprepare: function oneditprepare() {
             checkSelectedAPIType()
 
-            $('#node-input-gps_start').timepicker({
-                timeFormat: 'HH:mm:ss'
-            });
-            $('#node-input-gps_end').timepicker({
-                timeFormat: 'HH:mm:ss'
-            });
+            flatpickr("#node-input-gps_start", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                onChange: function(selectedDates, dateStr, instance) {
+                    $("#node-input-gps_start").val(Math.floor(selectedDates[0].getTime() / 1000));
+                }
+            })
+            flatpickr("#node-input-gps_end", {
+                enableTime: true,
+                dateFormat: "Y-m-d H:i",
+                onChange: function(selectedDates, dateStr, instance) {
+                    $("#node-input-gps_end").val(Math.floor(selectedDates[0].getTime() / 1000));
+                }
+            })
         }
     });
 </script>
@@ -254,11 +266,11 @@
     <div id="input-gps-download">
         <div class="form-row">
             <label for="node-input-gps_start"><i class="fa fa-calendar"></i> Timestamp from which to fetch data</label>
-            <input type="text" id="node-input-gps_start" placeholder="HH:MM:SS">
+            <input type="text" id="node-input-gps_start" placeholder="Unix timestamp">
         </div>
         <div class="form-row">
             <label for="node-input-gps_end"><i class="fa fa-calendar"></i> Timestamp tp which to fetch data</label>
-            <input type="text" id="node-input-gps_end" placeholder="HH:MM:SS">
+            <input type="text" id="node-input-gps_end" placeholder="Unix timestamp">
         </div>
     </div>
     <div id="input-widgets">

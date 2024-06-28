@@ -108,6 +108,10 @@ module.exports = function (RED) {
               parameters.end = Math.floor((hourEnd / 1000) + Number(end))
             }
           }
+          if (installations === 'gps-download') {
+            parameters.start = config.gps_start
+            parameters.end = config.gps_end
+          }
           url += '&' + Object.entries(parameters)
             .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
             .join('&')
