@@ -111,8 +111,11 @@ module.exports = function (RED) {
           if (installations === 'gps-download') {
             parameters.start = config.gps_start
             parameters.end = config.gps_end
+            url += '?'
+          } else {
+            url += '&'
           }
-          url += '&' + Object.entries(parameters)
+          url += Object.entries(parameters)
             .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
             .join('&')
         }
