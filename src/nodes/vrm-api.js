@@ -109,8 +109,10 @@ module.exports = function (RED) {
             }
           }
           if (installations === 'gps-download') {
-            parameters.start = config.gps_start
-            parameters.end = config.gps_end
+            const gps_start = new Date( config.gps_start + " GMT+0000")
+            const gps_end = new Date( config.gps_end + " GMT+0000")
+            parameters.start = Math.floor(gps_start.getTime() / 1000)
+            parameters.end = Math.floor(gps_end.getTime() / 1000)
             url += '?'
           } else {
             url += '&'
@@ -266,7 +268,9 @@ module.exports = function (RED) {
           axios.get(url, { params: options, headers }).then(function (response) {
             if (response.status === 200) {
               msg.payload = response.data
-              msg.payload.options = options
+              if (installations !== 'gps-download') {
+                msg.payload.options = options
+              }
               node.status({ fill: 'green', shape: 'dot', text: 'Ok' })
             } else {
               node.status({ fill: 'yellow', shape: 'dot', text: response.status })
@@ -286,7 +290,6 @@ module.exports = function (RED) {
             } else {
               node.status({ fill: 'red', shape: 'dot', text: 'Error fetching VRM data' })
             }
-
             if (error.response) {
               node.send({ payload: error.response })
             }
