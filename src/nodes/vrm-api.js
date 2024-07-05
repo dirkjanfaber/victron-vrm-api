@@ -153,7 +153,7 @@ module.exports = function (RED) {
           if (config.instance) {
             parameters.instance = config.instance
           }
-          url += '&' + Object.entries(parameters)
+          url += '?' + Object.entries(parameters)
             .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
             .join('&')
         }
