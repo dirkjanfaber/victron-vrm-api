@@ -109,10 +109,10 @@ module.exports = function (RED) {
             }
           }
           if (installations === 'gps-download') {
-            const gps_start = new Date( config.gps_start + " GMT+0000")
-            const gps_end = new Date( config.gps_end + " GMT+0000")
-            parameters.start = Math.floor(gps_start.getTime() / 1000)
-            parameters.end = Math.floor(gps_end.getTime() / 1000)
+            const gpsStart = new Date(config.gps_start + ' GMT+0000')
+            const gpsEnd = new Date(config.gps_end + ' GMT+0000')
+            parameters.start = Math.floor(gpsStart.getTime() / 1000)
+            parameters.end = Math.floor(gpsEnd.getTime() / 1000)
             url += '?'
           } else {
             url += '&'
