@@ -267,11 +267,17 @@ module.exports = function (RED) {
         default: // get
           axios.get(url, { params: options, headers }).then(function (response) {
             if (response.status === 200) {
+              let text = 'Ok'
               msg.payload = response.data
               if (installations !== 'gps-download') {
                 msg.payload.options = options
               }
-              node.status({ fill: 'green', shape: 'dot', text: 'Ok' })
+              if (response.data.totals) {
+                const key = Object.keys(response.data.totals)[0]
+                const value = response.data.totals[key]
+                text = `${key.replace(/_/g, ' ')}: ${value.toFixed(1)}`
+              }
+              node.status({ fill: 'green', shape: 'dot', text })
             } else {
               node.status({ fill: 'yellow', shape: 'dot', text: response.status })
             }
