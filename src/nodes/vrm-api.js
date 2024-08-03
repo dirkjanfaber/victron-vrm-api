@@ -95,6 +95,9 @@ module.exports = function (RED) {
               } else if (start === 'bod') {
                 start = (dayStart - hourStart) / 1000
               }
+              } else if (start === 'bot') {
+                start = (dayStart - hourStart + 86400000) / 1000
+              }
               parameters.start = Math.floor((hourStart / 1000) + Number(start))
             }
             if (config.stats_end !== 'undefined') {
