@@ -94,7 +94,6 @@ module.exports = function (RED) {
                 start = (dayStart - hourStart - 86400000) / 1000
               } else if (start === 'bod') {
                 start = (dayStart - hourStart) / 1000
-              }
               } else if (start === 'bot') {
                 start = (dayStart - hourStart + 86400000) / 1000
               }
