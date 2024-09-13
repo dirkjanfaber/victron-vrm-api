@@ -77,7 +77,6 @@ module.exports = function (RED) {
             if (config.attribute === 'dynamic_ess') {
               url += '?type=' + config.attribute
             } else {
-              url += '?type=custom&attributeCodes[]=' + config.attribute
               parameters.type = 'custom'
               parameters['attributeCodes[]'] = config.attribute
               if (config.stats_interval) {
@@ -115,12 +114,9 @@ module.exports = function (RED) {
             const gpsEnd = new Date(config.gps_end + ' GMT+0000')
             parameters.start = Math.floor(gpsStart.getTime() / 1000)
             parameters.end = Math.floor(gpsEnd.getTime() / 1000)
-            url += '?'
-          } else {
-            url += '&'
           }
-          url += Object.entries(parameters)
-            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+          url += '?' + Object.entries(parameters)
+            .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
             .join('&')
         }
           break
