@@ -74,10 +74,8 @@ module.exports = function (RED) {
             const hour = (config.use_utc === true) ? d.getUTCHours() : d.getHours()
             const hourStart = (config.use_utc === true) ? d.setUTCHours(hour, 0, 0, 0) : d.setHours(hour, 0, 0, 0)
             const hourEnd = (config.use_utc === true) ? d.setUTCHours(hour, 59, 59, 0) : d.setHours(hour, 59, 59, 0)
-            if (config.attribute === 'dynamic_ess') {
-              url += '?type=' + config.attribute
-            } else {
-              parameters.type = 'custom'
+            parameters.type = config.attribute
+            if (config.attribute !== 'dynamic_ess') {
               parameters['attributeCodes[]'] = config.attribute
               if (config.stats_interval) {
                 parameters.interval = config.stats_interval
