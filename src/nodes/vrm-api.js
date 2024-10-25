@@ -29,9 +29,9 @@ module.exports = function (RED) {
 
       let options = {
       }
-      const flowContext = this.context().flow;
+      const flowContext = this.context().flow
       const headers = {
-        'X-Authorization': 'Token ' + ( this.vrm ? this.vrm.credentials.token : flowContext.get('vrm_api.credentials.token') ),
+        'X-Authorization': 'Token ' + (this.vrm ? this.vrm.credentials.token : flowContext.get('vrm_api.credentials.token')),
         accept: 'application/json',
         'User-Agent': 'nrc-vrm-api/' + packageJson.version
       }
@@ -75,16 +75,16 @@ module.exports = function (RED) {
             const hour = (config.use_utc === true) ? d.getUTCHours() : d.getHours()
             const hourStart = (config.use_utc === true) ? d.setUTCHours(hour, 0, 0, 0) : d.setHours(hour, 0, 0, 0)
             const hourEnd = (config.use_utc === true) ? d.setUTCHours(hour, 59, 59, 0) : d.setHours(hour, 59, 59, 0)
-            parameters.type = config.attribute
-            if (config.attribute !== 'dynamic_ess') {
-              parameters['attributeCodes[]'] = config.attribute
-              if (config.stats_interval) {
-                parameters.interval = config.stats_interval
-              }
-              if (config.show_instance === true) {
-                parameters.show_instance = 1
-              }
-            }
+            parameters.type = 'custom'
+            Object.assign(parameters,
+              config.attribute !== 'dynamic_ess'
+                ? {
+                    'attributeCodes[]': config.attribute,
+                    ...(config.stats_interval && { interval: config.stats_interval }),
+                    ...(config.show_instance === true && { show_instance: 1 })
+                  }
+                : { type: config.attribute }
+            )
             if (config.stats_start !== 'undefined') {
               let start = config.stats_start
               const dayStart = (config.use_utc === true) ? d.setUTCHours(0, 0, 0, 0) : d.setHours(0, 0, 0, 0)
@@ -271,8 +271,9 @@ module.exports = function (RED) {
               }
               if (response.data.totals) {
                 const key = Object.keys(response.data.totals)[0]
-                const value = response.data.totals[key]
-                text = `${key.replace(/_/g, ' ')}: ${value.toFixed(1)}`
+                const isNumber = value => !isNaN(value) && typeof value === 'number'
+                const formatNumber = value => isNumber(value) ? value.toFixed(1) : value
+                text = `${key.replace(/_/g, ' ')}: ${formatNumber(response.data.totals[key])}`
               }
               node.status({ fill: 'green', shape: 'dot', text })
             } else {
