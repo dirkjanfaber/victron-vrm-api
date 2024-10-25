@@ -61,7 +61,7 @@ the menu or by pressing _ctrl-i_).
 
 Please use either the issues on the GitHub site or the Node-RED space on our community for questions, troubleshooting and suggestions.
 - [GitHub](https://github.com/dirkjanfaber/victron-vrm-api) - The nodes GitHub repository.
-- [Community](https://community.victronenergy.com/smart-spaces/71/node-red.html) - Node-RED space in the Victron Energy community.
+- [Community](https://community.victronenergy.com/tag/node-red) - Node-RED space in the Victron Energy community.
 - [VRM API documentation](https://vrm-api-docs.victronenergy.com/#) - The VRM API documentation.
 
 
