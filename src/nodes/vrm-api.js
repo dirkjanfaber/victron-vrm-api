@@ -29,8 +29,9 @@ module.exports = function (RED) {
 
       let options = {
       }
+      const flowContext = this.context().flow;
       const headers = {
-        'X-Authorization': 'Token ' + this.vrm.credentials.token,
+        'X-Authorization': 'Token ' + ( this.vrm ? this.vrm.credentials.token : flowContext.get('vrm_api.credentials.token') ),
         accept: 'application/json',
         'User-Agent': 'nrc-vrm-api/' + packageJson.version
       }

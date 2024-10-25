@@ -36,7 +36,7 @@
         paletteLabel: 'VRM API',
         color: '#f7ab3e',
         defaults: {
-            vrm: {value: "", type: "config-vrm-api"},
+            vrm: {value: "", type: "config-vrm-api", required: false},
             name: { value: "" },
             api_type: { value: "", validate: RED.validators.regex(/^(users|installations|widgets|dynamic-ess)$/)},
 
@@ -465,6 +465,10 @@ Note that instead of filling out the number of the VRM site id for installations
 can also use context variables, e.g. `{{flow.siteId}}` or `{{global.vrmId}}`. This allows to query the site
 that has been set in this context field. Of course you need to make sure that context contains a valid VRM site id first.
 
+There is a comparable trick if you want the VRM API credentials to be picked up via another node. If you put the credentials
+into the flow context `vrm_api.credentials.token` and set the VRM configuration node to "none", the VRM API node will use the
+credentials from the flow context instead.
+
 ### Details
 
 This node makes it easy to use the VRM API for data retrieval. Though not all possible API calls have been implemented, it can
@@ -480,7 +484,7 @@ If the data is to be stored in the global context, it will be saved under `vrm_a
 
 Please use either the issues on the GitHub site or the Node-RED space on our community for questions, troubleshooting and suggestions.
 - [GitHub](https://github.com/dirkjanfaber/victron-vrm-api) - The nodes GitHub repository.
-- [Community](https://community.victronenergy.com/smart-spaces/71/node-red.html) - Node-RED space in the Victron Energy community.
+- [Community](https://community.victronenergy.com/tag/node-red) - Node-RED space in the Victron Energy community.
 - [VRM API documentation](https://vrm-api-docs.victronenergy.com/#) - The VRM API documentation.
 
 </script>
