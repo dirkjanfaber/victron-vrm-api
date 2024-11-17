@@ -85,6 +85,11 @@ module.exports = function (RED) {
                   }
                 : { type: config.attribute }
             )
+
+            if (config.attribute === 'evcs') {
+              delete(parameters["attributeCodes[]"])
+              parameters.type = 'evcs'
+            }
             if (config.stats_start !== 'undefined') {
               let start = config.stats_start
               const dayStart = (config.use_utc === true) ? d.setUTCHours(0, 0, 0, 0) : d.setHours(0, 0, 0, 0)
