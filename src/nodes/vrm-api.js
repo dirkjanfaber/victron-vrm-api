@@ -112,6 +112,9 @@ module.exports = function (RED) {
               }
               parameters.end = Math.floor((hourEnd / 1000) + Number(end))
             }
+            if (!isNaN(Number(config.stats_end))) {
+              parameters.end = parameters.start + Number(config.stats_end)
+            }
           }
           if (installations === 'gps-download') {
             const gpsStart = new Date(config.gps_start + ' GMT+0000')
