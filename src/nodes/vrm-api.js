@@ -87,7 +87,7 @@ module.exports = function (RED) {
             )
 
             if (config.attribute === 'evcs') {
-              delete(parameters["attributeCodes[]"])
+              delete (parameters['attributeCodes[]'])
               parameters.type = 'evcs'
             }
             if (config.stats_start !== 'undefined') {
