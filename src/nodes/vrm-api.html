@@ -481,6 +481,15 @@ out in the configuration node.
 
 If the data is to be stored in the global context, it will be saved under `vrm_api.${site_id}_${installation}`.
 
+### Advanced usage
+
+If you have really spefic needs to query the VRM API, which aren't part of the node (yet), you can input a
+payload that contains `msg.query`, `msg.method` and `msg.url`. The node will then use these values to query
+the VRM API.  You can also overrule the `msg.topic` for these queries. Note that you _must_ set the `msg.method`
+when using this feature.
+
+The `msg.url` part is _everything_ after the `https://vrmapi.victronenergy.com/v2/` part.
+
 ### References
 
 Please use either the issues on the GitHub site or the Node-RED space on our community for questions, troubleshooting and suggestions.

@@ -50,12 +50,20 @@ Note that instead of filling out the number of the VRM site id for installations
 can also use context variables, e.g. `{{flow.siteId}}` or `{{global.vrmId}}`. This allows to query the site
 that has been set in this context field. Of course you need to make sure that context contains a valid VRM site id first.
 
-
 ## Examples
 
 There are several examples included in the package. In order to use them, import them via the
 victron-vrm-api examples dropdown on the _Import nodes_ page (accessible via
 the menu or by pressing _ctrl-i_).
+
+### Advanced usage
+
+If you have really spefic needs to query the VRM API, which aren't part of the node (yet), you can input a
+payload that contains `msg.query`, `msg.method` and `msg.url`. The node will then use these values to query
+the VRM API.  You can also overrule the `msg.topic` for these queries. Note that you _must_ set the `msg.method`
+when using this feature.
+
+The `msg.url` part is _everything_ after the `https://vrmapi.victronenergy.com/v2/` part.
 
 ## References
 
