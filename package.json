@@ -14,6 +14,11 @@
   ],
   "author": "Dirk-Jan Faber <dfaber@victronenergy.com>",
   "license": "MIT",
+  "files": [
+    "examples",
+    "src",
+    "LICENSE"
+  ],
   "node-red": {
     "nodes": {
       "config-vrm-api": "./src/nodes/config-vrm-api.js",
