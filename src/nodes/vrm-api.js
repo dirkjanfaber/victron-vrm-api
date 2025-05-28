@@ -5,9 +5,12 @@ module.exports = function (RED) {
   const curlirize = require('axios-curlirize')
   const path = require('path')
   const packageJson = require(path.join(__dirname, '../../', 'package.json'))
+  const debug = require('debug')('victron-vrm-api')
+
 
   function VRMAPI (config) {
     RED.nodes.createNode(this, config)
+    debug('VRMAPI node created with config:', config)
 
     this.vrm = RED.nodes.getNode(config.vrm)
 

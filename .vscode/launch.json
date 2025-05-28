@@ -9,9 +9,10 @@
         "cwd": "${env:HOME}",
         "args": ["-s", "${workspaceFolder}/.vscode/settings.js"],
         "runtimeArgs": ["--preserve-symlinks", "--experimental-modules"],
+        "outputCapture": "std",
         "env": {
           "NO_UPDATE_NOTIFIER": "1",
-          // "DEBUG": "*"
+          "DEBUG": "victron-vrm-api"
         }
       },
       {
