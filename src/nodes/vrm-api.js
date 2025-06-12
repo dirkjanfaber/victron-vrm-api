@@ -33,7 +33,8 @@ module.exports = function (RED) {
       const headers = {
         'X-Authorization': 'Token ' + (this.vrm ? this.vrm.credentials.token : flowContext.get('vrm_api.credentials.token')),
         accept: 'application/json',
-        'User-Agent': 'nrc-vrm-api/' + packageJson.version
+        'User-Agent': 'nrc-vrm-api/' + packageJson.version,
+        'Content-Type': 'application/json'
       }
 
       if (msg.query && /^(GET|POST|PATCH)$/i.test(msg.method)) {
@@ -56,6 +57,11 @@ module.exports = function (RED) {
             if (config.installations === 'patch-dynamic-ess-settings') {
               installations = 'dynamic-ess-settings'
               method = 'patch'
+            }
+            if (config.installations === 'fetch-dynamic-ess-schedule') {
+              installations = 'schedule-dynamic-ess'
+              method = 'post'
+              msg.payload = { "async": false }
             }
             topic.push(installations)
             url += '/' + config.api_type + '/'
@@ -127,9 +133,11 @@ module.exports = function (RED) {
               parameters.start = Math.floor(gpsStart.getTime() / 1000)
               parameters.end = Math.floor(gpsEnd.getTime() / 1000)
             }
-            url += '?' + Object.entries(parameters)
-              .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-              .join('&')
+            if (Object.keys(parameters).length > 0) {
+              url += '?' + Object.entries(parameters)
+                .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+                .join('&')
+            }
           }
             break
           case 'users':

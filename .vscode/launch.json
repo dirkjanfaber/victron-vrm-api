@@ -5,10 +5,14 @@
         "type": "node",
         "request": "launch",
         "name": "Launch Node-red",
-        "program": "${env:NVM_BIN}/../lib/node_modules/node-red/red.js",
+        "runtimeExecutable": "npx",
+        "runtimeArgs": [
+          "node-red",
+          "-s",
+          "${workspaceFolder}/.vscode/settings.js"
+        ],
         "cwd": "${env:HOME}",
-        "args": ["-s", "${workspaceFolder}/.vscode/settings.js"],
-        "runtimeArgs": ["--preserve-symlinks", "--experimental-modules"],
+        "outputCapture": "std",
         "env": {
           "NO_UPDATE_NOTIFIER": "1",
           // "DEBUG": "*"
