@@ -7,7 +7,6 @@ module.exports = function (RED) {
   const packageJson = require(path.join(__dirname, '../../', 'package.json'))
   const debug = require('debug')('victron-vrm-api')
 
-
   function VRMAPI (config) {
     RED.nodes.createNode(this, config)
     debug('VRMAPI node created with config:', config)
@@ -79,7 +78,7 @@ module.exports = function (RED) {
             url += '/' + installations
 
             if (installations === 'stats') {
-              parameters.type = 'custom';
+              parameters.type = 'custom'
               Object.assign(parameters,
                 config.attribute !== 'dynamic_ess'
                   ? {
@@ -88,63 +87,63 @@ module.exports = function (RED) {
                       ...(config.show_instance === true && { show_instance: 1 })
                     }
                   : { type: config.attribute }
-              );
+              )
 
               if (config.attribute === 'evcs') {
-                delete (parameters['attributeCodes[]']);
-                parameters.type = 'evcs';
+                delete (parameters['attributeCodes[]'])
+                parameters.type = 'evcs'
               }
 
               // --- Start of Corrected Time Logic ---
-              const now = new Date();
-              const nowTs = Math.floor(now.getTime() / 1000); // Unix timestamp for now, in seconds
+              const now = new Date()
+              const nowTs = Math.floor(now.getTime() / 1000) // Unix timestamp for now, in seconds
 
               // Helper function to floor a Unix timestamp (in seconds) to the beginning of the hour
               const floorToHour = (ts) => {
-                if (ts === undefined || ts === null) return ts;
-                return ts - (ts % 3600);
-              };
+                if (ts === undefined || ts === null) return ts
+                return ts - (ts % 3600)
+              }
 
               const getStartOfDay = (date) => {
-                const start = new Date(date);
-                config.use_utc ? start.setUTCHours(0, 0, 0, 0) : start.setHours(0, 0, 0, 0);
-                return Math.floor(start.getTime() / 1000);
-              };
+                const start = new Date(date)
+                config.use_utc ? start.setUTCHours(0, 0, 0, 0) : start.setHours(0, 0, 0, 0)
+                return Math.floor(start.getTime() / 1000)
+              }
 
               // --- Calculate Start Time ---
               if (config.stats_start && config.stats_start !== 'undefined') {
-                const startInput = config.stats_start;
-                let calculatedStart;
+                const startInput = config.stats_start
+                let calculatedStart
                 if (!isNaN(Number(startInput))) {
                   // Handles numeric offsets like -86400 (from now)
-                  calculatedStart = nowTs + Number(startInput);
+                  calculatedStart = nowTs + Number(startInput)
                 } else if (startInput === 'bod') { // Beginning of Today
-                  calculatedStart = getStartOfDay(now);
+                  calculatedStart = getStartOfDay(now)
                 } else if (startInput === 'boy') { // Beginning of Yesterday
-                  calculatedStart = getStartOfDay(now) - 86400;
+                  calculatedStart = getStartOfDay(now) - 86400
                 } else if (startInput === 'bot') { // Beginning of Tomorrow
-                  calculatedStart = getStartOfDay(now) + 86400;
+                  calculatedStart = getStartOfDay(now) + 86400
                 }
                 // Assign the final floored value
-                parameters.start = floorToHour(calculatedStart);
+                parameters.start = floorToHour(calculatedStart)
               }
 
               // --- Calculate End Time ---
               if (config.stats_end && config.stats_end !== 'undefined') {
-                const endInput = config.stats_end;
-                let calculatedEnd;
+                const endInput = config.stats_end
+                let calculatedEnd
                 if (!isNaN(Number(endInput))) {
                   // Handles numeric offsets like 0 (for now) or +86400 (for tomorrow)
-                  calculatedEnd = nowTs + Number(endInput);
+                  calculatedEnd = nowTs + Number(endInput)
                 } else if (endInput === 'eod') { // End of Today
-                  const endOfDay = new Date(now);
-                  config.use_utc ? endOfDay.setUTCHours(23, 59, 59, 999) : endOfDay.setHours(23, 59, 59, 999);
-                  calculatedEnd = Math.floor(endOfDay.getTime() / 1000);
+                  const endOfDay = new Date(now)
+                  config.use_utc ? endOfDay.setUTCHours(23, 59, 59, 999) : endOfDay.setHours(23, 59, 59, 999)
+                  calculatedEnd = Math.floor(endOfDay.getTime() / 1000)
                 } else if (endInput === 'eoy') { // End of Yesterday
-                  calculatedEnd = getStartOfDay(now) - 1; // 23:59:59 of yesterday
+                  calculatedEnd = getStartOfDay(now) - 1 // 23:59:59 of yesterday
                 }
                 // Assign the final floored value
-                parameters.end = floorToHour(calculatedEnd);
+                parameters.end = floorToHour(calculatedEnd)
               }
               // --- End of Corrected Time Logic ---
             }
