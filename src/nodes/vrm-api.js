@@ -15,7 +15,7 @@ module.exports = function (RED) {
 
     const node = this
 
-    let lastValidUpdate = null
+    node.lastValidUpdate = null
 
     node.on('input', function (msg) {
       let url = msg.url || 'https://vrmapi.victronenergy.com/v2'
@@ -24,7 +24,7 @@ module.exports = function (RED) {
 
       const currentTime = Date.now()
 
-      if (lastValidUpdate && (currentTime - lastValidUpdate) < 5000) {
+      if (node.lastValidUpdate && (currentTime - node.lastValidUpdate) < 5000) {
         node.status({ fill: 'yellow', shape: 'dot', text: 'Limit queries quickly' })
         return
       }
@@ -308,7 +308,13 @@ module.exports = function (RED) {
               if (installations !== 'gps-download') {
                 msg.payload.options = options
               }
-              if (response.data.totals) {
+
+              // Check for users/me response to show user name and ID
+              if (config.api_type === 'users' && config.users === 'me' && response.data.user) {
+                const user = response.data.user
+                const userName = user.name || user.email || 'Unknown User'
+                text = `${userName} (${user.id})`
+              } else if (response.data.totals) {
                 const key = Object.keys(response.data.totals)[0]
                 const isNumber = value => !isNaN(value) && typeof value === 'number'
                 const formatNumber = value => isNumber(value) ? value.toFixed(1) : value
@@ -324,7 +330,7 @@ module.exports = function (RED) {
               globalContext.set(msg.topic.split(' ').join('.'), response.data)
             }
 
-            lastValidUpdate = currentTime
+            node.lastValidUpdate = currentTime
 
             node.send(msg)
           }).catch(function (error) {
