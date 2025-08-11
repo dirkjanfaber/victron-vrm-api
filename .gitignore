@@ -4,3 +4,12 @@ scripts/csv/*.csv
 missingpaths.template.json
 
 *.swp
+.env
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Jest cache
+.jest/
+

@@ -4,7 +4,12 @@
   "description": "Interface with the Victron Energy VRM API",
   "main": "index.js",
   "scripts": {
-    "test": "standard --fix"
+    "test": "jest",
+    "test:unit": "jest test/unit",
+    "test:integration": "jest test/integration",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "standard --fix"
   },
   "keywords": [
     "node-red",
@@ -37,9 +42,26 @@
     "path": "^0.12.7"
   },
   "devDependencies": {
-    "standard": "^17.1.0"
+    "standard": "^17.1.0",
+    "jest": "^29.7.0",
+    "node-red": "^3.1.0",
+    "node-red-node-test-helper": "^0.3.4",
+    "dotenv": "^16.3.1"
   },
   "engines": {
     "node": ">=14.17.4"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "!src/**/*.html"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/setup.js"
+    ]
   }
 }
