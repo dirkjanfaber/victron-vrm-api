@@ -73,6 +73,7 @@ module.exports = function (RED) {
 
               result = await apiService.callWidgetsAPI(widgetSiteId, config.widgets, config.instance)
               msg.topic = `widgets ${config.widgets}`
+
               break
             }
 
@@ -128,6 +129,8 @@ module.exports = function (RED) {
               statusInfo = apiService.interpretStatsStatus(result.data)
             } else if (config.installations === 'dynamic-ess-settings' && result.data) {
               statusInfo = apiService.interpretDynamicEssStatus(result.data)
+            } else if (config.api_type === 'widgets' && result.data) {
+              statusInfo = apiService.interpretWidgetsStatus(result.data, config.widgets, config.instance)
             }
 
             node.status({ fill: statusInfo.color, shape: 'dot', text: statusInfo.text })

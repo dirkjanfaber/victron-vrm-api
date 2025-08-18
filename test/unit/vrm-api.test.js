@@ -182,7 +182,7 @@ describe('VRMAPIService Unit Tests', () => {
       testCases.forEach(responseData => {
         const result = service.interpretUsersStatus(responseData, 'me')
         expect(result.text).toBe('No user data found')
-        expect(result.color).toBe('orange')
+        expect(result.color).toBe('yellow')
         expect(result.raw).toBe(responseData)
       })
     })
@@ -246,7 +246,7 @@ describe('VRMAPIService Unit Tests', () => {
         const result = service.interpretDynamicEssStatus(responseData)
 
         expect(result.text).toBe('No data')
-        expect(result.color).toBe('orange')
+        expect(result.color).toBe('yellow')
         expect(result.mode).toBeNull()
         expect(result.operatingMode).toBeNull()
         expect(result.raw).toBe(responseData)
@@ -320,7 +320,7 @@ describe('VRMAPIService Unit Tests', () => {
 
         if (!responseData || !responseData.totals) {
           expect(result.text).toBe('No stats data')
-          expect(result.color).toBe('orange')
+          expect(result.color).toBe('yellow')
           expect(result.totals).toBeNull()
         } else {
           expect(result.text).toBe('No totals')

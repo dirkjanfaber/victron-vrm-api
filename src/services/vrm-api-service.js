@@ -287,7 +287,7 @@ class VRMAPIService {
     if (!responseData) {
       return {
         text: 'No user data found',
-        color: 'orange',
+        color: 'yellow',
         raw: responseData
       }
     }
@@ -298,7 +298,7 @@ class VRMAPIService {
       if (!user) {
         return {
           text: 'No user data found',
-          color: 'orange',
+          color: 'yellow',
           raw: responseData
         }
       }
@@ -323,7 +323,7 @@ class VRMAPIService {
       if (!Array.isArray(records)) {
         return {
           text: 'No installations data found',
-          color: 'orange',
+          color: 'yellow',
           raw: responseData
         }
       }
@@ -372,7 +372,7 @@ class VRMAPIService {
     if (!hasValidMode || !hasValidOperatingMode) {
       return {
         text: 'No data',
-        color: 'orange',
+        color: 'yellow',
         mode: null,
         operatingMode: null,
         raw: responseData
@@ -415,7 +415,7 @@ class VRMAPIService {
     if (!responseData || !responseData.totals) {
       return {
         text: 'No stats data',
-        color: 'orange',
+        color: 'yellow',
         totals: null,
         raw: responseData
       }
@@ -442,6 +442,129 @@ class VRMAPIService {
       value,
       formattedValue: formatNumber(value),
       totals: responseData.totals,
+      raw: responseData
+    }
+  }
+
+  /**
+ * Interpret widgets API response for status display
+ * Returns formatted status information for widgets data
+ */
+  interpretWidgetsStatus (responseData, widgetType, instance) {
+    if (!responseData?.records?.data) {
+      return {
+        text: 'No widget data',
+        color: 'yellow',
+        hasData: false,
+        raw: responseData
+      }
+    }
+
+    const data = responseData.records.data
+
+    // Check if we have actual device data (not just metadata)
+    const hasActualData = Object.keys(data).some(key =>
+      key !== 'hasOldData' && key !== 'secondsAgo' &&
+    typeof data[key] === 'object' &&
+    data[key].value !== undefined
+    )
+
+    if (!hasActualData) {
+      return {
+        text: 'No data - incorrect instance?',
+        color: 'yellow',
+        hasData: false,
+        instance,
+        raw: responseData
+      }
+    }
+
+    // Widget configuration lookup table
+    const widgetConfig = {
+      EvChargerSummary: {
+        lookupKey: '824',
+        lookupCode: 'evs',
+        lookupDataAttribute: 'Status',
+        fallbackText: 'EV Charger',
+        valueProperty: 'evChargerStatus'
+      },
+      TempSummaryAndGraph: {
+        lookupKey: '450',
+        lookupCode: 'tsT',
+        fallbackText: 'Temperature sensor',
+        valueProperty: 'temperatureValue',
+        includeInstanceInText: true // Show instance info for temperature
+      }
+    }
+
+    // Get configuration for this widget type
+    const config = widgetConfig[widgetType]
+
+    if (config) {
+    // Try different lookup strategies in order of preference
+      let targetData = null
+
+      // 1. Try lookup by specific key (e.g., data["450"])
+      if (config.lookupKey && data[config.lookupKey]) {
+        targetData = data[config.lookupKey]
+      }
+
+      // 2. Try lookup by code (e.g., code === 'evs')
+      if (!targetData && config.lookupCode) {
+        targetData = Object.values(data).find(item => item.code === config.lookupCode)
+      }
+
+      // 3. Try lookup by dataAttributeName (e.g., dataAttributeName === 'Status')
+      if (!targetData && config.lookupDataAttribute) {
+        targetData = Object.values(data).find(item =>
+          item.dataAttributeName === config.lookupDataAttribute
+        )
+      }
+
+      if (targetData && targetData.formattedValue) {
+        let displayText = targetData.formattedValue
+
+        // Add instance info if configured for this widget type
+        if (config.includeInstanceInText && instance) {
+          displayText = `Temperature (inst. ${instance}): ${targetData.formattedValue}`
+        }
+
+        const result = {
+          text: displayText,
+          color: 'green',
+          hasData: true,
+          instance,
+          raw: responseData
+        }
+
+        // Add widget-specific property
+        result[config.valueProperty] = targetData.formattedValue
+
+        return result
+      }
+
+      // Has data but no target field found
+      let fallbackText = config.fallbackText
+      if (config.includeInstanceInText && instance) {
+        fallbackText = `${config.fallbackText} (inst. ${instance})`
+      }
+
+      return {
+        text: fallbackText,
+        color: 'green',
+        hasData: true,
+        [config.valueProperty]: null,
+        instance,
+        raw: responseData
+      }
+    }
+
+    // Default for unknown widget types - just show the widget type name
+    return {
+      text: widgetType,
+      color: 'green',
+      hasData: true,
+      instance,
       raw: responseData
     }
   }
