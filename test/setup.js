@@ -13,10 +13,10 @@ if (process.env.NODE_ENV !== 'production') {
 global.testConfig = {
   // VRM API base URL
   VRM_API_BASE: 'https://vrmapi.victronenergy.com/v2',
-  
+
   // Test environment flags
   isIntegrationTest: process.env.NODE_ENV === 'integration',
-  
+
   // Helper to check if integration tests should run
   hasIntegrationCredentials: () => {
     return !!(

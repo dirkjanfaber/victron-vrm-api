@@ -1,10 +1,7 @@
 module.exports = function (RED) {
   'use strict'
 
-  const axios = require('axios')
-  const curlirize = require('axios-curlirize')
-  const path = require('path')
-  const packageJson = require(path.join(__dirname, '../../', 'package.json'))
+  const VRMAPIService = require('../services/vrm-api-service')
   const debug = require('debug')('victron-vrm-api')
 
   function VRMAPI (config) {
@@ -12,346 +9,251 @@ module.exports = function (RED) {
     debug('VRMAPI node created with config:', config)
 
     this.vrm = RED.nodes.getNode(config.vrm)
-
     const node = this
-
     node.lastValidUpdate = null
 
-    node.on('input', function (msg) {
-      let url = msg.url || 'https://vrmapi.victronenergy.com/v2'
-      let installations = config.installations
-      let method = 'get'
-
+    node.on('input', async function (msg) {
       const currentTime = Date.now()
 
+      // Rate limiting
       if (node.lastValidUpdate && (currentTime - node.lastValidUpdate) < 5000) {
         node.status({ fill: 'yellow', shape: 'dot', text: 'Limit queries quickly' })
         return
       }
 
-      let options = {
-      }
+      // Get API token from config or flow context
       const flowContext = this.context().flow
-      const headers = {
-        'X-Authorization': 'Token ' + (this.vrm ? this.vrm.credentials.token : flowContext.get('vrm_api.credentials.token')),
-        accept: 'application/json',
-        'User-Agent': 'nrc-vrm-api/' + packageJson.version
+      const apiToken = this.vrm ? this.vrm.credentials.token : flowContext.get('vrm_api.credentials.token')
+
+      if (!apiToken) {
+        node.status({ fill: 'red', shape: 'ring', text: 'No API token configured' })
+        return
       }
 
-      if (msg.query && /^(GET|POST|PATCH)$/i.test(msg.method)) {
-        url += '/' + msg.query
-        method = msg.method.toLowerCase()
-        msg.topic = msg.topic || 'custom'
-      } else {
-        const parameters = {}
-        const topic = [config.api_type]
-        switch (config.api_type) {
-          case 'installations': {
-            if (config.installations === 'post-alarms') {
-              installations = 'alarms'
-              method = 'post'
-            }
-            if (config.installations === 'post-dynamic-ess-settings') {
-              installations = 'dynamic-ess-settings'
-              method = 'post'
-            }
-            if (config.installations === 'patch-dynamic-ess-settings') {
-              installations = 'dynamic-ess-settings'
-              method = 'patch'
-            }
-            topic.push(installations)
-            url += '/' + config.api_type + '/'
-            const match = config.idSite.match(/^\{\{(node|flow|global)\.(.*)\}\}$/)
-            if (match) {
-              const Context = this.context()[match[1]]
-              if (Context.get([match[2]])[0] !== undefined) {
-                url += Context.get([match[2]]).toString()
-                topic.push(Context.get([match[2]]).toString())
-              } else {
-                node.status({ fill: 'red', shape: 'ring', text: `Unable to retrieve ${config.idSite} from context` })
-                return
-              }
-            } else {
-              url += (msg.siteId || config.idSite)
-              topic.push((msg.siteId || config.idSite))
-            }
-            url += '/' + installations
-
-            if (installations === 'stats') {
-              parameters.type = 'custom'
-              Object.assign(parameters,
-                config.attribute !== 'dynamic_ess'
-                  ? {
-                      'attributeCodes[]': config.attribute,
-                      ...(config.stats_interval && { interval: config.stats_interval }),
-                      ...(config.show_instance === true && { show_instance: 1 })
-                    }
-                  : { type: config.attribute }
-              )
-
-              if (config.attribute === 'evcs') {
-                delete (parameters['attributeCodes[]'])
-                parameters.type = 'evcs'
-              }
-
-              // --- Start of Corrected Time Logic ---
-              const now = new Date()
-              const nowTs = Math.floor(now.getTime() / 1000) // Unix timestamp for now, in seconds
-
-              // Helper function to floor a Unix timestamp (in seconds) to the beginning of the hour
-              const floorToHour = (ts) => {
-                if (ts === undefined || ts === null) return ts
-                return ts - (ts % 3600)
-              }
-
-              const getStartOfDay = (date) => {
-                const start = new Date(date)
-                config.use_utc ? start.setUTCHours(0, 0, 0, 0) : start.setHours(0, 0, 0, 0)
-                return Math.floor(start.getTime() / 1000)
-              }
-
-              // --- Calculate Start Time ---
-              if (config.stats_start && config.stats_start !== 'undefined') {
-                const startInput = config.stats_start
-                let calculatedStart
-                if (!isNaN(Number(startInput))) {
-                  // Handles numeric offsets like -86400 (from now)
-                  calculatedStart = nowTs + Number(startInput)
-                } else if (startInput === 'bod') { // Beginning of Today
-                  calculatedStart = getStartOfDay(now)
-                } else if (startInput === 'boy') { // Beginning of Yesterday
-                  calculatedStart = getStartOfDay(now) - 86400
-                } else if (startInput === 'bot') { // Beginning of Tomorrow
-                  calculatedStart = getStartOfDay(now) + 86400
-                }
-                // Assign the final floored value
-                parameters.start = floorToHour(calculatedStart)
-              }
-
-              // --- Calculate End Time ---
-              if (config.stats_end && config.stats_end !== 'undefined') {
-                const endInput = config.stats_end
-                let calculatedEnd
-                if (!isNaN(Number(endInput))) {
-                  // Handles numeric offsets like 0 (for now) or +86400 (for tomorrow)
-                  calculatedEnd = nowTs + Number(endInput)
-                } else if (endInput === 'eod') { // End of Today
-                  const endOfDay = new Date(now)
-                  config.use_utc ? endOfDay.setUTCHours(23, 59, 59, 999) : endOfDay.setHours(23, 59, 59, 999)
-                  calculatedEnd = Math.floor(endOfDay.getTime() / 1000)
-                } else if (endInput === 'eoy') { // End of Yesterday
-                  calculatedEnd = getStartOfDay(now) - 1 // 23:59:59 of yesterday
-                }
-                // Assign the final floored value
-                parameters.end = floorToHour(calculatedEnd)
-              }
-              // --- End of Corrected Time Logic ---
-            }
-            if (installations === 'gps-download') {
-              const gpsStart = new Date(config.gps_start + ' GMT+0000')
-              const gpsEnd = new Date(config.gps_end + ' GMT+0000')
-              parameters.start = Math.floor(gpsStart.getTime() / 1000)
-              parameters.end = Math.floor(gpsEnd.getTime() / 1000)
-            }
-            url += '?' + Object.entries(parameters)
-              .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-              .join('&')
-          }
-            break
-          case 'users':
-            url += '/' + config.api_type
-            if (config.users === 'installations') {
-              url += '/' + config.idUser
-              topic.push(config.users, config.idUser)
-            }
-            url += '/' + config.users
-            break
-          case 'widgets': {
-            topic.push(config.widgets)
-            url += '/installations/'
-            const match = config.idSite.match(/^\{\{(node|flow|global)\.(.*)\}\}$/)
-            if (match) {
-              const Context = this.context()[match[1]]
-              if (Context.get([match[2]])[0] !== undefined) {
-                url += Context.get([match[2]]).toString()
-                topic.push(Context.get([match[2]]).toString())
-              } else {
-                node.status({ fill: 'red', shape: 'ring', text: `Unable to retrieve ${config.idSite} from context` })
-                return
-              }
-            } else {
-              url += (msg.siteId || config.idSite) + '/'
-              topic.push((msg.siteId || config.idSite))
-            }
-            url += config.api_type + '/' + config.widgets
-
-            // instance
-            if (config.instance) {
-              parameters.instance = config.instance
-            }
-            url += '?' + Object.entries(parameters)
-              .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
-              .join('&')
-          }
-            break
-
-          case 'dynamic-ess':
-            topic.push('dynamic-ess')
-            url = 'https://vrm-dynamic-ess-api.victronenergy.com'
-            options = {
-              vrm_id: (config.vrm_id).toString(),
-              b_max: (config.b_max).toString(),
-              tb_max: (config.tb_max).toString(),
-              fb_max: (config.fb_max).toString(),
-              tg_max: (config.tg_max).toString(),
-              fg_max: (config.fg_max).toString(),
-              b_cycle_cost: (config.b_cycle_cost).toString(),
-              buy_price_formula: (config.buy_price_formula).toString(),
-              sell_price_formula: (config.sell_price_formula).toString(),
-              green_mode_on: (config.green_mode_on || false).toString(),
-              feed_in_possible: (config.feed_in_possible || false).toString(),
-              feed_in_control_on: (config.feed_in_control_on || false).toString(),
-              country: (config.country).toUpperCase(),
-              b_goal_hour: (config.b_goal_hour).toString(),
-              b_goal_SOC: (config.b_goal_SOC).toString()
-            }
-            headers['User-Agent'] = 'dynamic-ess/0.1.20'
-            break
-        }
-        msg.topic = topic.join(' ')
-      }
-
-      url = url.replace(/&$/, '')
-
-      if (config.verbose === true) {
-        node.warn({
-          url,
-          options,
-          headers
-        })
-      }
+      // Initialize API service
+      const apiService = new VRMAPIService(apiToken)
 
       node.status({ fill: 'yellow', shape: 'ring', text: 'Connecting to VRM API' })
 
-      switch (method) {
-        case 'patch':
-          axios.patch(url, msg.payload, { headers }).then(function (response) {
-            if (response.status === 200) {
-              msg.payload = response.data
-              msg.payload.options = options
+      try {
+        let result
 
-              if (msg.payload.success === false) {
-                node.status({ fill: 'yellow', shape: 'dot', text: msg.payload.error_code })
-              } else {
-                node.status({ fill: 'green', shape: 'dot', text: 'Ok' })
+        // Handle custom API calls (advanced usage)
+        if (msg.query && /^(GET|POST|PATCH)$/i.test(msg.method)) {
+          const customUrl = (msg.url || 'https://vrmapi.victronenergy.com/v2') + '/' + msg.query
+          result = await apiService.makeCustomCall(customUrl, msg.method, msg.payload)
+          msg.topic = msg.topic || 'custom'
+        } else {
+          // Handle standard API types
+          switch (config.api_type) {
+            case 'users': {
+              result = await apiService.callUsersAPI(config.users, config.idUser)
+              msg.topic = `users ${config.users}`
+              break
+            }
+
+            case 'installations': {
+              const siteId = await resolveSiteId(config.idSite, msg, node)
+              if (!siteId) return // Error already handled
+
+              // Handle stats endpoint with parameters
+              const options = {}
+              if (config.installations === 'stats') {
+                options.parameters = buildStatsParameters(config)
               }
-            } else {
-              node.status({ fill: 'yellow', shape: 'dot', text: response.status })
+
+              result = await apiService.callInstallationsAPI(siteId, config.installations, 'GET', null, options)
+              msg.topic = `installations ${config.installations}`
+              break
             }
 
-            if (config.store_in_global_context === true) {
-              const globalContext = node.context().global
-              globalContext.set(msg.topic.split(' ').join('.'), response.data)
+            case 'widgets': {
+              const widgetSiteId = await resolveSiteId(config.idSite, msg, node)
+              if (!widgetSiteId) return // Error already handled
+
+              result = await apiService.callWidgetsAPI(widgetSiteId, config.widgets, config.instance)
+              msg.topic = `widgets ${config.widgets}`
+              break
             }
 
-            node.send(msg)
-          }).catch(function (error) {
-            if (error.response && error.response.data && error.response.data.errors) {
-              node.status({ fill: 'red', shape: 'dot', text: error.response.data.errors })
-            } else {
-              node.status({ fill: 'red', shape: 'dot', text: 'Error fetching VRM data' })
+            case 'dynamic-ess': {
+              const dessOptions = {
+                vrm_id: config.vrm_id,
+                b_max: config.b_max,
+                tb_max: config.tb_max,
+                fb_max: config.fb_max,
+                tg_max: config.tg_max,
+                fg_max: config.fg_max,
+                b_cycle_cost: config.b_cycle_cost,
+                buy_price_formula: config.buy_price_formula,
+                sell_price_formula: config.sell_price_formula,
+                green_mode_on: config.green_mode_on,
+                feed_in_possible: config.feed_in_possible,
+                feed_in_control_on: config.feed_in_control_on,
+                country: config.country,
+                b_goal_hour: config.b_goal_hour,
+                b_goal_SOC: config.b_goal_SOC
+              }
+              result = await apiService.callDynamicEssAPI(dessOptions)
+              msg.topic = 'dynamic-ess'
+              break
             }
 
-            if (error.response) {
-              node.send({ payload: error.response })
+            default:
+              node.status({ fill: 'red', shape: 'ring', text: 'Unknown API type' })
+              return
+          }
+        }
+
+        // Handle the response
+        if (result.success) {
+          msg.payload = result.data
+
+          // Store in global context if requested
+          if (config.store_in_global_context === true) {
+            const globalContext = node.context().global
+            globalContext.set(msg.topic.split(' ').join('.'), result.data)
+          }
+
+          // Set status based on response
+          if (result.data && result.data.success === false) {
+            node.status({ fill: 'yellow', shape: 'dot', text: result.data.error_code })
+          } else {
+            let statusInfo = { text: 'Ok', color: 'green' }
+
+            // Use service methods to interpret different response types
+            if (config.api_type === 'users' && result.data) {
+              statusInfo = apiService.interpretUsersStatus(result.data, config.users)
+            } else if (config.installations === 'stats' && result.data) {
+              statusInfo = apiService.interpretStatsStatus(result.data)
+            } else if (config.installations === 'dynamic-ess-settings' && result.data) {
+              statusInfo = apiService.interpretDynamicEssStatus(result.data)
             }
+
+            node.status({ fill: statusInfo.color, shape: 'dot', text: statusInfo.text })
+          }
+
+          node.lastValidUpdate = currentTime
+          node.send(msg)
+        } else {
+          // Handle API errors
+          if (result.data && result.data.errors) {
+            node.status({ fill: 'red', shape: 'dot', text: result.data.errors })
+          } else {
+            node.status({ fill: 'red', shape: 'dot', text: result.error || 'Error fetching VRM data' })
+          }
+
+          // Send error response
+          msg.payload = result
+          node.send(msg)
+        }
+
+        // Verbose logging
+        if (config.verbose === true) {
+          node.warn({
+            url: result.url,
+            method: result.method,
+            status: result.status
           })
-          break
-        case 'post':
-          axios.post(url, msg.payload, { headers }).then(function (response) {
-            if (response.status === 200) {
-              msg.payload = response.data
-              msg.payload.options = options
-
-              if (msg.payload.success === false) {
-                node.status({ fill: 'yellow', shape: 'dot', text: msg.payload.error_code })
-              } else {
-                node.status({ fill: 'green', shape: 'dot', text: 'Ok' })
-              }
-            } else {
-              node.status({ fill: 'yellow', shape: 'dot', text: response.status })
-            }
-
-            if (config.store_in_global_context === true) {
-              const globalContext = node.context().global
-              globalContext.set(msg.topic.split(' ').join('.'), response.data)
-            }
-
-            node.send(msg)
-          }).catch(function (error) {
-            if (error.response && error.response.data && error.response.data.errors) {
-              node.status({ fill: 'red', shape: 'dot', text: error.response.data.errors })
-            } else {
-              node.status({ fill: 'red', shape: 'dot', text: 'Error fetching VRM data' })
-            }
-
-            if (error.response) {
-              node.send({ payload: error.response })
-            }
-          })
-          break
-        default: // get
-          axios.get(url, { params: options, headers }).then(function (response) {
-            if (response.status === 200) {
-              let text = 'Ok'
-              msg.payload = response.data
-              if (installations !== 'gps-download') {
-                msg.payload.options = options
-              }
-
-              // Check for users/me response to show user name and ID
-              if (config.api_type === 'users' && config.users === 'me' && response.data.user) {
-                const user = response.data.user
-                const userName = user.name || user.email || 'Unknown User'
-                text = `${userName} (${user.id})`
-              } else if (response.data.totals) {
-                const key = Object.keys(response.data.totals)[0]
-                const isNumber = value => !isNaN(value) && typeof value === 'number'
-                const formatNumber = value => isNumber(value) ? value.toFixed(1) : value
-                text = `${key.replace(/_/g, ' ')}: ${formatNumber(response.data.totals[key])}`
-              }
-              node.status({ fill: 'green', shape: 'dot', text })
-            } else {
-              node.status({ fill: 'yellow', shape: 'dot', text: response.status })
-            }
-
-            if (config.store_in_global_context === true) {
-              const globalContext = node.context().global
-              globalContext.set(msg.topic.split(' ').join('.'), response.data)
-            }
-
-            node.lastValidUpdate = currentTime
-
-            node.send(msg)
-          }).catch(function (error) {
-            if (error.response && error.response.data && error.response.data.errors) {
-              node.status({ fill: 'red', shape: 'dot', text: error.response.data.errors })
-            } else {
-              node.status({ fill: 'red', shape: 'dot', text: 'Error fetching VRM data' })
-            }
-            if (error.response) {
-              node.send({ payload: error.response })
-            }
-          })
+        }
+      } catch (error) {
+        node.status({ fill: 'red', shape: 'dot', text: 'Unexpected error' })
+        debug('Unexpected error:', error)
+        msg.payload = { error: error.message }
+        node.send(msg)
       }
     })
 
     node.on('close', function () {
+      // Cleanup if needed
     })
+  }
 
-    if (config.verbose === true) {
-      curlirize(axios)
+  /**
+   * Resolve site ID from config, handling context variables
+   */
+  async function resolveSiteId (configSiteId, msg, node) {
+    // Check if it's a context variable like {{flow.siteId}}
+    const match = configSiteId.match(/^\{\{(node|flow|global)\.(.+)\}\}$/)
+    if (match) {
+      const contextType = match[1]
+      const contextKey = match[2]
+      const context = node.context()[contextType]
+      const resolvedId = context.get(contextKey)
+
+      if (resolvedId !== undefined) {
+        return resolvedId.toString()
+      } else {
+        node.status({ fill: 'red', shape: 'ring', text: `Unable to retrieve ${configSiteId} from context` })
+        return null
+      }
     }
+
+    // Use direct ID from config or message
+    return (msg.siteId || configSiteId).toString()
+  }
+
+  /**
+   * Build parameters for stats endpoint
+   */
+  function buildStatsParameters (config) {
+    const parameters = {}
+
+    if (config.attribute !== 'dynamic_ess') {
+      parameters.type = 'custom'
+      parameters['attributeCodes[]'] = config.attribute
+
+      if (config.stats_interval) {
+        parameters.interval = config.stats_interval
+      }
+
+      if (config.show_instance === true) {
+        parameters.show_instance = 1
+      }
+    } else {
+      parameters.type = config.attribute
+    }
+
+    if (config.attribute === 'evcs') {
+      delete parameters['attributeCodes[]']
+      parameters.type = 'evcs'
+    }
+
+    // Handle time parameters (simplified version - you may want to keep the full logic)
+    const now = new Date()
+    const nowTs = Math.floor(now.getTime() / 1000)
+
+    // Helper function to floor to hour
+    const floorToHour = (ts) => {
+      if (ts === undefined || ts === null) return ts
+      return ts - (ts % 3600)
+    }
+
+    const getStartOfDay = (date) => {
+      const start = new Date(date)
+      if (config.use_utc) {
+        start.setUTCHours(0, 0, 0, 0)
+      } else {
+        start.setHours(0, 0, 0, 0)
+      }
+      return Math.floor(start.getTime() / 1000)
+    }
+
+    // Set start time
+    if (config.stats_start && !isNaN(parseInt(config.stats_start))) {
+      parameters.start = floorToHour(parseInt(config.stats_start))
+    } else {
+      parameters.start = getStartOfDay(now)
+    }
+
+    // Set end time
+    if (config.stats_end && !isNaN(parseInt(config.stats_end))) {
+      parameters.end = floorToHour(parseInt(config.stats_end))
+    } else {
+      parameters.end = floorToHour(nowTs)
+    }
+
+    return parameters
   }
 
   RED.nodes.registerType('vrm-api', VRMAPI)

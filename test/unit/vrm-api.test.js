@@ -1,178 +1,428 @@
-// test/unit/vrm-api.test.js
-const helper = require('node-red-node-test-helper')
-const configNode = require('../../src/nodes/config-vrm-api.js')
-const vrmApiNode = require('../../src/nodes/vrm-api.js')
+// test/unit/vrm-api-service.test.js
+const VRMAPIService = require('../../src/services/vrm-api-service')
 
 // Mock axios to avoid actual HTTP calls in unit tests
 jest.mock('axios')
 const axios = require('axios')
 
-// Initialize test helper
-helper.init(require.resolve('node-red'))
+describe('VRMAPIService Unit Tests', () => {
+  let service
 
-describe('vrm-api Node', () => {
-  beforeEach((done) => {
-    helper.startServer(done)
-  })
-
-  afterEach((done) => {
-    helper.unload()
-    helper.stopServer(done)
+  beforeEach(() => {
+    service = new VRMAPIService('test_token_64_characters_long_abcdef0123456789abcdef012345')
     jest.clearAllMocks()
   })
 
-  it('should be loaded with correct defaults', (done) => {
-    const flow = [
-      {
-        id: 'config1',
-        type: 'config-vrm-api',
-        name: 'Test Config'
-      },
-      {
-        id: 'vrm1',
-        type: 'vrm-api',
-        name: 'Test VRM API',
-        vrm: 'config1',
-        api_type: 'users',
-        users: 'me'
-      }
-    ]
+  describe('Constructor and Configuration', () => {
+    it('should initialize with correct defaults', () => {
+      expect(service.apiToken).toBe('test_token_64_characters_long_abcdef0123456789abcdef012345')
+      expect(service.baseUrl).toBe('https://vrmapi.victronenergy.com/v2')
+      expect(service.dynamicEssUrl).toBe('https://vrm-dynamic-ess-api.victronenergy.com')
+    })
 
-    const credentials = {
-      config1: {
-        token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-      }
-    }
+    it('should accept custom options', () => {
+      const customService = new VRMAPIService('token', {
+        baseUrl: 'https://custom-api.example.com',
+        dynamicEssUrl: 'https://custom-dess.example.com',
+        userAgent: 'custom-agent/1.0'
+      })
 
-    helper.load([configNode, vrmApiNode], flow, credentials, () => {
-      const vrmNode = helper.getNode('vrm1')
-      const configNodeInstance = helper.getNode('config1')
-      
-      // Verify nodes were created
-      expect(vrmNode).toBeDefined()
-      expect(vrmNode.name).toBe('Test VRM API')
-      expect(vrmNode.type).toBe('vrm-api')
-      
-      // Verify config node is linked
-      expect(configNodeInstance).toBeDefined()
-      
-      done()
+      expect(customService.baseUrl).toBe('https://custom-api.example.com')
+      expect(customService.dynamicEssUrl).toBe('https://custom-dess.example.com')
+      expect(customService.userAgent).toBe('custom-agent/1.0')
     })
   })
 
-  it('should construct correct API URL for users/me endpoint', (done) => {
-    const flow = [
-      {
-        id: 'config1',
-        type: 'config-vrm-api',
-        name: 'Test Config'
-      },
-      {
-        id: 'vrm1',
-        type: 'vrm-api',
-        name: 'Test VRM API',
-        vrm: 'config1',
-        api_type: 'users',
-        users: 'me',
-        wires: [['helper1']]
-      },
-      {
-        id: 'helper1',
-        type: 'helper'
-      }
-    ]
+  describe('Header Building', () => {
+    it('should build correct headers', () => {
+      const headers = service._buildHeaders()
 
-    const credentials = {
-      config1: {
-        token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-      }
-    }
-
-    // Mock axios get method
-    axios.get = jest.fn().mockResolvedValue({
-      data: { user: { id: 123, email: 'test@example.com' } }
+      expect(headers).toEqual({
+        'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
+        accept: 'application/json',
+        'User-Agent': expect.stringMatching(/nrc-vrm-api\/\d+\.\d+\.\d+/)
+      })
     })
 
-    helper.load([configNode, vrmApiNode], flow, credentials, () => {
-      const vrmNode = helper.getNode('vrm1')
-      const helperNode = helper.getNode('helper1')
+    it('should merge additional headers', () => {
+      const headers = service._buildHeaders({
+        'Custom-Header': 'custom-value',
+        'User-Agent': 'override-agent'
+      })
 
-      // Listen for output
-      helperNode.on('input', (msg) => {
-        // Verify axios was called with correct parameters
-        expect(axios.get).toHaveBeenCalledWith(
-          'https://vrmapi.victronenergy.com/v2/users/me',
-          expect.objectContaining({
-            headers: expect.objectContaining({
-              'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
-              'accept': 'application/json',
-              'User-Agent': expect.stringMatching(/^nrc-vrm-api\//)
-            })
+      expect(headers).toEqual({
+        'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
+        accept: 'application/json',
+        'User-Agent': 'override-agent',
+        'Custom-Header': 'custom-value'
+      })
+    })
+  })
+
+  describe('User Data Extraction', () => {
+    it('should extract user data correctly from VRM API response', () => {
+      const apiResponse = {
+        success: true,
+        user: {
+          id: 322456,
+          name: 'Dirk-Jan',
+          email: 'dfaber@gmail.com',
+          country: 'Netherlands',
+          idAccessToken: 1234,
+          accessLevel: 1
+        }
+      }
+
+      const extracted = service.extractUserData(apiResponse)
+
+      expect(extracted.id).toBe(322456)
+      expect(extracted.email).toBe('dfaber@gmail.com')
+      expect(extracted.name).toBe('Dirk-Jan')
+      expect(extracted.country).toBe('Netherlands')
+      expect(extracted.accessLevel).toBe(1)
+      expect(extracted.idAccessToken).toBe(1234)
+      expect(extracted.raw).toBe(apiResponse)
+    })
+
+    it('should handle missing user data gracefully', () => {
+      const testCases = [
+        null,
+        undefined,
+        {},
+        { success: true },
+        { user: null }
+      ]
+
+      testCases.forEach(apiResponse => {
+        const extracted = service.extractUserData(apiResponse)
+        expect(extracted).toBeNull()
+      })
+    })
+  })
+
+  describe('Users Status Interpretation', () => {
+    it('should interpret users/me response correctly', () => {
+      const responseData = {
+        success: true,
+        user: {
+          id: 354816,
+          name: 'Dirk-Jan RO',
+          email: 'd.faber+ro@gmail.com',
+          country: 'Netherlands',
+          idAccessToken: 787676,
+          accessLevel: 1
+        }
+      }
+
+      const result = service.interpretUsersStatus(responseData, 'me')
+
+      expect(result.text).toBe('Dirk-Jan RO (ID: 354816)')
+      expect(result.color).toBe('green')
+      expect(result.userId).toBe(354816)
+      expect(result.userName).toBe('Dirk-Jan RO')
+      expect(result.userEmail).toBe('d.faber+ro@gmail.com')
+      expect(result.userCountry).toBe('Netherlands')
+      expect(result.accessLevel).toBe(1)
+      expect(result.raw).toBe(responseData)
+    })
+
+    it('should interpret users/installations response correctly', () => {
+      const responseData = {
+        success: true,
+        records: [
+          { idSite: 123, name: 'Installation 1' },
+          { idSite: 456, name: 'Installation 2' },
+          { idSite: 789, name: 'Installation 3' }
+        ]
+      }
+
+      const result = service.interpretUsersStatus(responseData, 'installations')
+
+      expect(result.text).toBe('3 installations')
+      expect(result.color).toBe('green')
+      expect(result.installationCount).toBe(3)
+      expect(result.raw).toBe(responseData)
+    })
+
+    it('should handle single installation correctly', () => {
+      const responseData = {
+        success: true,
+        records: [
+          { idSite: 123, name: 'Installation 1' }
+        ]
+      }
+
+      const result = service.interpretUsersStatus(responseData, 'installations')
+
+      expect(result.text).toBe('1 installation')
+      expect(result.installationCount).toBe(1)
+    })
+
+    it('should handle empty installations list', () => {
+      const responseData = {
+        success: true,
+        records: []
+      }
+
+      const result = service.interpretUsersStatus(responseData, 'installations')
+
+      expect(result.text).toBe('0 installations')
+      expect(result.installationCount).toBe(0)
+    })
+
+    it('should handle missing user data gracefully', () => {
+      const testCases = [
+        null,
+        undefined,
+        {},
+        { success: true },
+        { user: null }
+      ]
+
+      testCases.forEach(responseData => {
+        const result = service.interpretUsersStatus(responseData, 'me')
+        expect(result.text).toBe('No user data found')
+        expect(result.color).toBe('orange')
+        expect(result.raw).toBe(responseData)
+      })
+    })
+
+    it('should provide default status for unknown endpoints', () => {
+      const responseData = { success: true, someData: 'value' }
+      const result = service.interpretUsersStatus(responseData, 'unknown-endpoint')
+
+      expect(result.text).toBe('Users data received')
+      expect(result.color).toBe('green')
+      expect(result.raw).toBe(responseData)
+    })
+  })
+
+  describe('Dynamic ESS Status Interpretation', () => {
+    it('should interpret all valid mode combinations correctly', () => {
+      const testCases = [
+        { mode: 0, operatingMode: 0, expectedText: 'Off - Trade mode', expectedColor: 'blue' },
+        { mode: 0, operatingMode: 1, expectedText: 'Off - Green mode', expectedColor: 'blue' },
+        { mode: 1, operatingMode: 0, expectedText: 'Auto - Trade mode', expectedColor: 'green' },
+        { mode: 1, operatingMode: 1, expectedText: 'Auto - Green mode', expectedColor: 'green' },
+        { mode: 2, operatingMode: 0, expectedText: 'Buy (deprecated) - Trade mode', expectedColor: 'green' },
+        { mode: 3, operatingMode: 1, expectedText: 'Sell (deprecated) - Green mode', expectedColor: 'green' },
+        { mode: 4, operatingMode: 0, expectedText: 'Local - Trade mode', expectedColor: 'green' }
+      ]
+
+      testCases.forEach(({ mode, operatingMode, expectedText, expectedColor }) => {
+        const responseData = { data: { mode, operatingMode } }
+        const result = service.interpretDynamicEssStatus(responseData)
+
+        expect(result.text).toBe(expectedText)
+        expect(result.color).toBe(expectedColor)
+        expect(result.mode).toBe(mode)
+        expect(result.operatingMode).toBe(operatingMode)
+        expect(result.raw).toBe(responseData)
+      })
+    })
+
+    it('should handle unknown mode values gracefully', () => {
+      const responseData = { data: { mode: 99, operatingMode: 99 } }
+      const result = service.interpretDynamicEssStatus(responseData)
+
+      expect(result.text).toBe('Unknown - Unknown mode')
+      expect(result.color).toBe('green') // Unknown modes default to green
+      expect(result.mode).toBe(99)
+      expect(result.operatingMode).toBe(99)
+    })
+
+    it('should handle missing data gracefully', () => {
+      const testCases = [
+        null,
+        undefined,
+        {},
+        { data: null },
+        { data: {} },
+        { data: { mode: 1 } }, // missing operatingMode
+        { data: { operatingMode: 0 } } // missing mode
+      ]
+
+      testCases.forEach(responseData => {
+        const result = service.interpretDynamicEssStatus(responseData)
+
+        expect(result.text).toBe('No data')
+        expect(result.color).toBe('orange')
+        expect(result.mode).toBeNull()
+        expect(result.operatingMode).toBeNull()
+        expect(result.raw).toBe(responseData)
+      })
+    })
+
+    it('should provide detailed mode information', () => {
+      const responseData = { data: { mode: 1, operatingMode: 1 } }
+      const result = service.interpretDynamicEssStatus(responseData)
+
+      expect(result.modeName).toBe('Auto')
+      expect(result.operatingModeName).toBe('Green')
+    })
+  })
+
+  describe('Stats Status Interpretation', () => {
+    it('should interpret stats with totals correctly', () => {
+      const responseData = {
+        totals: {
+          consumption: 15.7,
+          solar_yield: 23.4
+        }
+      }
+
+      const result = service.interpretStatsStatus(responseData)
+
+      expect(result.text).toBe('consumption: 15.7')
+      expect(result.color).toBe('green')
+      expect(result.key).toBe('consumption')
+      expect(result.value).toBe(15.7)
+      expect(result.formattedValue).toBe('15.7')
+      expect(result.totals).toBe(responseData.totals)
+    })
+
+    it('should format non-numeric values correctly', () => {
+      const responseData = {
+        totals: {
+          status: 'online'
+        }
+      }
+
+      const result = service.interpretStatsStatus(responseData)
+
+      expect(result.text).toBe('status: online')
+      expect(result.formattedValue).toBe('online')
+    })
+
+    it('should replace underscores in key names', () => {
+      const responseData = {
+        totals: {
+          battery_soc: 85.2
+        }
+      }
+
+      const result = service.interpretStatsStatus(responseData)
+
+      expect(result.text).toBe('battery soc: 85.2')
+    })
+
+    it('should handle missing totals gracefully', () => {
+      const testCases = [
+        null,
+        undefined,
+        {},
+        { totals: null },
+        { totals: {} }
+      ]
+
+      testCases.forEach(responseData => {
+        const result = service.interpretStatsStatus(responseData)
+
+        if (!responseData || !responseData.totals) {
+          expect(result.text).toBe('No stats data')
+          expect(result.color).toBe('orange')
+          expect(result.totals).toBeNull()
+        } else {
+          expect(result.text).toBe('No totals')
+          expect(result.color).toBe('yellow')
+          expect(result.totals).toEqual({})
+        }
+      })
+    })
+  })
+
+  describe('API Call Methods', () => {
+    beforeEach(() => {
+      axios.get = jest.fn()
+      axios.post = jest.fn()
+      axios.patch = jest.fn()
+    })
+
+    it('should call installations API with correct URL', async () => {
+      const mockResponse = { status: 200, data: { success: true } }
+      axios.get.mockResolvedValue(mockResponse)
+
+      await service.callInstallationsAPI('123456', 'basic', 'GET')
+
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://vrmapi.victronenergy.com/v2/installations/123456/basic',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345'
           })
-        )
-        
-        done()
-      })
-
-      // Wait a bit to let rate limiting pass, then send message
-      setTimeout(() => {
-        vrmNode.receive({ payload: 'trigger' })
-      }, 6000)
-    })
-  }, 10000) // Increase timeout for this test
-
-  it('should handle custom query via msg properties', (done) => {
-    const flow = [
-      {
-        id: 'config1',
-        type: 'config-vrm-api',
-        name: 'Test Config'
-      },
-      {
-        id: 'vrm1',
-        type: 'vrm-api',
-        name: 'Test VRM API',
-        vrm: 'config1',
-        wires: [['helper1']]
-      },
-      {
-        id: 'helper1',
-        type: 'helper'
-      }
-    ]
-
-    const credentials = {
-      config1: {
-        token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-      }
-    }
-
-    // Mock axios get method
-    axios.get = jest.fn().mockResolvedValue({
-      data: { custom: 'response' }
+        })
+      )
     })
 
-    helper.load([configNode, vrmApiNode], flow, credentials, () => {
-      const vrmNode = helper.getNode('vrm1')
-      const helperNode = helper.getNode('helper1')
+    it('should call users API with correct URL and response structure', async () => {
+      const mockResponse = { status: 200, data: { user: { id: 123, email: 'test@example.com' } } }
+      axios.get.mockResolvedValue(mockResponse)
 
-      helperNode.on('input', (msg) => {
-        // Verify custom URL was used
-        expect(axios.get).toHaveBeenCalledWith(
-          'https://vrmapi.victronenergy.com/v2/custom/endpoint',
-          expect.any(Object)
-        )
-        
-        expect(msg.topic).toBe('custom')
-        done()
-      })
+      const result = await service.callUsersAPI('me')
 
-      // Send message with custom query
-      vrmNode.receive({
-        payload: 'trigger',
-        query: 'custom/endpoint',
-        method: 'GET'
-      })
+      expect(axios.get).toHaveBeenCalledWith(
+        'https://vrmapi.victronenergy.com/v2/users/me',
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345'
+          })
+        })
+      )
+
+      // Verify the response structure matches actual VRM API
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveProperty('user')
+      expect(result.data.user).toHaveProperty('id')
+      expect(result.data.user).toHaveProperty('email')
+    })
+
+    it('should transform endpoint names correctly', async () => {
+      const mockResponse = { status: 200, data: { success: true } }
+      axios.post.mockResolvedValue(mockResponse)
+
+      await service.callInstallationsAPI('123456', 'post-alarms', 'GET')
+
+      expect(axios.post).toHaveBeenCalledWith(
+        'https://vrmapi.victronenergy.com/v2/installations/123456/alarms',
+        null,
+        expect.any(Object)
+      )
+    })
+
+    it('should handle stats parameters correctly', async () => {
+      const mockResponse = { status: 200, data: { success: true } }
+      axios.get.mockResolvedValue(mockResponse)
+
+      const options = {
+        parameters: {
+          type: 'custom',
+          'attributeCodes[]': ['consumption', 'solar_yield'],
+          interval: 'hours'
+        }
+      }
+
+      await service.callInstallationsAPI('123456', 'stats', 'GET', null, options)
+
+      const expectedUrl = 'https://vrmapi.victronenergy.com/v2/installations/123456/stats?type=custom&attributeCodes%5B%5D=consumption&attributeCodes%5B%5D=solar_yield&interval=hours'
+      expect(axios.get).toHaveBeenCalledWith(expectedUrl, expect.any(Object))
+    })
+
+    it('should handle API errors gracefully', async () => {
+      const mockError = {
+        response: {
+          status: 404,
+          data: { error: 'Not found' }
+        },
+        message: 'Request failed'
+      }
+      axios.get.mockRejectedValue(mockError)
+
+      const result = await service.callInstallationsAPI('999999', 'basic', 'GET')
+
+      expect(result.success).toBe(false)
+      expect(result.status).toBe(404)
+      expect(result.data).toEqual({ error: 'Not found' })
+      expect(result.error).toBe('Request failed')
     })
   })
 })

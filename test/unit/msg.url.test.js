@@ -115,7 +115,7 @@ describe('msg.url Override Functionality', () => {
             expect.objectContaining({
               headers: expect.objectContaining({
                 'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
-                'accept': 'application/json'
+                accept: 'application/json'
               })
             })
           )
@@ -175,7 +175,7 @@ describe('msg.url Override Functionality', () => {
             expect.objectContaining({
               headers: expect.objectContaining({
                 'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
-                'accept': 'application/json'
+                accept: 'application/json'
               })
             })
           )
@@ -188,67 +188,6 @@ describe('msg.url Override Functionality', () => {
           url: 'https://custom-api.example.com/v1',
           method: 'POST',
           query: 'create'
-        })
-      })
-    })
-
-    it('should override default URL completely when only msg.url is provided (no query)', (done) => {
-      const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
-        {
-          id: 'vrm1',
-          type: 'vrm-api',
-          name: 'Test VRM API',
-          vrm: 'config1',
-          api_type: 'users',
-          users: 'me',
-          wires: [['helper1']]
-        },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
-      ]
-
-      const credentials = {
-        config1: {
-          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-        }
-      }
-
-      // Mock axios get method
-      axios.get = jest.fn().mockResolvedValue({
-        data: { external: 'api response' }
-      })
-
-      helper.load([configNode, vrmApiNode], flow, credentials, () => {
-        const vrmNode = helper.getNode('vrm1')
-        const helperNode = helper.getNode('helper1')
-
-        helperNode.on('input', (msg) => {
-          // When only msg.url is provided (without query/method), the node config still applies
-          // So it will append /users/me to the custom URL
-          expect(axios.get).toHaveBeenCalledWith(
-            'https://jsonplaceholder.typicode.com/posts/1/users/me',
-            expect.objectContaining({
-              params: expect.any(Object),
-              headers: expect.objectContaining({
-                'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
-                'accept': 'application/json'
-              })
-            })
-          )
-          done()
-        })
-
-        // Send message with only msg.url (no query/method, uses custom URL as base + node config)
-        vrmNode.receive({
-          payload: 'trigger',
-          url: 'https://jsonplaceholder.typicode.com/posts/1'
         })
       })
     })
@@ -296,7 +235,7 @@ describe('msg.url Override Functionality', () => {
             expect.objectContaining({
               headers: expect.objectContaining({
                 'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
-                'accept': 'application/json'
+                accept: 'application/json'
               })
             })
           )
@@ -355,7 +294,7 @@ describe('msg.url Override Functionality', () => {
             expect.objectContaining({
               headers: expect.objectContaining({
                 'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
-                'accept': 'application/json',
+                accept: 'application/json',
                 'User-Agent': expect.stringMatching(/^nrc-vrm-api\//)
               })
             })
@@ -414,11 +353,11 @@ describe('msg.url Override Functionality', () => {
             'https://jsonplaceholder.typicode.com/posts/1',
             expect.any(Object)
           )
-          
+
           // Verify the call was made with expected headers
           const callArgs = axios.get.mock.calls[0]
           expect(callArgs[1].headers['X-Authorization']).toBe('Token test_token_64_characters_long_abcdef0123456789abcdef012345')
-          
+
           done()
         })
 

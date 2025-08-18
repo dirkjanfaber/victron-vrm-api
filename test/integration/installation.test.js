@@ -58,10 +58,10 @@ describe('VRM API Integration - Installations Endpoint', () => {
 
       expect(process.env.VRM_API_TOKEN).toBeDefined()
       expect(process.env.VRM_API_TOKEN).toMatch(/^[a-f0-9]{64}$/) // 64 char hex string
-      
+
       expect(process.env.VRM_TEST_SITE_ID).toBeDefined()
       expect(process.env.VRM_TEST_SITE_ID).toMatch(/^\d+$/) // Numeric
-      
+
       expect(process.env.VRM_TEST_USER_ID).toBeDefined()
       expect(process.env.VRM_TEST_USER_ID).toMatch(/^\d+$/) // Numeric
     })
@@ -109,11 +109,11 @@ describe('VRM API Integration - Installations Endpoint', () => {
         helperNode.on('input', (msg) => {
           try {
             console.log('📋', logPayload(msg.payload, 'Installation basic response'))
-            
+
             // Verify response exists
             expect(msg.payload).toBeDefined()
             expect(typeof msg.payload).toBe('object')
-            
+
             // Check if this is an error response (axios error)
             if (msg.payload.status && msg.payload.status >= 400) {
               console.log(`❌ API returned error status: ${msg.payload.status}`)
@@ -122,25 +122,25 @@ describe('VRM API Integration - Installations Endpoint', () => {
               done()
               return
             }
-            
+
             // VRM API response structure - the payload is the direct axios response.data
             // Check for common VRM API response patterns
-            const hasValidResponse = 
+            const hasValidResponse =
               msg.payload.success === true ||
               msg.payload.records !== undefined ||
               msg.payload.record !== undefined ||
               msg.payload.data !== undefined ||
               Object.keys(msg.payload).length > 0
-            
+
             expect(hasValidResponse).toBe(true)
-            
+
             // Verify topic is set correctly
             expect(msg.topic).toBe('installations basic')
-            
+
             console.log('✅ Installations basic integration test passed')
             console.log(`   Response keys: ${Object.keys(msg.payload).join(', ')}`)
             console.log(`   Topic: ${msg.topic}`)
-            
+
             done()
           } catch (error) {
             done(error)
@@ -200,24 +200,24 @@ describe('VRM API Integration - Installations Endpoint', () => {
         helperNode.on('input', (msg) => {
           try {
             console.log('📋', logPayload(msg.payload, 'Error test response'))
-            
+
             expect(msg.payload).toBeDefined()
-            
+
             // Should receive an error response or empty result
-            const isErrorResponse = 
+            const isErrorResponse =
               msg.payload.success === false ||
               msg.payload.error !== undefined ||
               msg.payload.status >= 400 ||
               (msg.payload.data && msg.payload.data.status >= 400) ||
               Object.keys(msg.payload).length === 0
-            
+
             if (isErrorResponse) {
               console.log('✅ Error handling test passed - API correctly handled invalid site ID')
             } else {
               // Sometimes APIs might return some default data, which is also acceptable
               console.log('✅ Error handling test passed - API handled invalid site ID gracefully')
             }
-            
+
             done()
           } catch (error) {
             // Error in processing is also acceptable for this test
@@ -280,28 +280,28 @@ describe('VRM API Integration - Installations Endpoint', () => {
         helperNode.on('input', (msg) => {
           try {
             console.log('📊 Stats response keys:', Object.keys(msg.payload))
-            
+
             // Check if this is an error response
             if (msg.payload.status && msg.payload.status >= 400) {
               console.log(`❌ Stats API returned error status: ${msg.payload.status}`)
               done()
               return
             }
-            
+
             // Verify response structure
             expect(msg.payload).toBeDefined()
             expect(typeof msg.payload).toBe('object')
-            
+
             // Should have some data
             const hasData = Object.keys(msg.payload).length > 0
             expect(hasData).toBe(true)
-            
+
             // Verify topic includes stats
             expect(msg.topic).toContain('stats')
-            
+
             console.log('✅ Installations stats integration test passed')
             console.log(`   Topic: ${msg.topic}`)
-            
+
             done()
           } catch (error) {
             done(error)
@@ -363,22 +363,22 @@ describe('VRM API Integration - Installations Endpoint', () => {
         helperNode.on('input', (msg) => {
           try {
             console.log('🔒', logPayload(msg.payload, 'Auth error response'))
-            
+
             expect(msg.payload).toBeDefined()
-            
+
             // Should receive an error response (axios error responses are sent to output)
-            const isAuthError = 
+            const isAuthError =
               msg.payload.status >= 400 ||
               (msg.payload.data && msg.payload.data.status >= 400) ||
               msg.payload.success === false ||
               msg.payload.error !== undefined
-            
+
             if (isAuthError) {
               console.log('✅ Invalid token test passed - API correctly rejected invalid token')
             } else {
               console.log('⚠️  Unexpected: API did not reject invalid token, but test will pass anyway')
             }
-            
+
             done()
           } catch (error) {
             // Error handling is also acceptable
