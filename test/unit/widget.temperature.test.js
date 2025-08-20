@@ -303,6 +303,60 @@ describe('Temperature Widget Tests', () => {
       expect(result.temperatureValue).toBeNull()
       expect(result.raw).toBe(dataResponse)
     })
+
+    it('should show warning for invalid temperature data', () => {
+      const invalidDataResponse = {
+        success: true,
+        records: {
+          data: {
+            450: {
+              code: 'tsT',
+              value: '57.8',
+              dataAttributeName: 'Temperature',
+              formattedValue: '57.80 °C',
+              instance: 20,
+              isValid: 0, // Invalid data
+              hasOldData: false
+            }
+          }
+        }
+      }
+
+      const result = service.interpretWidgetsStatus(invalidDataResponse, 'TempSummaryAndGraph', 20)
+
+      expect(result.text).toBe('Invalid data')
+      expect(result.color).toBe('yellow')
+      expect(result.hasData).toBe(true)
+      expect(result.hasValidData).toBe(false)
+      expect(result.raw).toBe(invalidDataResponse)
+    })
+
+    it('should show warning for stale temperature data', () => {
+      const staleDataResponse = {
+        success: true,
+        records: {
+          data: {
+            450: {
+              code: 'tsT',
+              value: '22.5',
+              dataAttributeName: 'Temperature',
+              formattedValue: '22.5 °C',
+              instance: 20,
+              isValid: 1,
+              hasOldData: true // Stale data
+            }
+          }
+        }
+      }
+
+      const result = service.interpretWidgetsStatus(staleDataResponse, 'TempSummaryAndGraph', 20)
+
+      expect(result.text).toBe('Stale data - check sensor')
+      expect(result.color).toBe('yellow')
+      expect(result.hasData).toBe(true)
+      expect(result.hasValidData).toBe(false)
+      expect(result.raw).toBe(staleDataResponse)
+    })
   })
 
   describe('Node-RED Integration - Temperature Widget', () => {
@@ -665,6 +719,84 @@ describe('Temperature Widget Tests', () => {
               expect(nodeStatus.text).toBe('Temperature (inst. 20): 22.4°C')
               done()
             }, 10) // Small delay to ensure status is set
+          } catch (error) {
+            done(error)
+          }
+        })
+
+        vrmNode.receive({ payload: 'trigger' })
+      })
+    })
+
+    it('should show yellow status for invalid temperature data', (done) => {
+      const flow = [
+        {
+          id: 'config1',
+          type: 'config-vrm-api',
+          name: 'Test Config'
+        },
+        {
+          id: 'vrm1',
+          type: 'vrm-api',
+          name: 'Test Invalid Temperature',
+          vrm: 'config1',
+          api_type: 'widgets',
+          widgets: 'TempSummaryAndGraph',
+          idSite: '123456',
+          instance: '20',
+          wires: [['helper1']]
+        },
+        {
+          id: 'helper1',
+          type: 'helper'
+        }
+      ]
+
+      const credentials = {
+        config1: {
+          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
+        }
+      }
+
+      const mockInvalidResponse = {
+        status: 200,
+        data: {
+          success: true,
+          records: {
+            data: {
+              450: {
+                code: 'tsT',
+                value: '57.8',
+                dataAttributeName: 'Temperature',
+                formattedValue: '57.80 °C',
+                instance: 20,
+                isValid: 0, // Invalid data
+                hasOldData: false
+              }
+            }
+          }
+        }
+      }
+
+      axios.get = jest.fn().mockResolvedValue(mockInvalidResponse)
+
+      helper.load([configNode, vrmApiNode], flow, credentials, () => {
+        const vrmNode = helper.getNode('vrm1')
+        const helperNode = helper.getNode('helper1')
+
+        helperNode.on('input', (msg) => {
+          try {
+            expect(msg.payload.success).toBe(true)
+
+            // Check node status shows warning for invalid data
+            setTimeout(() => {
+              const nodeStatus = vrmNode.status.lastCall ? vrmNode.status.lastCall.args[0] : null
+              expect(nodeStatus).toBeTruthy()
+              expect(nodeStatus.fill).toBe('yellow')
+              expect(nodeStatus.shape).toBe('dot')
+              expect(nodeStatus.text).toBe('Invalid data')
+              done()
+            }, 10)
           } catch (error) {
             done(error)
           }

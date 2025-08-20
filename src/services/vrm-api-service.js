@@ -522,17 +522,46 @@ class VRMAPIService {
       }
 
       if (targetData && targetData.formattedValue) {
+      // Check data validity first - applies to all widgets
+        if (targetData.isValid === 0) {
+          return {
+            text: 'Invalid data',
+            color: 'yellow',
+            hasData: true,
+            hasValidData: false,
+            instance,
+            raw: responseData
+          }
+        }
+
+        if (targetData.hasOldData === true) {
+          return {
+            text: 'Stale data - check sensor',
+            color: 'yellow',
+            hasData: true,
+            hasValidData: false,
+            instance,
+            raw: responseData
+          }
+        }
+
+        // Data is valid - format display text based on widget type
         let displayText = targetData.formattedValue
 
         // Add instance info if configured for this widget type
         if (config.includeInstanceInText && instance) {
-          displayText = `Temperature (inst. ${instance}): ${targetData.formattedValue}`
+          if (widgetType === 'TempSummaryAndGraph') {
+            displayText = `Temperature (inst. ${instance}): ${targetData.formattedValue}`
+          } else {
+            displayText = `${config.fallbackText} (inst. ${instance}): ${targetData.formattedValue}`
+          }
         }
 
         const result = {
           text: displayText,
           color: 'green',
           hasData: true,
+          hasValidData: true,
           instance,
           raw: responseData
         }
