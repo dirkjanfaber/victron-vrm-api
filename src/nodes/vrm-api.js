@@ -58,7 +58,7 @@ module.exports = function (RED) {
 
               // Handle stats endpoint with parameters
               const options = {}
-              if (config.installations === 'stats') {
+              if (config.installations === 'stats' || config.installations === 'fetch-dynamic-ess-schedules') {
                 options.parameters = buildStatsParameters(config)
               }
 
@@ -74,29 +74,6 @@ module.exports = function (RED) {
               result = await apiService.callWidgetsAPI(widgetSiteId, config.widgets, config.instance)
               msg.topic = `widgets ${config.widgets}`
 
-              break
-            }
-
-            case 'dynamic-ess': {
-              const dessOptions = {
-                vrm_id: config.vrm_id,
-                b_max: config.b_max,
-                tb_max: config.tb_max,
-                fb_max: config.fb_max,
-                tg_max: config.tg_max,
-                fg_max: config.fg_max,
-                b_cycle_cost: config.b_cycle_cost,
-                buy_price_formula: config.buy_price_formula,
-                sell_price_formula: config.sell_price_formula,
-                green_mode_on: config.green_mode_on,
-                feed_in_possible: config.feed_in_possible,
-                feed_in_control_on: config.feed_in_control_on,
-                country: config.country,
-                b_goal_hour: config.b_goal_hour,
-                b_goal_SOC: config.b_goal_SOC
-              }
-              result = await apiService.callDynamicEssAPI(dessOptions)
-              msg.topic = 'dynamic-ess'
               break
             }
 

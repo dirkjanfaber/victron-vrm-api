@@ -42,12 +42,16 @@ class VRMAPIService {
     if (endpoint === 'post-alarms') {
       actualEndpoint = 'alarms'
       actualMethod = 'post'
-    } else if (endpoint === 'post-dynamic-ess-settings') {
-      actualEndpoint = 'dynamic-ess-settings'
-      actualMethod = 'post'
     } else if (endpoint === 'patch-dynamic-ess-settings') {
       actualEndpoint = 'dynamic-ess-settings'
       actualMethod = 'patch'
+    } else if (endpoint === 'fetch-dynamic-ess-schedules') {
+      actualEndpoint = 'stats'
+      actualMethod = 'get'
+      options.parameters.type = 'dynamic_ess'
+      delete (options.parameters.start)
+      delete (options.parameters.end)
+      delete (options.parameters['attributeCodes[]'])
     }
 
     url += `/${actualEndpoint}`
@@ -200,61 +204,6 @@ class VRMAPIService {
         error: error.message,
         url,
         method: 'get'
-      }
-    }
-  }
-
-  /**
-   * Handle Dynamic ESS API calls (different base URL)
-   */
-  async callDynamicEssAPI (options = {}) {
-    const url = this.dynamicEssUrl
-
-    // Convert all options to strings as per original node logic
-    const payload = {
-      vrm_id: (options.vrm_id || '').toString(),
-      b_max: (options.b_max || '').toString(),
-      tb_max: (options.tb_max || '').toString(),
-      fb_max: (options.fb_max || '').toString(),
-      tg_max: (options.tg_max || '').toString(),
-      fg_max: (options.fg_max || '').toString(),
-      b_cycle_cost: (options.b_cycle_cost || '').toString(),
-      buy_price_formula: (options.buy_price_formula || '').toString(),
-      sell_price_formula: (options.sell_price_formula || '').toString(),
-      green_mode_on: (options.green_mode_on || false).toString(),
-      feed_in_possible: (options.feed_in_possible || false).toString(),
-      feed_in_control_on: (options.feed_in_control_on || false).toString(),
-      country: (options.country || '').toUpperCase(),
-      b_goal_hour: (options.b_goal_hour || '').toString(),
-      b_goal_SOC: (options.b_goal_SOC || '').toString()
-    }
-
-    const headers = this._buildHeaders({
-      'User-Agent': 'dynamic-ess/0.1.20'
-    })
-
-    debug(`POST ${url}`, payload)
-
-    try {
-      const response = await axios.post(url, payload, { headers })
-      debug(`Response ${response.status}:`, response.data)
-
-      return {
-        success: true,
-        status: response.status,
-        data: response.data,
-        url,
-        method: 'post'
-      }
-    } catch (error) {
-      debug('API Error:', error.response?.status, error.response?.data)
-      return {
-        success: false,
-        status: error.response?.status,
-        data: error.response?.data,
-        error: error.message,
-        url,
-        method: 'post'
       }
     }
   }
