@@ -58,7 +58,7 @@
             gps_start: {value: '', required: false },
             gps_end: {value: '', required: false },
 
-            stats_interval_dess: {value: ""},
+            stats_interval: {value: ""},
 
             // widgets
             // taking idSite from installations
@@ -169,11 +169,10 @@
         </div>
         <div id="input-fetch-dynamic-ess-schedules" style="display:none;">
             <div class="form-row">
-                <label for="node-input-stats_interval"><i class="fa fa-barcode"></i> Interval</label>
-                <select id="node-input-stats_interval">
-                    <option value="15mins">15 minutes</option>
-                    <option selected="selected" value="hours">hours</option>
-                </select>
+                <p style="margin-left: 102px; color: #666; font-style: italic;">
+                    The API returns the Dynamic ESS schedules based on the interval which is set in the contract part of Dynamic ESS on VRM and stored for the system.
+                    If that is set to 15 minute interval, the API will return 96 entries per day. If set to 1 hour interval, the API will return 24 entries per day.
+                </p>
             </div>
         </div>
         <div id="input-stats">
@@ -201,8 +200,8 @@
                 </select>
             </div>    
             <div class="form-row">
-                <label for="node-input-stats_interval_dess"><i class="fa fa-barcode"></i> Interval</label>
-                <select id="node-input-stats_interval_dess">
+                <label for="node-input-stats_interval"><i class="fa fa-barcode"></i> Interval</label>
+                <select id="node-input-stats_interval">
                     <option value="15mins">15 minutes</option>
                     <option selected="selected" value="hours">hours</option>
                     <option value="2hours">2 hours</option>
