@@ -228,9 +228,9 @@ module.exports = function (RED) {
 
     // Set end time
     if (config.stats_end && !isNaN(parseInt(config.stats_end))) {
-      parameters.end = floorToHour(parseInt(config.stats_end))
+      parameters.end = parseInt(config.stats_end)
     } else {
-      parameters.end = floorToHour(nowTs)
+      parameters.end = nowTs
     }
 
     return parameters
