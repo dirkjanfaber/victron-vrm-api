@@ -1,17 +1,6 @@
 // test/unit/build-stats-parameters.test.js
 
-// Mock Node-RED environment
-const mockRED = {
-  nodes: {
-    createNode: jest.fn(),
-    getNode: jest.fn(),
-    registerType: jest.fn()
-  }
-}
-
-// Load the module with mocked RED
-const vrmApiModule = require('../../src/nodes/vrm-api')(mockRED)
-const { buildStatsParameters } = require('../../src/nodes/vrm-api')
+const { buildStatsParameters } = require('../../src/utils/stats-parameters')
 
 describe('buildStatsParameters', () => {
   // Helper to create a fixed date for consistent testing

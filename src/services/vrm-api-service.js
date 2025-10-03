@@ -3,6 +3,7 @@
 const axios = require('axios')
 const debug = require('debug')('victron-vrm-api:service')
 const path = require('path')
+const { buildStatsParameters } = require('../utils/stats-parameters')
 
 // Get package version for User-Agent
 const packageJson = require(path.join(__dirname, '../../', 'package.json'))
@@ -48,10 +49,17 @@ class VRMAPIService {
     } else if (endpoint === 'fetch-dynamic-ess-schedules') {
       actualEndpoint = 'stats'
       actualMethod = 'get'
-      options.parameters.type = 'dynamic_ess'
-      delete (options.parameters.start)
-      delete (options.parameters.end)
-      delete (options.parameters['attributeCodes[]'])
+
+      // Create a config object for buildStatsParameters
+      const statsConfig = {
+        attribute: 'dynamic_ess',
+        stats_start: 'bod', // beginning of day
+        stats_end: 'eot', // end of tomorrow - Dynamic ESS schedules typically span current day + next day
+        use_utc: options.parameters?.use_utc || false
+      }
+
+      // Use buildStatsParameters to properly handle time calculations
+      options.parameters = buildStatsParameters(statsConfig)
     }
 
     url += `/${actualEndpoint}`

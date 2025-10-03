@@ -170,9 +170,9 @@
         <div id="input-fetch-dynamic-ess-schedules" style="display:none;">
             <div class="form-row">
                 <p style="margin-left: 102px; color: #666; font-style: italic;">
-                    The API returns the Dynamic ESS schedules based on the interval which is set in the contract part of Dynamic ESS on VRM and stored for the system.
-                    If that is set to 15 minute interval, the API will return 96 entries per day. If set to 1 hour interval, the API will return 24 entries per day.
-                </p>
+                    The API always returns buckets of 15 minute intervals. If you have hourly prices configured for your site, the buckets will contain the same price for 4 records in a row.
+                The records returned will contain data from the beginning of today until the end of tomorrow (if the prices are in, else until the end of today).
+                            </p>
             </div>
         </div>
         <div id="input-stats">
