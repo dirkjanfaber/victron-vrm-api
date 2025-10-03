@@ -10,15 +10,16 @@ function buildStatsParameters (config) {
     parameters.type = 'custom'
     parameters['attributeCodes[]'] = config.attribute
 
-    if (config.stats_interval) {
-      parameters.interval = config.stats_interval
-    }
-
     if (config.show_instance === true) {
       parameters.show_instance = 1
     }
   } else {
     parameters.type = config.attribute
+  }
+
+  // Add interval for all types (including dynamic_ess)
+  if (config.stats_interval || config.interval) {
+    parameters.interval = config.stats_interval || config.interval
   }
 
   if (config.attribute === 'evcs') {

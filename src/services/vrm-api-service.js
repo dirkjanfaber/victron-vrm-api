@@ -53,9 +53,10 @@ class VRMAPIService {
       // Create a config object for buildStatsParameters
       const statsConfig = {
         attribute: 'dynamic_ess',
+        interval: '15mins', // Always query for 15 minute buckets
         stats_start: 'bod', // beginning of day
         stats_end: 'eot', // end of tomorrow - Dynamic ESS schedules typically span current day + next day
-        use_utc: options.parameters?.use_utc || false
+        use_utc: true
       }
 
       // Use buildStatsParameters to properly handle time calculations
