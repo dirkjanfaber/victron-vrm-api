@@ -71,10 +71,12 @@ function buildStatsParameters (config) {
   if (config.stats_end) {      // interpret 'eod', 'eoy', and 'eot'
     if (config.stats_end === 'eod') {
       const endOfDay = new Date(now)
+      // Set to start of next day (24:00:00 = 00:00:00 + 1 day) for API preference
+      endOfDay.setDate(endOfDay.getDate() + 1)
       if (config.use_utc) {
-        endOfDay.setUTCHours(23, 59, 59, 999)
+        endOfDay.setUTCHours(0, 0, 0, 0)
       } else {
-        endOfDay.setHours(23, 59, 59, 999)
+        endOfDay.setHours(0, 0, 0, 0)
       }
       parameters.end = Math.floor(endOfDay.getTime() / 1000)
     } else if (config.stats_end === 'eoy') {

@@ -189,8 +189,8 @@ describe('buildStatsParameters', () => {
 
       const result = buildStatsParameters(config)
       
-      // Should be end of October 15, 2023 (local time)
-      const expectedEnd = Math.floor(new Date('2023-10-15T23:59:59.999').getTime() / 1000)
+      // Should be start of October 16, 2023 (local time) - 00:00:00 of next day
+      const expectedEnd = Math.floor(new Date('2023-10-16T00:00:00.000').getTime() / 1000)
       expect(result.end).toBe(expectedEnd)
     })
 
@@ -203,8 +203,8 @@ describe('buildStatsParameters', () => {
 
       const result = buildStatsParameters(config)
       
-      // Should be end of October 15, 2023 UTC
-      const expectedEnd = Math.floor(new Date('2023-10-15T23:59:59.999Z').getTime() / 1000)
+      // Should be start of October 16, 2023 UTC - 00:00:00 of next day
+      const expectedEnd = Math.floor(new Date('2023-10-16T00:00:00.000Z').getTime() / 1000)
       expect(result.end).toBe(expectedEnd)
     })
 
@@ -266,7 +266,7 @@ describe('buildStatsParameters', () => {
         interval: 'hours',
         show_instance: 1,
         start: Math.floor(new Date('2023-10-15T00:00:00.000Z').getTime() / 1000),
-        end: Math.floor(new Date('2023-10-15T23:59:59.999Z').getTime() / 1000)
+        end: Math.floor(new Date('2023-10-16T00:00:00.000Z').getTime() / 1000)
       })
     })
 
