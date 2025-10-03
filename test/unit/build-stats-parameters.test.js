@@ -1,0 +1,371 @@
+// test/unit/build-stats-parameters.test.js
+
+// Mock Node-RED environment
+const mockRED = {
+  nodes: {
+    createNode: jest.fn(),
+    getNode: jest.fn(),
+    registerType: jest.fn()
+  }
+}
+
+// Load the module with mocked RED
+const vrmApiModule = require('../../src/nodes/vrm-api')(mockRED)
+const { buildStatsParameters } = require('../../src/nodes/vrm-api')
+
+describe('buildStatsParameters', () => {
+  // Helper to create a fixed date for consistent testing
+  const fixedDate = new Date('2023-10-15T14:30:00.000Z') // Sunday, October 15, 2023, 14:30 UTC
+  let originalDate
+
+  beforeAll(() => {
+    // Mock Date to return consistent results
+    originalDate = Date
+    global.Date = class extends Date {
+      constructor(...args) {
+        if (args.length === 0) {
+          return new originalDate(fixedDate)
+        }
+        return new originalDate(...args)
+      }
+      
+      static now() {
+        return fixedDate.getTime()
+      }
+    }
+  })
+
+  afterAll(() => {
+    global.Date = originalDate
+  })
+
+  describe('Basic parameter building', () => {
+    it('should build parameters for custom attribute', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_interval: 'hours'
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result).toEqual({
+        type: 'custom',
+        'attributeCodes[]': 'Dc/0/Power',
+        interval: 'hours'
+      })
+    })
+
+    it('should build parameters for dynamic_ess attribute', () => {
+      const config = {
+        attribute: 'dynamic_ess'
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result).toEqual({
+        type: 'dynamic_ess'
+      })
+    })
+
+    it('should build parameters for evcs attribute', () => {
+      const config = {
+        attribute: 'evcs'
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result).toEqual({
+        type: 'evcs'
+      })
+    })
+
+    it('should include show_instance when enabled', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        show_instance: true
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result).toEqual({
+        type: 'custom',
+        'attributeCodes[]': 'Dc/0/Power',
+        show_instance: 1
+      })
+    })
+  })
+
+  describe('Start time parameter handling', () => {
+    const nowTs = Math.floor(fixedDate.getTime() / 1000) // 1697380200
+
+    it('should handle "now" start time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: 'now'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should floor to hour: 1697380200 - (1697380200 % 3600) = 1697378400
+      expect(result.start).toBe(1697378400)
+    })
+
+    it('should handle "bod" (beginning of day) start time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: 'bod'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be start of October 15, 2023 (local time)
+      const expectedStart = Math.floor(new Date('2023-10-15T00:00:00.000').getTime() / 1000)
+      expect(result.start).toBe(expectedStart)
+    })
+
+    it('should handle "bod" with UTC enabled', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: 'bod',
+        use_utc: true
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be start of October 15, 2023 UTC
+      const expectedStart = Math.floor(new Date('2023-10-15T00:00:00.000Z').getTime() / 1000)
+      expect(result.start).toBe(expectedStart)
+    })
+
+    it('should handle "boy" (beginning of yesterday) start time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: 'boy'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be start of October 14, 2023 (local time)
+      const expectedStart = Math.floor(new Date('2023-10-14T00:00:00.000').getTime() / 1000)
+      expect(result.start).toBe(expectedStart)
+    })
+
+    it('should handle "bot" (beginning of tomorrow) start time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: 'bot'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be start of October 16, 2023 (local time)
+      const expectedStart = Math.floor(new Date('2023-10-16T00:00:00.000').getTime() / 1000)
+      expect(result.start).toBe(expectedStart)
+    })
+
+    it('should handle numeric offset for start time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: '3600' // 1 hour ago
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be now - 3600 seconds, floored to hour
+      const expectedStart = nowTs - 3600  // 1697380200 - 3600 = 1697376600
+      const flooredStart = expectedStart - (expectedStart % 3600)  // 1697376600 - 0 = 1697376600
+      expect(result.start).toBe(flooredStart)
+    })
+
+    it('should not set start time for invalid values', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: 'invalid'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      expect(result.start).toBeUndefined()
+    })
+  })
+
+  describe('End time parameter handling', () => {
+    const nowTs = Math.floor(fixedDate.getTime() / 1000) // 1697380200
+
+    it('should handle "eod" (end of day) end time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_end: 'eod'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be end of October 15, 2023 (local time)
+      const expectedEnd = Math.floor(new Date('2023-10-15T23:59:59.999').getTime() / 1000)
+      expect(result.end).toBe(expectedEnd)
+    })
+
+    it('should handle "eod" with UTC enabled', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_end: 'eod',
+        use_utc: true
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be end of October 15, 2023 UTC
+      const expectedEnd = Math.floor(new Date('2023-10-15T23:59:59.999Z').getTime() / 1000)
+      expect(result.end).toBe(expectedEnd)
+    })
+
+    it('should handle "eoy" (end of year) end time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_end: 'eoy'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be end of 2023
+      const expectedEnd = Math.floor(new Date(2023, 11, 31, 23, 59, 59, 999).getTime() / 1000)
+      expect(result.end).toBe(expectedEnd)
+    })
+
+    it('should handle numeric offset for end time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_end: '7200' // 2 hours ago
+      }
+
+      const result = buildStatsParameters(config)
+      
+      // Should be now - 7200 seconds, floored to hour
+      const expectedEnd = nowTs - 7200
+      const flooredEnd = expectedEnd - (expectedEnd % 3600)
+      expect(result.end).toBe(flooredEnd)
+    })
+
+    it('should not set end time for invalid values', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_end: 'invalid'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      expect(result.end).toBeUndefined()
+    })
+  })
+
+  describe('Complex configuration scenarios', () => {
+    it('should handle full configuration with all parameters', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_interval: 'hours',
+        show_instance: true,
+        stats_start: 'bod',
+        stats_end: 'eod',
+        use_utc: true
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result).toEqual({
+        type: 'custom',
+        'attributeCodes[]': 'Dc/0/Power',
+        interval: 'hours',
+        show_instance: 1,
+        start: Math.floor(new Date('2023-10-15T00:00:00.000Z').getTime() / 1000),
+        end: Math.floor(new Date('2023-10-15T23:59:59.999Z').getTime() / 1000)
+      })
+    })
+
+    it('should handle dynamic_ess with time parameters', () => {
+      const config = {
+        attribute: 'dynamic_ess',
+        stats_start: 'now',
+        stats_end: 'eod'
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result.type).toBe('dynamic_ess')
+      expect(result['attributeCodes[]']).toBeUndefined()
+      expect(result.start).toBeDefined()
+      expect(result.end).toBeDefined()
+    })
+
+    it('should handle evcs with time parameters', () => {
+      const config = {
+        attribute: 'evcs',
+        stats_start: 'boy',
+        stats_end: 'now'
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result.type).toBe('evcs')
+      expect(result['attributeCodes[]']).toBeUndefined()
+      expect(result.start).toBeDefined()
+      expect(result.end).toBeUndefined() // 'now' is not a valid end time option
+    })
+  })
+
+  describe('Edge cases', () => {
+    it('should handle empty config', () => {
+      const config = {}
+
+      const result = buildStatsParameters(config)
+
+      expect(result).toEqual({
+        type: 'custom',
+        'attributeCodes[]': undefined
+      })
+    })
+
+    it('should handle config with only time parameters', () => {
+      const config = {
+        stats_start: 'bod',
+        stats_end: 'eod'
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result.type).toBe('custom')
+      expect(result.start).toBeDefined()
+      expect(result.end).toBeDefined()
+    })
+
+    it('should handle zero numeric offset', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: '0',
+        stats_end: '0'
+      }
+
+      const result = buildStatsParameters(config)
+      
+      const nowTs = Math.floor(fixedDate.getTime() / 1000)
+      const flooredNow = nowTs - (nowTs % 3600)
+      
+      expect(result.start).toBe(flooredNow)
+      expect(result.end).toBe(flooredNow)
+    })
+
+    it('should handle negative numeric offset', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: '-3600' // This would be future time
+      }
+
+      const result = buildStatsParameters(config)
+      
+      const nowTs = Math.floor(fixedDate.getTime() / 1000)
+      const expectedStart = nowTs - (-3600) // now + 3600
+      const flooredStart = expectedStart - (expectedStart % 3600)
+      
+      expect(result.start).toBe(flooredStart)
+    })
+  })
+})

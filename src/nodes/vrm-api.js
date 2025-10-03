@@ -220,21 +220,52 @@ module.exports = function (RED) {
     }
 
     // Set start time
-    if (config.stats_start && !isNaN(parseInt(config.stats_start))) {
-      parameters.start = floorToHour(parseInt(config.stats_start))
-    } else {
-      parameters.start = getStartOfDay(now)
+    if (config.stats_start) {      // interpret 'now', 'boy' 'bod' and 'bot'
+      if (config.stats_start === 'now') {
+        parameters.start = floorToHour(nowTs)
+      } else if (config.stats_start === 'boy' ) {
+        const yesterday = new Date(now)
+        yesterday.setDate(yesterday.getDate() - 1)
+        parameters.start = getStartOfDay(yesterday)
+      } else if (config.stats_start === 'bod') {
+        parameters.start = getStartOfDay(now)
+      } else if (config.stats_start === 'bot') {
+        const tomorrow = new Date(now)
+        tomorrow.setDate(tomorrow.getDate() + 1)
+        parameters.start = getStartOfDay(tomorrow)
+      } else if (!isNaN(parseInt(config.stats_start))) {
+        // the value is an offset in seconds from now
+        parameters.start = floorToHour(nowTs - parseInt(config.stats_start))
+      }
     }
 
     // Set end time
-    if (config.stats_end && !isNaN(parseInt(config.stats_end))) {
-      parameters.end = floorToHour(parseInt(config.stats_end))
-    } else {
-      parameters.end = floorToHour(nowTs)
+    if (config.stats_end) {      // interpret 'eod' and 'eoy'
+      if (config.stats_end === 'eod') {
+        const endOfDay = new Date(now)
+        if (config.use_utc) {
+          endOfDay.setUTCHours(23, 59, 59, 999)
+        } else {
+          endOfDay.setHours(23, 59, 59, 999)
+        }
+        parameters.end = Math.floor(endOfDay.getTime() / 1000)
+      } else if (config.stats_end === 'eoy') {
+        const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
+        parameters.end = Math.floor(endOfYear.getTime() / 1000)
+      } else if (!isNaN(parseInt(config.stats_end))) {
+        // the value is an offset in seconds from now
+        parameters.end = floorToHour(nowTs - parseInt(config.stats_end))
+      }
     }
+
 
     return parameters
   }
 
   RED.nodes.registerType('vrm-api', VRMAPI)
+
+  // Export for testing
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports.buildStatsParameters = buildStatsParameters
+  }
 }
