@@ -94,7 +94,7 @@ function buildStatsParameters (config) {
       parameters.end = Math.floor(endOfTomorrow.getTime() / 1000)
     } else if (!isNaN(parseInt(config.stats_end))) {
       // the value is an offset in seconds from now
-      parameters.end = floorToHour(nowTs - parseInt(config.stats_end))
+      parameters.end = floorToHour(nowTs + parseInt(config.stats_end))
     }
   }
 
