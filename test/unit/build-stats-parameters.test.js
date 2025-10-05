@@ -229,8 +229,8 @@ describe('buildStatsParameters', () => {
 
       const result = buildStatsParameters(config)
       
-      // Should be now - 7200 seconds, floored to hour
-      const expectedEnd = nowTs - 7200
+      // Should be now + 7200 seconds, floored to hour
+      const expectedEnd = nowTs + 7200
       const flooredEnd = expectedEnd - (expectedEnd % 3600)
       expect(result.end).toBe(flooredEnd)
     })
