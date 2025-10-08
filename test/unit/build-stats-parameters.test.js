@@ -208,7 +208,7 @@ describe('buildStatsParameters', () => {
       expect(result.end).toBe(expectedEnd)
     })
 
-    it('should handle "eoy" (end of year) end time', () => {
+    it('should handle "eoy" (end of yesterday) end time', () => {
       const config = {
         attribute: 'Dc/0/Power',
         stats_end: 'eoy'
@@ -216,8 +216,57 @@ describe('buildStatsParameters', () => {
 
       const result = buildStatsParameters(config)
       
-      // Should be end of 2023
-      const expectedEnd = Math.floor(new Date(2023, 11, 31, 23, 59, 59, 999).getTime() / 1000)
+      const endOfYesterday = new Date(fixedDate)
+      endOfYesterday.setDate(endOfYesterday.getDate() - 1)
+      endOfYesterday.setHours(23, 59, 59, 999)
+      const expectedEnd = Math.floor(endOfYesterday.getTime() / 1000)
+      expect(result.end).toBe(expectedEnd)
+    })
+
+    it('should handle "eoy" end time with UTC enabled', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_end: 'eoy',
+        use_utc: true
+      }
+
+      const result = buildStatsParameters(config)
+
+      const endOfYesterday = new Date(fixedDate)
+      endOfYesterday.setDate(endOfYesterday.getDate() - 1)
+      endOfYesterday.setUTCHours(23, 59, 59, 999)
+      const expectedEnd = Math.floor(endOfYesterday.getTime() / 1000)
+      expect(result.end).toBe(expectedEnd)
+    })
+
+    it('should handle "eoyr" (end of year) end time', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_end: 'eoyr'
+      }
+
+      const result = buildStatsParameters(config)
+
+      const endOfYear = new Date(fixedDate)
+      endOfYear.setFullYear(endOfYear.getFullYear(), 11, 31)
+      endOfYear.setHours(23, 59, 59, 999)
+      const expectedEnd = Math.floor(endOfYear.getTime() / 1000)
+      expect(result.end).toBe(expectedEnd)
+    })
+
+    it('should handle "eoyr" end time with UTC enabled', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_end: 'eoyr',
+        use_utc: true
+      }
+
+      const result = buildStatsParameters(config)
+
+      const endOfYear = new Date(fixedDate)
+      endOfYear.setUTCFullYear(endOfYear.getUTCFullYear(), 11, 31)
+      endOfYear.setUTCHours(23, 59, 59, 999)
+      const expectedEnd = Math.floor(endOfYear.getTime() / 1000)
       expect(result.end).toBe(expectedEnd)
     })
 
