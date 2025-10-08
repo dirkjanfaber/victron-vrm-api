@@ -68,7 +68,7 @@ function buildStatsParameters (config) {
   }
 
   // Set end time
-  if (config.stats_end) {      // interpret 'eod', 'eoy', and 'eot'
+  if (config.stats_end) {      // interpret 'eod', 'eoy', 'eot', and 'eoyr'
     if (config.stats_end === 'eod') {
       const endOfDay = new Date(now)
       // Set to start of next day (24:00:00 = 00:00:00 + 1 day) for API preference
@@ -80,8 +80,14 @@ function buildStatsParameters (config) {
       }
       parameters.end = Math.floor(endOfDay.getTime() / 1000)
     } else if (config.stats_end === 'eoy') {
-      const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
-      parameters.end = Math.floor(endOfYear.getTime() / 1000)
+      const endOfYesterday = new Date(now)
+      endOfYesterday.setDate(endOfYesterday.getDate() - 1)
+      if (config.use_utc) {
+        endOfYesterday.setUTCHours(23, 59, 59, 999)
+      } else {
+        endOfYesterday.setHours(23, 59, 59, 999)
+      }
+      parameters.end = Math.floor(endOfYesterday.getTime() / 1000)
     } else if (config.stats_end === 'eot') {
       // End of tomorrow
       const endOfTomorrow = new Date(now)
@@ -92,6 +98,16 @@ function buildStatsParameters (config) {
         endOfTomorrow.setHours(23, 59, 59, 999)
       }
       parameters.end = Math.floor(endOfTomorrow.getTime() / 1000)
+    } else if (config.stats_end === 'eoyr') {
+      const endOfYear = new Date(now)
+      if (config.use_utc) {
+        endOfYear.setUTCFullYear(now.getUTCFullYear(), 11, 31)
+        endOfYear.setUTCHours(23, 59, 59, 999)
+      } else {
+        endOfYear.setFullYear(now.getFullYear(), 11, 31)
+        endOfYear.setHours(23, 59, 59, 999)
+      }
+      parameters.end = Math.floor(endOfYear.getTime() / 1000)
     } else if (!isNaN(parseInt(config.stats_end))) {
       // the value is an offset in seconds from now
       parameters.end = floorToHour(nowTs + parseInt(config.stats_end))
