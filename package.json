@@ -1,6 +1,6 @@
 {
   "name": "victron-vrm-api",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "description": "Interface with the Victron Energy VRM API",
   "main": "index.js",
   "scripts": {
