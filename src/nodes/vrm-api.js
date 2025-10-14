@@ -63,7 +63,7 @@ module.exports = function (RED) {
                 options.parameters = buildStatsParameters(config)
               }
 
-              result = await apiService.callInstallationsAPI(siteId, config.installations, 'GET', null, options)
+              result = await apiService.callInstallationsAPI(siteId, config.installations, 'GET', msg.payload, options)
               msg.topic = `installations ${config.installations}`
               break
             }

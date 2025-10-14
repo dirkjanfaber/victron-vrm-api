@@ -425,4 +425,67 @@ describe('VRMAPIService Unit Tests', () => {
       expect(result.error).toBe('Request failed')
     })
   })
+
+  it('should pass payload for post-alarms endpoint', async () => {
+    const mockResponse = { status: 200, data: { success: true, id: 123 } }
+    axios.post.mockResolvedValue(mockResponse)
+
+    const alarmPayload = {
+      AlarmEnabled: 1,
+      NotifyAfterSeconds: 60,
+      highAlarm: 30,
+      highAlarmHysteresis: 2,
+      idDataAttribute: 450,
+      instance: 41,
+      lowAlarm: -10,
+      lowAlarmHysteresis: 1.5
+    }
+
+    const result = await service.callInstallationsAPI('123456', 'post-alarms', 'POST', alarmPayload)
+
+    expect(axios.post).toHaveBeenCalledWith(
+      'https://vrmapi.victronenergy.com/v2/installations/123456/alarms',
+      alarmPayload,
+      expect.any(Object)
+    )
+    expect(result.success).toBe(true)
+    expect(result.method).toBe('post')
+  })
+
+  it('should pass payload for patch-dynamic-ess-settings endpoint', async () => {
+    const mockResponse = {
+      status: 200,
+      data: {
+        success: true,
+        data: { isGreenModeOn: false }
+      }
+    }
+    axios.patch.mockResolvedValue(mockResponse)
+
+    const patchPayload = { isGreenModeOn: false }
+
+    const result = await service.callInstallationsAPI('123456', 'patch-dynamic-ess-settings', 'PATCH', patchPayload)
+
+    expect(axios.patch).toHaveBeenCalledWith(
+    'https://vrmapi.victronenergy.com/v2/installations/123456/dynamic-ess-settings',
+      patchPayload,
+      expect.any(Object)
+    )
+    expect(result.success).toBe(true)
+    expect(result.method).toBe('patch')
+  })
+
+  it('should ignore payload for GET requests', async () => {
+    const mockResponse = { status: 200, data: { success: true } }
+    axios.get.mockResolvedValue(mockResponse)
+
+    // Pass a payload, but it should be ignored for GET
+    await service.callInstallationsAPI('123456', 'basic', 'GET', { ignored: 'data' })
+
+    expect(axios.get).toHaveBeenCalledWith(
+      'https://vrmapi.victronenergy.com/v2/installations/123456/basic',
+      expect.any(Object)
+    )
+    // Axios.get doesn't receive the payload as a parameter
+  })
 })

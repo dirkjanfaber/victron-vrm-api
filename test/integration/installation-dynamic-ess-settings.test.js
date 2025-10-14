@@ -122,4 +122,67 @@ xdescribe('VRM API Integration - Dynamic ESS Settings PATCH Bug Detection', () =
       }
     }, 30000)
   })
+
+  it('should successfully PATCH Dynamic ESS settings with msg.payload', async () => {
+    if (skipIfNoCredentials()) return
+
+    // First, GET current settings to know what to toggle
+    const currentSettings = await apiService.callInstallationsAPI(
+      siteId,
+      'dynamic-ess-settings',
+      'GET'
+    )
+
+    console.log('📊 Current Dynamic ESS settings:')
+    console.log(`   isGreenModeOn: ${currentSettings.data?.data?.isGreenModeOn}`)
+
+    if (!currentSettings.success || !currentSettings.data?.data) {
+      console.log('⚠️  Could not retrieve current settings, skipping PATCH test')
+      return
+    }
+
+    const currentGreenMode = currentSettings.data.data.isGreenModeOn
+
+    // PATCH to toggle the green mode
+    const patchPayload = { isGreenModeOn: !currentGreenMode }
+
+    console.log(`🔧 Attempting to PATCH isGreenModeOn from ${currentGreenMode} to ${!currentGreenMode}`)
+
+    const patchResult = await apiService.callInstallationsAPI(
+      siteId,
+      'patch-dynamic-ess-settings',
+      'PATCH',
+      patchPayload
+    )
+
+    console.log(`   PATCH Status: ${patchResult.status}`)
+    console.log(`   PATCH Success: ${patchResult.success}`)
+
+    if (patchResult.success && patchResult.data?.data) {
+      console.log(`   New isGreenModeOn: ${patchResult.data.data.isGreenModeOn}`)
+
+      // Verify the change was applied
+      expect(patchResult.data.data.isGreenModeOn).toBe(!currentGreenMode)
+    } else {
+      console.log(`   Error: ${patchResult.error}`)
+      console.log(`   Response data:`, patchResult.data)
+    }
+
+    // Important: Patch back to original value to avoid affecting other tests
+    if (patchResult.success) {
+      console.log(`🔄 Restoring original isGreenModeOn value: ${currentGreenMode}`)
+      const restorePayload = { isGreenModeOn: currentGreenMode }
+
+      await apiService.callInstallationsAPI(
+        siteId,
+        'patch-dynamic-ess-settings',
+        'PATCH',
+        restorePayload
+      )
+    }
+
+    // Assert that the PATCH operation succeeded
+    expect(patchResult.success).toBe(true)
+    expect(patchResult.status).toBe(200)
+  }, 30000)
 })
