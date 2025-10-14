@@ -58,12 +58,27 @@ the menu or by pressing _ctrl-i_).
 
 ### Advanced usage
 
-If you have really spefic needs to query the VRM API, which aren't part of the node (yet), you can input a
-payload that contains `msg.query`, `msg.method` and `msg.url`. The node will then use these values to query
-the VRM API.  You can also overrule the `msg.topic` for these queries. Note that you _must_ set the `msg.method`
-when using this feature.
+For advanced use cases where you need to query VRM API endpoints not yet implemented in the node, or even external APIs, you can use the custom query feature by sending specific message properties.
 
-The `msg.url` part is _everything_ after the `https://vrmapi.victronenergy.com/v2/` part.
+#### Requirements
+
+To use the custom query feature, your message must include:
+
+* `msg.method` - The HTTP method (GET, POST, or PATCH)
+* `msg.query` - The API endpoint path
+
+#### Optional properties
+
+* `msg.url` - Custom base URL (defaults to _"https://vrmapi.victronenergy.com/v2"_)
+* `msg.topic` - Custom topic for the response (defaults to _"custom"_)
+* `msg.payload` - Request body (for POST and PATCH methods)
+
+#### How URL Construction Works
+
+The final URL is constructed as follows:
+```javascript
+finalURL = (msg.url || 'https://vrmapi.victronenergy.com/v2') + '/' + msg.query
+```
 
 ## References
 
