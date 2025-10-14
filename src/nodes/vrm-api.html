@@ -19,7 +19,15 @@
             'stats', 'gps-download'
         ].map( x => { $('#input-'+x).hide() })
         const selected = $('select#node-input-installations').val()
-        if (selected === 'stats') { $('#input-stats').show() }
+        if (selected === 'stats') {
+            $('#input-stats-dynamic-ess-warning').hide()
+            $('#input-stats').show()
+
+            const selectedAttribute = $('select#node-input-attribute').val()
+            if (selectedAttribute === 'dynamic_ess') {
+                $('#input-stats-dynamic-ess-warning').show()
+            }
+        }
         if (selected === 'gps-download' ) { $('#input-gps-download').show()}
         if (selected === 'fetch-dynamic-ess-schedules' ) { $('#input-fetch-dynamic-ess-schedules').show() }
     }
@@ -101,6 +109,12 @@
         oneditprepare: function oneditprepare() {
             checkSelectedAPIType()
 
+            const $dynamicEssOption = $('#node-input-attribute option[value="dynamic_ess"]')
+            const currentAttribute = this.attribute
+            if (currentAttribute !== 'dynamic_ess') {
+                $dynamicEssOption.remove()
+            }
+
             flatpickr("#node-input-gps_start", {
                 enableTime: true,
                 dateFormat: "Y-m-d H:i"
@@ -177,8 +191,8 @@
         </div>
         <div id="input-stats">
             <div class="form-row">
-                <label for="node-input-attribute"><i class="fa fa-location-pencil"></i> Attribute</label>
-                <select id="node-input-attribute">
+                <label for="node-input-attribute"><i class="fa fa-location-pencil" ></i> Attribute</label>
+                <select id="node-input-attribute" onchange="checkSelectedInstallations()">
                     <option value="Bc">Battery direct use</option>
                     <option value="Bg">Battery to grid</option>
                     <option value="bs">Battery SoC</option>
@@ -197,6 +211,7 @@
                     <option value="solar_yield">Solar Yield</option>
                     <option value="total_solar_yield">Total Solar Yield</option>
                     <option value="solar_yield_forecast">Solar Yield Forecast</option>
+                    <option value="dynamic_ess" style="color: #999; font-style: italic;">Dynamic ESS (deprecated)</option>
                 </select>
             </div>    
             <div class="form-row">
@@ -252,6 +267,24 @@
                 <label style="min-width:390px" for="node-input-show_instance"><i class="fa fa-power"></i> Group attributes by instance?</label>
             </div>
         </div>    
+    </div>
+    <div id="input-stats-dynamic-ess-warning" style="display:none;">
+        <div class="form-row">
+            <div style="margin-left: 12px; padding: 12px; background-color: #fff3cd; border-left: 4px solid #ff9800; border-radius: 4px;">
+                <p style="margin: 0 0 8px 0; color: #856404; font-weight: bold;">
+                    ⚠️ Deprecated Method
+                </p>
+                <p style="margin: 0 0 8px 0; color: #856404;">
+                    Fetching Dynamic ESS schedules via <strong>Installation stats</strong> with <strong>Dynamic ESS</strong> attribute is deprecated.
+                </p>
+                <p style="margin: 0 0 8px 0; color: #856404;">
+                    Please migrate to: <strong>Installations → Fetch Dynamic ESS schedules</strong>
+                </p>
+                <p style="margin: 0; color: #856404; font-size: 0.9em; font-style: italic;">
+                    The new method will be maintained and is the recommended approach going forward.
+                </p>
+            </div>
+        </div>
     </div>
     <div id="input-gps-download">
         <div class="form-row">
