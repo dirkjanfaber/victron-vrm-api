@@ -27,6 +27,15 @@ function buildStatsParameters (config) {
     parameters.type = 'evcs'
   }
 
+  // BACKWARD COMPATIBILITY FIX FOR DEPRECATED dynamic_ess STATS ENDPOINT:
+  // The VRM API behavior changed - the old API ignored the interval parameter and always
+  // returned hourly data. The new API respects the interval parameter.
+  // Users who had '15mins' configured were unknowingly getting hourly data (24 records).
+  // To maintain backward compatibility, force interval to 'hours' for dynamic_ess.
+  if (config.attribute === 'dynamic_ess') {
+    parameters.interval = 'hours'
+  }
+
   // Handle time parameters
   const now = new Date()
   const nowTs = Math.floor(now.getTime() / 1000)

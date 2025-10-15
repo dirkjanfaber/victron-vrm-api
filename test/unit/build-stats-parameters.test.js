@@ -52,6 +52,7 @@ describe('buildStatsParameters', () => {
       const result = buildStatsParameters(config)
 
       expect(result).toEqual({
+        interval: 'hours',
         type: 'dynamic_ess'
       })
     })
