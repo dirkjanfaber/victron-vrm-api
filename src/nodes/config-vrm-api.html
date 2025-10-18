@@ -8,7 +8,8 @@
             },
         },
         defaults: {
-            name: { value: "" }
+            name: { value: "" },
+            forceIpv4: { value: false }
         },
         label: function() {
             return this.name || 'VRM API';
@@ -24,5 +25,12 @@
     <div class="form-row">
         <label for="node-config-input-token"><i class="fa fa-user-secret"></i> VRM token</label>
         <input type="password" id="node-config-input-token" placeholder="VRM token" required>
+    </div>
+    <div class="form-row" style="margin-bottom:0px;">
+        <input type="checkbox" id="node-config-input-forceIpv4" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+        <label style="min-width:390px" for="node-config-input-forceIpv4"> Force IPv4 connections</label>
+        <div style="margin-left: 30px; margin-top: 5px; color: #666; font-size: 0.9em;">
+            Enable this if you experience connection issues. Forces the API client to use IPv4 instead of IPv6.
+        </div>
     </div>
 </script>

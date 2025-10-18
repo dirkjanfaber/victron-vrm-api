@@ -1,6 +1,8 @@
 'use strict'
 
 const axios = require('axios')
+const http = require('http')
+const https = require('https')
 const debug = require('debug')('victron-vrm-api:service')
 const path = require('path')
 const { buildStatsParameters } = require('../utils/stats-parameters')
@@ -17,6 +19,14 @@ class VRMAPIService {
     this.baseUrl = options.baseUrl || 'https://vrmapi.victronenergy.com/v2'
     this.dynamicEssUrl = options.dynamicEssUrl || 'https://vrm-dynamic-ess-api.victronenergy.com'
     this.userAgent = options.userAgent || `nrc-vrm-api/${packageJson.version}`
+    this.forceIpv4 = options.forceIpv4 || false
+
+    // Configure axios to force IPv4 if requested
+    if (this.forceIpv4) {
+      debug('Configuring axios to force IPv4 connections')
+      axios.defaults.httpAgent = new http.Agent({ family: 4 })
+      axios.defaults.httpsAgent = new https.Agent({ family: 4 })
+    }
   }
 
   /**

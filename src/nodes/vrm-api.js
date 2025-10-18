@@ -31,6 +31,12 @@ module.exports = function (RED) {
         return
       }
 
+      // Initialize API service with IPv4 configuration if available
+      const serviceOptions = {}
+      if (this.vrm && this.vrm.forceIpv4) {
+        serviceOptions.forceIpv4 = true
+      }
+
       // Initialize API service
       const apiService = new VRMAPIService(apiToken)
 
