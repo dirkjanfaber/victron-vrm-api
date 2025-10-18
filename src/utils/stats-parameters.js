@@ -32,7 +32,8 @@ function buildStatsParameters (config) {
   // returned hourly data. The new API respects the interval parameter.
   // Users who had '15mins' configured were unknowingly getting hourly data (24 records).
   // To maintain backward compatibility, force interval to 'hours' for dynamic_ess.
-  if (config.attribute === 'dynamic_ess') {
+  // Skip this override if preserveInterval is set (for new fetch-dynamic-ess-schedules endpoint)
+  if (config.attribute === 'dynamic_ess' && !config.preserveInterval) {
     parameters.interval = 'hours'
   }
 

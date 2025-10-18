@@ -66,7 +66,8 @@ class VRMAPIService {
         interval: '15mins', // Always query for 15 minute buckets
         stats_start: 'bod', // beginning of day
         stats_end: 'eot', // end of tomorrow - Dynamic ESS schedules typically span current day + next day
-        use_utc: true
+        use_utc: true,
+        preserveInterval: true // Preserve the specified interval for the new schedules endpoint
       }
 
       // Use buildStatsParameters to properly handle time calculations
