@@ -57,35 +57,39 @@ class VRMAPIService {
       actualEndpoint = 'dynamic-ess-settings'
       actualMethod = 'patch'
     } else if (endpoint === 'fetch-dynamic-ess-schedules') {
-      actualEndpoint = 'stats'
+      // NEW: Use the correct schedule-dynamic-ess endpoint
+      actualEndpoint = 'schedule-dynamic-ess'
       actualMethod = 'get'
-
-      // Create a config object for buildStatsParameters
-      const statsConfig = {
-        attribute: 'dynamic_ess',
-        interval: '15mins', // Always query for 15 minute buckets
-        stats_start: 'bod', // beginning of day
-        stats_end: 'eot', // end of tomorrow - Dynamic ESS schedules typically span current day + next day
-        use_utc: true
-      }
-
-      // Use buildStatsParameters to properly handle time calculations
-      options.parameters = buildStatsParameters(statsConfig)
+      // This endpoint doesn't need the complex stats parameters
+      // It just needs async=0
+      options.parameters = { async: 0 }
     }
 
     url += `/${actualEndpoint}`
 
-    // Add query parameters for stats endpoint
+    // Add query parameters based on endpoint type
+    let queryParams = null
+
     if (actualEndpoint === 'stats' && options.parameters) {
-      const params = new URLSearchParams()
+      // Handle stats endpoint parameters
+      queryParams = new URLSearchParams()
       Object.entries(options.parameters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
-          value.forEach(v => params.append(key, v))
+          value.forEach(v => queryParams.append(key, v))
         } else {
-          params.append(key, value)
+          queryParams.append(key, value)
         }
       })
-      const queryString = params.toString()
+    } else if (actualEndpoint === 'schedule-dynamic-ess' && options.parameters) {
+      // Handle schedule-dynamic-ess endpoint parameters
+      queryParams = new URLSearchParams()
+      Object.entries(options.parameters).forEach(([key, value]) => {
+        queryParams.append(key, value)
+      })
+    }
+
+    if (queryParams) {
+      const queryString = queryParams.toString()
       if (queryString) {
         url += `?${queryString}`
       }
@@ -159,6 +163,8 @@ class VRMAPIService {
       }
     } else if (endpoint === 'me') {
       url += '/me'
+    } else {
+      throw new Error(`Unknown users endpoint: ${endpoint}`)
     }
 
     const headers = this._buildHeaders()
@@ -167,6 +173,7 @@ class VRMAPIService {
 
     try {
       const response = await axios.get(url, { headers })
+
       debug(`Response ${response.status}:`, response.data)
 
       return {
@@ -192,12 +199,8 @@ class VRMAPIService {
   /**
    * Handle widgets API calls
    */
-  async callWidgetsAPI (siteId, widgetType, instance = null) {
-    let url = `${this.baseUrl}/installations/${siteId}/widgets/${widgetType}`
-
-    if (instance) {
-      url += `?instance=${instance}`
-    }
+  async callWidgetsAPI (siteId, widgetType, instance = 0) {
+    const url = `${this.baseUrl}/installations/${siteId}/widgets/${widgetType}?instance=${instance}`
 
     const headers = this._buildHeaders()
 
@@ -205,6 +208,7 @@ class VRMAPIService {
 
     try {
       const response = await axios.get(url, { headers })
+
       debug(`Response ${response.status}:`, response.data)
 
       return {
@@ -228,124 +232,63 @@ class VRMAPIService {
   }
 
   /**
-   * Helper method to extract user data from VRM API response
-   * Handles the nested structure where user data is in response.user
-   */
-  extractUserData (apiResponse) {
-    if (!apiResponse || !apiResponse.user) {
-      return null
-    }
-
-    return {
-      id: apiResponse.user.id,
-      email: apiResponse.user.email,
-      name: apiResponse.user.name,
-      country: apiResponse.user.country,
-      accessLevel: apiResponse.user.accessLevel,
-      idAccessToken: apiResponse.user.idAccessToken,
-      raw: apiResponse
-    }
-  }
-
-  /**
    * Interpret users API response for status display
-   * Returns formatted status information for users data
    */
-  interpretUsersStatus (responseData, endpoint) {
-    if (!responseData) {
+  interpretUsersStatus (data, endpoint) {
+    if (endpoint === 'me' && data && data.user) {
       return {
-        text: 'No user data found',
-        color: 'yellow',
-        raw: responseData
+        text: `User: ${data.user.name || data.user.email}`,
+        color: 'green'
       }
     }
 
-    if (endpoint === 'me') {
-      const user = responseData.user
-
-      if (!user) {
-        return {
-          text: 'No user data found',
-          color: 'yellow',
-          raw: responseData
-        }
-      }
-
-      const text = `${user.name} (ID: ${user.id})`
-
+    if (endpoint === 'installations' && data && data.records) {
       return {
-        text,
-        color: 'green',
-        userId: user.id,
-        userName: user.name,
-        userEmail: user.email,
-        userCountry: user.country,
-        accessLevel: user.accessLevel,
-        raw: responseData
+        text: `${data.records.length} installation${data.records.length !== 1 ? 's' : ''}`,
+        color: 'green'
       }
     }
 
-    if (endpoint === 'installations') {
-      const records = responseData.records
+    return { text: 'Ok', color: 'green' }
+  }
 
-      if (!Array.isArray(records)) {
-        return {
-          text: 'No installations data found',
-          color: 'yellow',
-          raw: responseData
-        }
-      }
-
-      const count = records.length
-      const text = `${count} installation${count === 1 ? '' : 's'}`
-
-      return {
-        text,
-        color: 'green',
-        installationCount: count,
-        raw: responseData
-      }
+  /**
+   * Interpret stats API response for status display
+   */
+  interpretStatsStatus (data) {
+    if (!data || !data.records) {
+      return { text: 'No data', color: 'yellow' }
     }
 
-    // Default for other users endpoints
+    const recordCount = Object.keys(data.records).length
+
+    if (recordCount === 0) {
+      return { text: 'No records', color: 'yellow' }
+    }
+
     return {
-      text: 'Users data received',
-      color: 'green',
-      raw: responseData
+      text: `${recordCount} record${recordCount !== 1 ? 's' : ''}`,
+      color: 'green'
     }
   }
 
   /**
-   * Interpret Dynamic ESS settings response for status display
-   * Returns structured status information that can be used by any consumer
-   *
-   * Dynamic ESS API returns data in this structure:
-   * {
-   *   "success": true,
-   *   "data": {
-   *     "idSite": 102195,
-   *     "isGreenModeOn": true,
-   *     "mode": 1,
-   *     "operatingMode": 1,
-   *     // ... many other fields
-   *   }
-   * }
+   * Interpret dynamic ESS settings response for status display
    */
-  interpretDynamicEssStatus (responseData) {
-    const data = responseData?.data
-
-    const hasValidMode = data?.mode !== undefined && data?.mode !== null
-    const hasValidOperatingMode = data?.operatingMode !== undefined && data?.operatingMode !== null
-
-    if (!hasValidMode || !hasValidOperatingMode) {
+  interpretDynamicEssStatus (data) {
+    if (!data || !data.data) {
       return {
-        text: 'No data',
-        color: 'yellow',
+        text: 'Unknown status',
+        color: 'blue',
         mode: null,
+        modeName: 'Unknown',
         operatingMode: null,
-        raw: responseData
+        operatingModeName: 'Unknown'
       }
     }
+
+    const mode = data.data.mode
+    const operatingMode = data.data.operatingMode
 
     const modeNames = {
       0: 'Off',
@@ -355,259 +298,37 @@ class VRMAPIService {
       4: 'Local'
     }
 
-    const operationModeNames = ['Trade', 'Green']
+    const operatingModeNames = {
+      0: 'Trade',
+      1: 'Green'
+    }
 
-    const currentMode = data.mode
-    const currentOpMode = data.operatingMode
-
-    const text = `${modeNames[currentMode] || 'Unknown'} - ${operationModeNames[currentOpMode] || 'Unknown'} mode`
-    const color = currentMode === 0 ? 'blue' : 'green'
+    const modeName = modeNames[mode] || 'Unknown'
+    const operatingModeName = operatingModeNames[operatingMode] || 'Unknown'
+    const statusText = `${modeName} - ${operatingModeName} mode`
+    const statusColor = mode === 0 ? 'blue' : 'green'
 
     return {
-      text,
-      color,
-      mode: currentMode,
-      operatingMode: currentOpMode,
-      modeName: modeNames[currentMode],
-      operatingModeName: operationModeNames[currentOpMode],
-      isGreenModeOn: data.isGreenModeOn,
-      raw: responseData
+      text: statusText,
+      color: statusColor,
+      mode,
+      modeName,
+      operatingMode,
+      operatingModeName
     }
   }
 
   /**
-   * Interpret stats response for status display
-   * Returns formatted status information for stats data
+   * Interpret widgets API response for status display
    */
-  interpretStatsStatus (responseData) {
-    if (!responseData || !responseData.totals) {
-      return {
-        text: 'No stats data',
-        color: 'yellow',
-        totals: null,
-        raw: responseData
-      }
+  interpretWidgetsStatus (data, widgetType) {
+    if (!data || typeof data !== 'object') {
+      return { text: 'No data', color: 'yellow' }
     }
-
-    const key = Object.keys(responseData.totals)[0]
-    if (!key) {
-      return {
-        text: 'No totals',
-        color: 'yellow',
-        totals: responseData.totals,
-        raw: responseData
-      }
-    }
-
-    const value = responseData.totals[key]
-    const formatNumber = (value) => typeof value === 'number' ? value.toFixed(1) : value
-    const text = `${key.replace(/_/g, ' ')}: ${formatNumber(value)}`
 
     return {
-      text,
-      color: 'green',
-      key,
-      value,
-      formattedValue: formatNumber(value),
-      totals: responseData.totals,
-      raw: responseData
-    }
-  }
-
-  /**
- * Interpret widgets API response for status display
- * Returns formatted status information for widgets data
- */
-  interpretWidgetsStatus (responseData, widgetType, instance) {
-    if (!responseData?.records?.data) {
-      return {
-        text: 'No widget data',
-        color: 'yellow',
-        hasData: false,
-        raw: responseData
-      }
-    }
-
-    const data = responseData.records.data
-
-    // Check if we have actual device data (not just metadata)
-    const hasActualData = Object.keys(data).some(key =>
-      key !== 'hasOldData' && key !== 'secondsAgo' &&
-    typeof data[key] === 'object' &&
-    data[key].value !== undefined
-    )
-
-    if (!hasActualData) {
-      return {
-        text: 'No data - incorrect instance?',
-        color: 'yellow',
-        hasData: false,
-        instance,
-        raw: responseData
-      }
-    }
-
-    // Widget configuration lookup table
-    const widgetConfig = {
-      EvChargerSummary: {
-        lookupKey: '824',
-        lookupCode: 'evs',
-        lookupDataAttribute: 'Status',
-        fallbackText: 'EV Charger',
-        valueProperty: 'evChargerStatus'
-      },
-      TempSummaryAndGraph: {
-        lookupKey: '450',
-        lookupCode: 'tsT',
-        fallbackText: 'Temperature sensor',
-        valueProperty: 'temperatureValue',
-        includeInstanceInText: true // Show instance info for temperature
-      }
-    }
-
-    // Get configuration for this widget type
-    const config = widgetConfig[widgetType]
-
-    if (config) {
-    // Try different lookup strategies in order of preference
-      let targetData = null
-
-      // 1. Try lookup by specific key (e.g., data["450"])
-      if (config.lookupKey && data[config.lookupKey]) {
-        targetData = data[config.lookupKey]
-      }
-
-      // 2. Try lookup by code (e.g., code === 'evs')
-      if (!targetData && config.lookupCode) {
-        targetData = Object.values(data).find(item => item.code === config.lookupCode)
-      }
-
-      // 3. Try lookup by dataAttributeName (e.g., dataAttributeName === 'Status')
-      if (!targetData && config.lookupDataAttribute) {
-        targetData = Object.values(data).find(item =>
-          item.dataAttributeName === config.lookupDataAttribute
-        )
-      }
-
-      if (targetData && targetData.formattedValue) {
-      // Check data validity first - applies to all widgets
-        if (targetData.isValid === 0) {
-          return {
-            text: 'Invalid data',
-            color: 'yellow',
-            hasData: true,
-            hasValidData: false,
-            instance,
-            raw: responseData
-          }
-        }
-
-        if (targetData.hasOldData === true) {
-          return {
-            text: 'Stale data - check sensor',
-            color: 'yellow',
-            hasData: true,
-            hasValidData: false,
-            instance,
-            raw: responseData
-          }
-        }
-
-        // Data is valid - format display text based on widget type
-        let displayText = targetData.formattedValue
-
-        // Add instance info if configured for this widget type
-        if (config.includeInstanceInText && instance) {
-          if (widgetType === 'TempSummaryAndGraph') {
-            displayText = `Temperature (inst. ${instance}): ${targetData.formattedValue}`
-          } else {
-            displayText = `${config.fallbackText} (inst. ${instance}): ${targetData.formattedValue}`
-          }
-        }
-
-        const result = {
-          text: displayText,
-          color: 'green',
-          hasData: true,
-          hasValidData: true,
-          instance,
-          raw: responseData
-        }
-
-        // Add widget-specific property
-        result[config.valueProperty] = targetData.formattedValue
-
-        return result
-      }
-
-      // Has data but no target field found
-      let fallbackText = config.fallbackText
-      if (config.includeInstanceInText && instance) {
-        fallbackText = `${config.fallbackText} (inst. ${instance})`
-      }
-
-      return {
-        text: fallbackText,
-        color: 'green',
-        hasData: true,
-        [config.valueProperty]: null,
-        instance,
-        raw: responseData
-      }
-    }
-
-    // Default for unknown widget types - just show the widget type name
-    return {
-      text: widgetType,
-      color: 'green',
-      hasData: true,
-      instance,
-      raw: responseData
-    }
-  }
-
-  /**
-   * Generic method to make custom API calls (for advanced usage)
-   */
-  async makeCustomCall (url, method = 'GET', payload = null, customHeaders = {}) {
-    const headers = this._buildHeaders(customHeaders)
-
-    debug(`${method.toUpperCase()} ${url}`, payload ? { payload } : '')
-
-    try {
-      let response
-      switch (method.toLowerCase()) {
-        case 'get':
-          response = await axios.get(url, { headers })
-          break
-        case 'post':
-          response = await axios.post(url, payload, { headers })
-          break
-        case 'patch':
-          response = await axios.patch(url, payload, { headers })
-          break
-        default:
-          throw new Error(`Unsupported method: ${method}`)
-      }
-
-      debug(`Response ${response.status}:`, response.data)
-      return {
-        success: true,
-        status: response.status,
-        data: response.data,
-        url,
-        method: method.toLowerCase()
-      }
-    } catch (error) {
-      debug('API Error:', error.response?.status, error.response?.data)
-      return {
-        success: false,
-        status: error.response?.status,
-        data: error.response?.data,
-        error: error.message,
-        url,
-        method: method.toLowerCase()
-      }
+      text: `${widgetType} data`,
+      color: 'green'
     }
   }
 }

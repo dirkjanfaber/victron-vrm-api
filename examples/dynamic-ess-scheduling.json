@@ -1,0 +1,523 @@
+[
+    {
+        "id": "848f13b012f3e09a",
+        "type": "group",
+        "z": "dd54dd45922062eb",
+        "name": "Dynamic ESS mode",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "f554aa79331525ef",
+            "ccbdb4d7d70c35ed",
+            "a6b5b452ff171afb",
+            "185e05c97e14bd43",
+            "feac1be1f0ea311b"
+        ],
+        "x": 14,
+        "y": 699,
+        "w": 818,
+        "h": 408
+    },
+    {
+        "id": "f554aa79331525ef",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "848f13b012f3e09a",
+        "name": "Node-RED mode (4)",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "4",
+        "payloadType": "num",
+        "x": 150,
+        "y": 820,
+        "wires": [
+            [
+                "a6b5b452ff171afb"
+            ]
+        ]
+    },
+    {
+        "id": "ccbdb4d7d70c35ed",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "848f13b012f3e09a",
+        "name": "VRM mode (1)",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "1",
+        "payloadType": "num",
+        "x": 130,
+        "y": 780,
+        "wires": [
+            [
+                "a6b5b452ff171afb"
+            ]
+        ]
+    },
+    {
+        "id": "a6b5b452ff171afb",
+        "type": "victron-output-custom",
+        "z": "dd54dd45922062eb",
+        "g": "848f13b012f3e09a",
+        "service": "com.victronenergy.settings",
+        "path": "/Settings/DynamicEss/Mode",
+        "serviceObj": {
+            "service": "com.victronenergy.settings",
+            "name": "com.victronenergy.settings"
+        },
+        "pathObj": {
+            "path": "/Settings/DynamicEss/Mode",
+            "name": "/Settings/DynamicEss/Mode",
+            "type": "number",
+            "value": 0
+        },
+        "name": "",
+        "onlyChanges": false,
+        "x": 590,
+        "y": 780,
+        "wires": []
+    },
+    {
+        "id": "185e05c97e14bd43",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "848f13b012f3e09a",
+        "name": "OFF  (0)",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "0",
+        "payloadType": "num",
+        "x": 110,
+        "y": 740,
+        "wires": [
+            [
+                "a6b5b452ff171afb"
+            ]
+        ]
+    },
+    {
+        "id": "feac1be1f0ea311b",
+        "type": "group",
+        "z": "dd54dd45922062eb",
+        "g": "848f13b012f3e09a",
+        "name": "Maintenance",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "eaab2f6a1a94277b",
+            "6b19c295a1a466ad",
+            "5ab5750481056b3f",
+            "9c6e04864591454e",
+            "22d135f2c1554591",
+            "51bd0153ead472e8"
+        ],
+        "x": 54,
+        "y": 879,
+        "w": 752,
+        "h": 202
+    },
+    {
+        "id": "eaab2f6a1a94277b",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "feac1be1f0ea311b",
+        "name": "Clear stored DESS context",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "clear",
+        "payloadType": "str",
+        "x": 210,
+        "y": 960,
+        "wires": [
+            [
+                "6b19c295a1a466ad"
+            ]
+        ],
+        "info": "This allows for starting with a \"fresh\" cache of\nthe schedule. Shouldn't be needed, but you never\nknow when it might come in handy."
+    },
+    {
+        "id": "6b19c295a1a466ad",
+        "type": "function",
+        "z": "dd54dd45922062eb",
+        "g": "feac1be1f0ea311b",
+        "name": "Maintenance of the stored context",
+        "func": "// Node-RED Function Node: Advanced Maintenance for Dynamic ESS Schedule\n// Supports multiple maintenance actions via msg.action\n\nconst action = msg.action || msg.payload || 'clear'; // Default to 'clear' if not specified\nconst currentTime = Math.floor(Date.now() / 1000);\n\n// Get existing slots\nconst existingSlots = global.get('dynamicEssScheduleSlots') || {};\nconst slotCount = Object.keys(existingSlots).length;\n\nlet result = {};\nlet expiredCount = 0;\n\nswitch (action) {\n    case 'clear':\n    case 'clear_all':\n        // Clear all cached slots\n        global.set('dynamicEssScheduleSlots', {});\n        node.status({ fill: 'green', shape: 'ring', text: `Cleared ${slotCount} slots` });\n        node.warn(`Maintenance: Cleared all ${slotCount} cached schedule slots`);\n        \n        result = {\n            action: 'clear_all',\n            clearedSlots: slotCount,\n            timestamp: new Date().toISOString()\n        };\n        break;\n        \n    case 'clear_expired':\n        // Remove only expired slots\n        const cleaned = {};\n        \n        for (const [slotNum, slotData] of Object.entries(existingSlots)) {\n            const endTime = slotData.Start + slotData.Duration;\n            if (endTime >= currentTime) {\n                // Keep non-expired\n                cleaned[slotNum] = slotData;\n            } else {\n                expiredCount++;\n            }\n        }\n        \n        global.set('dynamicEssScheduleSlots', cleaned);\n        node.status({ fill: 'blue', shape: 'ring', text: `Removed ${expiredCount} expired` });\n        node.warn(`Maintenance: Removed ${expiredCount} expired slots, kept ${Object.keys(cleaned).length}`);\n        \n        result = {\n            action: 'clear_expired',\n            removedSlots: expiredCount,\n            remainingSlots: Object.keys(cleaned).length,\n            timestamp: new Date().toISOString()\n        };\n        break;\n        \n    case 'info':\n    case 'status':\n        // Show current status without clearing\n        let activeCount = 0;\n        \n        for (const [slotNum, slotData] of Object.entries(existingSlots)) {\n            const endTime = slotData.Start + slotData.Duration;\n            if (endTime >= currentTime) {\n                activeCount++;\n            } else {\n                expiredCount++;\n            }\n        }\n        \n        node.status({ fill: 'yellow', shape: 'dot', text: `${activeCount} active, ${expiredCount} expired` });\n        \n        result = {\n            action: 'info',\n            totalSlots: slotCount,\n            activeSlots: activeCount,\n            expiredSlots: expiredCount,\n            availableSlots: 48 - activeCount,\n            timestamp: new Date().toISOString()\n        };\n        break;\n        \n    case 'dump':\n    case 'export':\n        // Export all slots for inspection\n        node.status({ fill: 'grey', shape: 'dot', text: `Exported ${slotCount} slots` });\n        \n        result = {\n            action: 'export',\n            slots: existingSlots,\n            totalSlots: slotCount,\n            timestamp: new Date().toISOString()\n        };\n        break;\n        \n    default:\n        node.status({ fill: 'red', shape: 'ring', text: 'Unknown action' });\n        node.error(`Unknown maintenance action: ${action}. Use: clear, clear_expired, info, or dump`);\n        \n        result = {\n            error: 'Unknown action',\n            action: action,\n            validActions: ['clear', 'clear_expired', 'info', 'dump']\n        };\n}\n\nmsg.payload = result;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 540,
+        "y": 920,
+        "wires": [
+            [
+                "9c6e04864591454e"
+            ]
+        ]
+    },
+    {
+        "id": "5ab5750481056b3f",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "feac1be1f0ea311b",
+        "name": "Dump the stored DESS context",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "dump",
+        "payloadType": "str",
+        "x": 230,
+        "y": 1040,
+        "wires": [
+            [
+                "6b19c295a1a466ad"
+            ]
+        ]
+    },
+    {
+        "id": "9c6e04864591454e",
+        "type": "debug",
+        "z": "dd54dd45922062eb",
+        "g": "feac1be1f0ea311b",
+        "name": "DESS maintenance",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 670,
+        "y": 980,
+        "wires": []
+    },
+    {
+        "id": "22d135f2c1554591",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "feac1be1f0ea311b",
+        "name": "DESS context status",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "status",
+        "payloadType": "str",
+        "x": 190,
+        "y": 920,
+        "wires": [
+            [
+                "6b19c295a1a466ad"
+            ]
+        ]
+    },
+    {
+        "id": "51bd0153ead472e8",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "feac1be1f0ea311b",
+        "name": "Clear expired DESS context",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "clear_expired",
+        "payloadType": "str",
+        "x": 220,
+        "y": 1000,
+        "wires": [
+            [
+                "6b19c295a1a466ad"
+            ]
+        ],
+        "info": "This allows for starting with a \"fresh\" cache of\nthe schedule. Shouldn't be needed, but you never\nknow when it might come in handy."
+    },
+    {
+        "id": "d9455186613b5f12",
+        "type": "group",
+        "z": "dd54dd45922062eb",
+        "name": "Dynamic ESS scheduling",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "91794f12bc40ad46",
+            "10ad53090e1dc735",
+            "2164b4a2d865544a",
+            "5672407a3f8c36e0",
+            "ec2e83aca6c22c8c",
+            "14a36f4c55a0ae1a",
+            "792b8b1d92e76bb8",
+            "f22621fcf6b896e1"
+        ],
+        "x": 14,
+        "y": 479,
+        "w": 812,
+        "h": 202
+    },
+    {
+        "id": "91794f12bc40ad46",
+        "type": "vrm-api",
+        "z": "dd54dd45922062eb",
+        "g": "d9455186613b5f12",
+        "vrm": "4e54da6b2db12c18",
+        "name": "Fetch Dynamic ESS schedules",
+        "api_type": "installations",
+        "idUser": "",
+        "users": "",
+        "idSite": "{{flow.siteId}}",
+        "installations": "fetch-dynamic-ess-schedules",
+        "attribute": "dynamic_ess",
+        "stats_interval": "15mins",
+        "show_instance": false,
+        "stats_start": "",
+        "stats_end": "",
+        "use_utc": false,
+        "gps_start": "",
+        "gps_end": "",
+        "widgets": "",
+        "instance": "",
+        "store_in_global_context": false,
+        "verbose": false,
+        "transform_price_schedule": false,
+        "outputs": 1,
+        "x": 430,
+        "y": 520,
+        "wires": [
+            [
+                "2164b4a2d865544a"
+            ]
+        ]
+    },
+    {
+        "id": "10ad53090e1dc735",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "d9455186613b5f12",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "900",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 130,
+        "y": 520,
+        "wires": [
+            [
+                "91794f12bc40ad46"
+            ]
+        ]
+    },
+    {
+        "id": "2164b4a2d865544a",
+        "type": "link out",
+        "z": "dd54dd45922062eb",
+        "g": "d9455186613b5f12",
+        "name": "link out 2",
+        "mode": "link",
+        "links": [
+            "f22621fcf6b896e1"
+        ],
+        "x": 705,
+        "y": 520,
+        "wires": []
+    },
+    {
+        "id": "5672407a3f8c36e0",
+        "type": "function",
+        "z": "dd54dd45922062eb",
+        "g": "d9455186613b5f12",
+        "name": "Process Dynamic ESS schedule",
+        "func": "// Node-RED Function Node: Process Dynamic ESS Schedule\n// Place this code in a Function node after your VRM API fetch node\n\nconst MAX_SLOTS = 4;\nconst PROPERTIES = ['Duration', 'Start', 'AllowGridFeedin', 'Soc', 'Restrictions', 'Flags', 'Strategy'];\nconst allowNonEqualArrays = false; // Set to false to enforce strict array length validation\n\n// Get current time (use msg.timestamp for testing, otherwise Date.now())\nconst currentTime = msg.timestamp || Math.floor(Date.now() / 1000);\n\n// Extract schedule from payload\nif (!msg.payload || !msg.payload.schedule) {\n    node.status({ fill: 'red', shape: 'ring', text: 'Invalid input' });\n    node.error('Invalid message: msg.payload.schedule is required');\n    return null;\n}\n\nconst schedule = msg.payload.schedule;\n\n// Validate schedule structure\ntry {\n    validateSchedule(schedule, PROPERTIES, allowNonEqualArrays);\n} catch (error) {\n    node.status({ fill: 'red', shape: 'ring', text: error.message });\n    node.error(error.message);\n    return null;\n}\n\n// Get existing slots from global context\nconst existingSlots = global.get('dynamicEssScheduleSlots') || {};\n\n// Identify expired slots\nconst expiredSlotNumbers = findExpiredSlots(existingSlots, currentTime);\n\n// Build new slot assignments and collect changes\nconst { newSlots, changes, stats } = processScheduleEntries(\n    schedule,\n    existingSlots,\n    expiredSlotNumbers,\n    currentTime,\n    MAX_SLOTS,\n    PROPERTIES\n);\n\n// Save updated slots to context\nglobal.set('dynamicEssScheduleSlots', newSlots);\n\n// Update node status\nupdateNodeStatus(node, stats, changes.length);\n\n// Return array of change messages\nreturn [changes];\n\n// ===== Helper Functions =====\n\nfunction validateSchedule(schedule, properties, allowNonEqual) {\n    // Check all required properties exist\n    for (const prop of properties) {\n        if (!Array.isArray(schedule[prop])) {\n            throw new Error(`Schedule property '${prop}' must be an array`);\n        }\n    }\n    \n    // Check all arrays have same length\n    const lengths = properties.map(prop => schedule[prop].length);\n    const minLength = Math.min(...lengths);\n    const maxLength = Math.max(...lengths);\n    \n    if (minLength !== maxLength) {\n        if (allowNonEqual) {\n            // Truncate all arrays to minimum length\n            node.warn(`Array length mismatch detected. Truncating to ${minLength} entries (shortest array).`);\n            for (const prop of properties) {\n                if (schedule[prop].length > minLength) {\n                    schedule[prop].length = minLength;\n                }\n            }\n        } else {\n            throw new Error('All schedule arrays must have the same length');\n        }\n    }\n}\n\nfunction findExpiredSlots(slots, currentTime) {\n    const expired = [];\n    \n    for (const [slotNum, slotData] of Object.entries(slots)) {\n        const endTime = slotData.Start + slotData.Duration;\n        if (endTime < currentTime) {\n            expired.push(parseInt(slotNum));\n        }\n    }\n    \n    return expired.sort((a, b) => a - b);\n}\n\nfunction processScheduleEntries(schedule, existingSlots, expiredSlotNumbers, currentTime, maxSlots, properties) {\n    const newSlots = { ...existingSlots };\n    const changes = [];\n    const scheduleLength = schedule.Start.length;\n    \n    // Statistics for status reporting\n    const stats = {\n        totalEntries: scheduleLength,\n        expiredEntries: 0,\n        processedEntries: 0,\n        newSlots: 0,\n        updatedSlots: 0,\n        unchangedSlots: 0,\n        discardedOverLimit: 0\n    };\n    \n    // Create a map of Start time to existing slot number\n    const startTimeToSlot = {};\n    for (const [slotNum, slotData] of Object.entries(existingSlots)) {\n        startTimeToSlot[slotData.Start] = parseInt(slotNum);\n    }\n    \n    // Track which slots we've assigned\n    const usedSlots = new Set(Object.keys(existingSlots).map(n => parseInt(n)));\n    \n    // Process each schedule entry and filter expired ones\n    const scheduleEntries = [];\n    for (let i = 0; i < scheduleLength; i++) {\n        const entry = {\n            Duration: schedule.Duration[i],\n            Start: schedule.Start[i],\n            AllowGridFeedin: schedule.AllowGridFeedin[i],\n            Soc: schedule.Soc[i],\n            Restrictions: schedule.Restrictions[i],\n            Flags: schedule.Flags[i],\n            Strategy: schedule.Strategy[i]\n        };\n        \n        // Skip expired entries\n        const endTime = entry.Start + entry.Duration;\n        if (endTime < currentTime) {\n            stats.expiredEntries++;\n            continue;\n        }\n        \n        scheduleEntries.push(entry);\n    }\n    \n    // If we have more than maxSlots non-expired entries, keep only first maxSlots\n    // Sort by Start time and limit to maxSlots\n    if (scheduleEntries.length > maxSlots) {\n        scheduleEntries.sort((a, b) => a.Start - b.Start);\n        stats.discardedOverLimit = scheduleEntries.length - maxSlots;\n        scheduleEntries.length = maxSlots;\n    }\n    \n    // Track available expired slots for reuse\n    let availableExpiredSlots = [...expiredSlotNumbers];\n    \n    // Process each schedule entry\n    for (const entry of scheduleEntries) {\n        let slotNum;\n        let hasChanges = false;\n        \n        // Check if this Start time already exists in a non-expired slot\n        if (startTimeToSlot[entry.Start] !== undefined) {\n            slotNum = startTimeToSlot[entry.Start];\n            \n            // Compare and collect changes\n            const existingEntry = existingSlots[slotNum];\n            for (const prop of properties) {\n                if (existingEntry[prop] !== entry[prop]) {\n                    changes.push({\n                        path: `/Settings/DynamicEss/Schedule/${slotNum}/${prop}`,\n                        payload: entry[prop]\n                    });\n                    hasChanges = true;\n                }\n            }\n            \n            if (hasChanges) {\n                stats.updatedSlots++;\n            } else {\n                stats.unchangedSlots++;\n            }\n            \n            // Update slot data\n            newSlots[slotNum] = entry;\n        } else {\n            // New entry - find a slot for it\n            \n            // First, try to reuse an expired slot\n            if (availableExpiredSlots.length > 0) {\n                slotNum = availableExpiredSlots.shift();\n            } else {\n                // No expired slots, find next available slot number\n                slotNum = 0;\n                while (usedSlots.has(slotNum) && slotNum < maxSlots) {\n                    slotNum++;\n                }\n                \n                if (slotNum >= maxSlots) {\n                    // All slots full - this should not happen since we limited to maxSlots above\n                    node.warn(`Unexpected: Could not assign slot for entry with Start=${entry.Start}`);\n                    continue;\n                }\n            }\n            \n            // Write all properties for new slot\n            for (const prop of properties) {\n                changes.push({\n                    path: `/Settings/DynamicEss/Schedule/${slotNum}/${prop}`,\n                    payload: entry[prop]\n                });\n            }\n            \n            stats.newSlots++;\n            \n            // Update tracking\n            newSlots[slotNum] = entry;\n            usedSlots.add(slotNum);\n            startTimeToSlot[entry.Start] = slotNum;\n        }\n        \n        stats.processedEntries++;\n    }\n    \n    return { newSlots, changes, stats };\n}\n\nfunction updateNodeStatus(node, stats, changeCount) {\n    if (changeCount === 0) {\n        node.status({ \n            fill: 'green', \n            shape: 'dot', \n            text: `No changes (${stats.processedEntries} slots)` \n        });\n    } else if (stats.newSlots > 0) {\n        node.status({ \n            fill: 'blue', \n            shape: 'dot', \n            text: `${changeCount} changes (${stats.newSlots} new, ${stats.updatedSlots} updated)` \n        });\n    } else {\n        node.status({ \n            fill: 'yellow', \n            shape: 'dot', \n            text: `${changeCount} changes (${stats.updatedSlots} updated)` \n        });\n    }\n    \n    // Build warning message\n    const discardedParts = [];\n    if (stats.expiredEntries > 0) {\n        discardedParts.push(`${stats.expiredEntries} expired`);\n    }\n    if (stats.discardedOverLimit > 0) {\n        discardedParts.push(`${stats.discardedOverLimit} over 48 limit`);\n    }\n    \n    if (discardedParts.length > 0) {\n        const totalDiscarded = stats.expiredEntries + stats.discardedOverLimit;\n        node.warn(`Ignored ${totalDiscarded} of ${stats.totalEntries} entries: ${discardedParts.join(', ')}`);\n    }\n}",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 310,
+        "y": 580,
+        "wires": [
+            [
+                "792b8b1d92e76bb8",
+                "ec2e83aca6c22c8c"
+            ]
+        ]
+    },
+    {
+        "id": "ec2e83aca6c22c8c",
+        "type": "debug",
+        "z": "dd54dd45922062eb",
+        "g": "d9455186613b5f12",
+        "name": "Updated DESS schedules",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": true,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "path",
+        "statusType": "msg",
+        "x": 670,
+        "y": 580,
+        "wires": []
+    },
+    {
+        "id": "14a36f4c55a0ae1a",
+        "type": "victron-output-custom",
+        "z": "dd54dd45922062eb",
+        "g": "d9455186613b5f12",
+        "service": "com.victronenergy.settings",
+        "path": "/Settings/DynamicEss/Schedule/0/Start",
+        "serviceObj": {
+            "service": "com.victronenergy.settings",
+            "name": "com.victronenergy.settings"
+        },
+        "pathObj": {
+            "path": "/Settings/DynamicEss/Schedule/0/Start",
+            "name": "/Settings/DynamicEss/Schedule/0/Start",
+            "type": "number",
+            "value": 0
+        },
+        "name": "Update DESS schedules",
+        "onlyChanges": false,
+        "x": 670,
+        "y": 640,
+        "wires": []
+    },
+    {
+        "id": "792b8b1d92e76bb8",
+        "type": "delay",
+        "z": "dd54dd45922062eb",
+        "g": "d9455186613b5f12",
+        "name": "Be a bit friendly for the dbus",
+        "pauseType": "delay",
+        "timeout": "0.1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 320,
+        "y": 640,
+        "wires": [
+            [
+                "14        "type": "delay",
+        "z": "dd54dd45922062eb",
+        "g": "d9455186613b5f12",
+        "name": "Be a bit friendly for the dbus",
+        "pauseType": "delay",
+        "timeout": "0.1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "config-vrm-api",
+        "name": "",
+        "forceIpv4": true
+    }
+]

@@ -12,24 +12,47 @@
         if (selected === 'installations' || selected === 'widgets') {
             $('#input-instalations_and_widgets').show()
         }
+        console.log('selected api type', selected)
+        const isDynamicESS = selected === 'installations' &&
+                    $('#node-input-installations').val() === 'stats' &&
+                    $('#node-input-attribute').val() === 'dynamic_ess';
+
+        if (isDynamicESS) {
+            $('#input-transform-price-schedule').show();
+        } else {
+            $('#input-transform-price-schedule').hide();
+            $('#node-input-transform_price_schedule').prop('checked', false);
+        }
     }
 
     function checkSelectedInstallations() {
         [
-            'stats', 'gps-download'
+            'stats', 'gps-download', 'fetch--ess-schedules'
         ].map( x => { $('#input-'+x).hide() })
-        const selected = $('select#node-input-installations').val()
-        if (selected === 'stats') {
-            $('#input-stats-dynamic-ess-warning').hide()
-            $('#input-stats').show()
 
-            const selectedAttribute = $('select#node-input-attribute').val()
-            if (selectedAttribute === 'dynamic_ess') {
-                $('#input-stats-dynamic-ess-warning').show()
-            }
+        const selected = $('select#node-input-installations').val()
+
+        if (selected === 'stats') {
+            $('#input-stats').show()
         }
-        if (selected === 'gps-download' ) { $('#input-gps-download').show()}
-        if (selected === 'fetch-dynamic-ess-schedules' ) { $('#input-fetch-dynamic-ess-schedules').show() }
+        if (selected === 'gps-download' ) {
+            $('#input-gps-download').show()
+        }
+        if (selected === 'fetch-dynamic-ess-schedules' ) {
+            $('#input-fetch-dynamic-ess-schedules').show()
+        }
+
+        const apiType = $('#node-input-api_type').val();
+        const isDynamicESS = apiType === 'installations' &&
+                            selected === 'stats' &&
+                            $('#node-input-attribute').val() === 'dynamic_ess';
+
+        if (isDynamicESS) {
+            $('#input-transform-price-schedule').show();
+        } else {
+            $('#input-transform-price-schedule').hide();
+            $('#node-input-transform_price_schedule').prop('checked', false);
+        }
     }
 
     function checkSelectedUsers() {
@@ -74,7 +97,9 @@
             instance: {value: "", required: false},
 
             store_in_global_context: {value: false},
-            verbose: { value: false }
+            verbose: { value: false },
+            transform_price_schedule: { value: false },
+            outputs: {value: 1}
         },
         inputs: 1,
         outputs: 1,
@@ -106,14 +131,48 @@
 
             return label;
         },
+        outputLabels: function(index) {
+            const isDynamicESS = this.installations === 'fetch-dynamic-ess-schedules';
+            if (isDynamicESS && this.transform_price_schedule) {
+                return index === 0 ? "raw data" : "price schedule";
+            }
+            return "output";
+        },
         oneditprepare: function oneditprepare() {
             checkSelectedAPIType()
 
-            const $dynamicEssOption = $('#node-input-attribute option[value="dynamic_ess"]')
-            const currentAttribute = this.attribute
-            if (currentAttribute !== 'dynamic_ess') {
-                $dynamicEssOption.remove()
-            }
+            // NEW: Function to update outputs count
+            const updateOutputs = () => {
+                const isDynamicESS = $('#node-input-installations').val() === 'stats' &&
+                                     $('#node-input-attribute').val() === 'dynamic_ess';
+                const transformEnabled = $('#node-input-transform_price_schedule').is(':checked');
+                const outputCount = (isDynamicESS && transformEnabled) ? 2 : 1;
+
+                // Update the hidden field
+                $('#node-input-outputs').val(outputCount);
+
+                // Update the node's outputs property
+                this.outputs = outputCount;
+            };
+
+            // Show/hide transform checkbox based on installation selection
+            $('#node-input-installations').on('change', function() {
+                const isDynamicESS = $(this).val() === 'installations' &&
+                                     $('#node-input-attribute').val() === 'dynamic_ess';
+                $('#input-transform-price-schedule').toggle(isDynamicESS);
+                updateOutputs();
+            });
+
+            // Update outputs when checkbox changes
+            $('#node-input-transform_price_schedule').on('change', updateOutputs);
+
+            // Initial state
+            const isDynamicESS = $('#node-input-installations').val() === 'stats' &&
+                                 $('#node-input-attribute').val() === 'dynamic_ess';
+            $('#input-transform-price-schedule').toggle(isDynamicESS);
+
+            // Set initial output count
+            updateOutputs();
 
             flatpickr("#node-input-gps_start", {
                 enableTime: true,
@@ -128,6 +187,7 @@
 </script>
 
 <script type="text/html" data-template-name="vrm-api">
+    <input type="hidden" id="node-input-outputs">
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
@@ -211,9 +271,9 @@
                     <option value="solar_yield">Solar Yield</option>
                     <option value="total_solar_yield">Total Solar Yield</option>
                     <option value="solar_yield_forecast">Solar Yield Forecast</option>
-                    <option value="dynamic_ess" style="color: #999; font-style: italic;">Dynamic ESS (deprecated)</option>
+                    <option value="dynamic_ess">Dynamic ESS</option>
                 </select>
-            </div>    
+            </div>
             <div class="form-row">
                 <label for="node-input-stats_interval"><i class="fa fa-barcode"></i> Interval</label>
                 <select id="node-input-stats_interval">
@@ -266,24 +326,6 @@
                 <input type="checkbox" id="node-input-show_instance" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
                 <label style="min-width:390px" for="node-input-show_instance"><i class="fa fa-power"></i> Group attributes by instance?</label>
             </div>
-        </div>    
-    </div>
-    <div id="input-stats-dynamic-ess-warning" style="display:none;">
-        <div class="form-row">
-            <div style="margin-left: 12px; padding: 12px; background-color: #fff3cd; border-left: 4px solid #ff9800; border-radius: 4px;">
-                <p style="margin: 0 0 8px 0; color: #856404; font-weight: bold;">
-                    ⚠️ Deprecated Method
-                </p>
-                <p style="margin: 0 0 8px 0; color: #856404;">
-                    Fetching Dynamic ESS schedules via <strong>Installation stats</strong> with <strong>Dynamic ESS</strong> attribute is deprecated.
-                </p>
-                <p style="margin: 0 0 8px 0; color: #856404;">
-                    Please migrate to: <strong>Installations → Fetch Dynamic ESS schedules</strong>
-                </p>
-                <p style="margin: 0; color: #856404; font-size: 0.9em; font-style: italic;">
-                    The new method will be maintained and is the recommended approach going forward.
-                </p>
-            </div>
         </div>
     </div>
     <div id="input-gps-download">
@@ -329,6 +371,10 @@
     <div class="form-row" style="margin-bottom:0px;">
         <input type="checkbox" id="node-input-verbose" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
         <label style="min-width:390px" for="node-input-verbose"> Verbose: show the used <em>url</em> in the debug tab?</label>
+    </div>
+    <div class="form-row" id="input-transform-price-schedule" style="margin-bottom:0px; display:none;">
+        <input type="checkbox" id="node-input-transform_price_schedule" style="display:inline-block; margin-left:8px; width:auto; vertical-align:top;">
+        <label style="min-width:390px" for="node-input-transform_price_schedule"> Transform price schedule to second output?</label>
     </div>
 </script>
 

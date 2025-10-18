@@ -13,7 +13,7 @@
         "env": {
           "NO_UPDATE_NOTIFIER": "1",
           "DEBUG": "victron-vrm-api"
-        }
+      }
       },
       {
         "type": "node",
@@ -21,7 +21,7 @@
         "name": "Debug Current File",
         "program": "${file}"
       },
-      { "type": "node", "request": "attach", "name": "Attach to Process", "processId": "${command:PickProcess}" } 
-      
+      { "type": "node", "request": "attach", "name": "Attach to Process", "processId": "${command:PickProcess}" }
+
     ]
   }

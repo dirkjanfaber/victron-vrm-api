@@ -1,0 +1,291 @@
+[
+    {
+        "id": "1a1032ac531dcd70",
+        "type": "group",
+        "z": "dd54dd45922062eb",
+        "name": "Price analysis",
+        "style": {
+            "label": true
+        },
+        "nodes": [
+            "a32ca3d5b1956c60",
+            "dafc524684caf73e",
+            "3402da69e49f5cc6",
+            "601098dc11ceea8b",
+            "7c289789598b12d0",
+            "583c40137910c702",
+            "65235d7c7d010d74",
+            "7b0a8a20c7f4a196",
+            "9eda047fcfae46cf",
+            "4312e79a1a2a17a5",
+            "cc492cdce20106a1",
+            "0cb71f4f097c34cc"
+        ],
+        "x": 14,
+        "y": 19,
+        "w": 812,
+        "h": 402
+    },
+    {
+        "id": "a32ca3d5b1956c60",
+        "type": "function",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "Real-time Status - Am I in a Cheap Period?",
+        "func": "const schedule = msg.payload;\nconst now = Date.now();\n\n// Find top 10 cheapest charging times\nconst cheapestTimes = schedule\n    .filter(slot => slot.buyPrice !== null)\n    .sort((a, b) => a.buyPrice - b.buyPrice)\n    .slice(0, 10);\n\n// Check if current time is in one of the cheap slots\nconst currentSlot = schedule.find(slot => {\n    const slotEnd = slot.timestamp + (15 * 60 * 1000); // 15 minutes later\n    return now >= slot.timestamp && now < slotEnd;\n});\n\nconst isInCheapPeriod = cheapestTimes.some(slot => \n    slot.timestamp === currentSlot?.timestamp\n);\n\nif (isInCheapPeriod) {\n    node.status({\n        fill: \"green\",\n        shape: \"dot\",\n        text: `⚡ CHARGE NOW - €${currentSlot.buyPrice.toFixed(3)}/kWh`\n    });\n    msg.recommendation = \"charge\";\n} else if (currentSlot) {\n    // Find how we rank in the price list\n    const allPrices = schedule\n        .filter(s => s.buyPrice !== null)\n        .sort((a, b) => a.buyPrice - b.buyPrice);\n    const rank = allPrices.findIndex(s => s.timestamp === currentSlot.timestamp) + 1;\n    const percentile = Math.round((rank / allPrices.length) * 100);\n    \n    node.status({\n        fill: \"yellow\",\n        shape: \"ring\",\n        text: `⏸️  WAIT - Price rank ${rank}/${allPrices.length} (${percentile}%)`\n    });\n    msg.recommendation = \"wait\";\n} else {\n    node.status({\n        fill: \"grey\",\n        shape: \"ring\",\n        text: \"No current price data\"\n    });\n    msg.recommendation = \"unknown\";\n}\n\nmsg.currentSlot = currentSlot;\nmsg.cheapestTimes = cheapestTimes;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 140,
+        "wires": [
+            [
+                "601098dc11ceea8b"
+            ]
+        ]
+    },
+    {
+        "id": "dafc524684caf73e",
+        "type": "function",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "Charge / discharge recommendation",
+        "func": "// Recommends CHARGE (green), DISCHARGE (blue), or IDLE (yellow)\nconst schedule = msg.payload;\nconst now = Date.now();\n\nconst cheapestTimes = schedule\n    .filter(slot => slot.buyPrice !== null)\n    .sort((a, b) => a.buyPrice - b.buyPrice)\n    .slice(0, 10);\n\nconst bestSellTimes = schedule\n    .filter(slot => slot.sellPrice !== null)\n    .sort((a, b) => b.sellPrice - a.sellPrice)\n    .slice(0, 10);\n\nconst currentSlot = schedule.find(slot => {\n    const slotEnd = slot.timestamp + (15 * 60 * 1000);\n    return now >= slot.timestamp && now < slotEnd;\n});\n\nif (!currentSlot) return msg;\n\nconst isChargePeriod = cheapestTimes.some(s => s.timestamp === currentSlot.timestamp);\nconst isDischargePeriod = bestSellTimes.some(s => s.timestamp === currentSlot.timestamp);\n\nif (isChargePeriod) {\n    node.status({\n        fill: \"green\",\n        shape: \"dot\",\n        text: `⬇️ CHARGE - €${currentSlot.buyPrice.toFixed(3)}/kWh`\n    });\n    msg.recommendation = \"charge\";\n} else if (isDischargePeriod) {\n    node.status({\n        fill: \"blue\",\n        shape: \"dot\",\n        text: `⬆️ DISCHARGE - €${currentSlot.sellPrice.toFixed(3)}/kWh`\n    });\n    msg.recommendation = \"discharge\";\n} else {\n    node.status({\n        fill: \"yellow\",\n        shape: \"ring\",\n        text: `⏸️ IDLE - €${currentSlot.buyPrice.toFixed(3)}`\n    });\n    msg.recommendation = \"idle\";\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 200,
+        "wires": [
+            [
+                "601098dc11ceea8b"
+            ]
+        ]
+    },
+    {
+        "id": "3402da69e49f5cc6",
+        "type": "function",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "Threshold based smart stats",
+        "func": "// Uses fixed thresholds to determine recommendations\nconst schedule = msg.payload;\nconst now = Date.now();\n\n// Configure your thresholds\nconst CHEAP_THRESHOLD = 0.20;      // Below this = charge\nconst EXPENSIVE_THRESHOLD = 0.28;  // Above this = avoid\nconst GOOD_SELL_THRESHOLD = 0.12;  // Above this = discharge\n\nconst currentSlot = schedule.find(slot => {\n    const slotEnd = slot.timestamp + (15 * 60 * 1000);\n    return now >= slot.timestamp && now < slotEnd;\n});\n\nif (!currentSlot) return msg;\n\n// Calculate average for comparison\nconst avgPrice = schedule\n    .filter(s => s.buyPrice !== null)\n    .reduce((sum, s) => sum + s.buyPrice, 0) / schedule.length;\n\nif (currentSlot.buyPrice < CHEAP_THRESHOLD) {\n    const savings = ((avgPrice - currentSlot.buyPrice) / avgPrice * 100).toFixed(0);\n    node.status({\n        fill: \"green\",\n        shape: \"dot\",\n        text: `⚡ CHARGE NOW - ${savings}% below avg`\n    });\n    msg.recommendation = \"charge\";\n} else if (currentSlot.buyPrice > EXPENSIVE_THRESHOLD) {\n    if (currentSlot.sellPrice > GOOD_SELL_THRESHOLD) {\n        node.status({\n            fill: \"blue\",\n            shape: \"dot\",\n            text: `⬆️ DISCHARGE - €${currentSlot.sellPrice.toFixed(3)}`\n        });\n        msg.recommendation = \"discharge\";\n    } else {\n        node.status({\n            fill: \"red\",\n            shape: \"ring\",\n            text: `❌ DON'T CHARGE - Too expensive`\n        });\n        msg.recommendation = \"avoid\";\n    }\n} else {\n    const diff = Number(((currentSlot.buyPrice - avgPrice) / avgPrice * 100).toFixed(0));\n    node.status({\n        fill: \"yellow\",\n        shape: \"ring\",\n        text: `⏸️ MEDIUM - ${diff > 0 ? '+' : ''}${diff}% vs avg`\n    });\n    msg.recommendation = \"neutral\";\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 340,
+        "y": 260,
+        "wires": [
+            [
+                "601098dc11ceea8b"
+            ]
+        ]
+    },
+    {
+        "id": "601098dc11ceea8b",
+        "type": "debug",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "Debugging on price",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "true",
+        "targetType": "full",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 690,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "7c289789598b12d0",
+        "type": "link in",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "link in 1",
+        "links": [
+            "cc492cdce20106a1"
+        ],
+        "x": 55,
+        "y": 200,
+        "wires": [
+            [
+                "583c40137910c702"
+            ]
+        ]
+    },
+    {
+        "id": "583c40137910c702",
+        "type": "junction",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "x": 120,
+        "y": 200,
+        "wires": [
+            [
+                "a32ca3d5b1956c60",
+                "dafc524684caf73e",
+                "3402da69e49f5cc6",
+                "65235d7c7d010d74",
+                "7b0a8a20c7f4a196"
+            ]
+        ]
+    },
+    {
+        "id": "65235d7c7d010d74",
+        "type": "function",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "Countdown to next cheap period",
+        "func": "// Shows time remaining in current cheap period, or time until next one\nconst schedule = msg.payload;\nconst now = Date.now();\n\nconst cheapestTimes = schedule\n    .filter(slot => slot.buyPrice !== null)\n    .sort((a, b) => a.buyPrice - b.buyPrice)\n    .slice(0, 10);\n\n// Check if currently in cheap period\nconst currentCheap = cheapestTimes.find(slot => {\n    const slotEnd = slot.timestamp + (15 * 60 * 1000);\n    return now >= slot.timestamp && now < slotEnd;\n});\n\nif (currentCheap) {\n    const remaining = (currentCheap.timestamp + 15 * 60 * 1000) - now;\n    const minutes = Math.floor(remaining / 60000);\n    \n    node.status({\n        fill: \"green\",\n        shape: \"dot\",\n        text: `⚡ CHARGING - ${minutes}min left @ €${currentCheap.buyPrice.toFixed(3)}`\n    });\n} else {\n    // Find next cheap slot\n    const nextCheap = cheapestTimes\n        .filter(slot => slot.timestamp > now)\n        .sort((a, b) => a.timestamp - b.timestamp)[0];\n    \n    if (nextCheap) {\n        const timeUntil = nextCheap.timestamp - now;\n        const hours = Math.floor(timeUntil / 3600000);\n        const minutes = Math.floor((timeUntil % 3600000) / 60000);\n        const timeStr = hours > 0 ? `${hours}h${minutes}m` : `${minutes}m`;\n        \n        node.status({\n            fill: \"yellow\",\n            shape: \"ring\",\n            text: `⏳ Next cheap slot in ${timeStr} @ €${nextCheap.buyPrice.toFixed(3)}`\n        });\n    } else {\n        node.status({\n            fill: \"red\",\n            shape: \"ring\",\n            text: `❌ No cheap slot upcomming`\n        });\n    }\n}\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 360,
+        "y": 320,
+        "wires": [
+            [
+                "601098dc11ceea8b"
+            ]
+        ]
+    },
+    {
+        "id": "7b0a8a20c7f4a196",
+        "type": "function",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "Planned battery schedule",
+        "func": "// Shows planned SoC vs actual charging windows\nconst schedule = msg.payload;\nconst now = Date.now();\n\n// Find current slot\nconst currentSlot = schedule.find(slot => {\n    const slotEnd = slot.timestamp + (15 * 60 * 1000);\n    return now >= slot.timestamp && now < slotEnd;\n});\n\nif (!currentSlot) {\n    node.status({\n        fill: \"grey\",\n        shape: \"ring\",\n        text: \"No current schedule data\"\n    });\n    return msg;\n}\n\n// Determine what's happening now based on planned SoC and forecasts\nconst isCharging = currentSlot.batteryForecast > 100; // Charging if > 100W\nconst isDischarging = currentSlot.batteryForecast < -100; // Discharging if < -100W\nconst isExporting = currentSlot.gridForecast < 0; // Exporting to grid\n\nlet statusText = '';\nlet statusColor = 'yellow';\n\nif (isCharging) {\n    statusText = `⚡ Charging → ${currentSlot.plannedSoC?.toFixed(1)}% SoC`;\n    statusColor = 'green';\n} else if (isDischarging) {\n    statusText = `🔋 Discharging → ${currentSlot.plannedSoC?.toFixed(1)}% SoC`;\n    statusColor = 'blue';\n} else {\n    statusText = `⏸️ Idle - no active (dis)charging`;\n    statusColor = 'yellow';\n}\n\n// Add price context\nif (currentSlot.buyPrice) {\n    statusText += ` | €${currentSlot.buyPrice.toFixed(3)}`;\n}\n\nnode.status({\n    fill: statusColor,\n    shape: \"dot\",\n    text: statusText\n});\n\nmsg.recommendation = isCharging ? 'charging' : isDischarging ? 'discharging' : 'idle';\nmsg.currentSlot = currentSlot;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 330,
+        "y": 380,
+        "wires": [
+            [
+                "601098dc11ceea8b"
+            ]
+        ]
+    },
+    {
+        "id": "9eda047fcfae46cf",
+        "type": "inject",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 120,
+        "y": 80,
+        "wires": [
+            [
+                "4312e79a1a2a17a5"
+            ]
+        ]
+    },
+    {
+        "id": "4312e79a1a2a17a5",
+        "type": "vrm-api",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "vrm": "4e54da6b2db12c18",
+        "name": "Fetch Dynamic ESS stats",
+        "api_type": "installations",
+        "idUser": "",
+        "users": "",
+        "idSite": "{{flow.siteId}}",
+        "installations": "stats",
+        "attribute": "dynamic_ess",
+        "stats_interval": "15mins",
+        "show_instance": false,
+        "stats_start": "bod",
+        "stats_end": "eod",
+        "use_utc": false,
+        "gps_start": "",
+        "gps_end": "",
+        "widgets": "",
+        "instance": "",
+        "store_in_global_context": false,
+        "verbose": false,
+        "transform_price_schedule": true,
+        "outputs": 2,
+        "x": 390,
+        "y": 80,
+        "wires": [
+            [
+                "0cb71f4f097c34cc"
+            ],
+            [
+                "cc492cdce20106a1"
+            ]
+        ]
+    },
+    {
+        "id": "cc492cdce20106a1",
+        "type": "link out",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "link out 1",
+        "mode": "link",
+        "links": [
+            "7c289789598b12d0"
+        ],
+        "x": 665,
+        "y": 100,
+        "wires": []
+    },
+    {
+        "id": "0cb71f4f097c34cc",
+        "type": "debug",
+        "z": "dd54dd45922062eb",
+        "g": "1a1032ac531dcd70",
+        "name": "Raw output",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 710,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "4e54da6b2db12c18",
+        "type": "config-vrm-api",
+        "name": "",
+        "forceIpv4": true
+    }
+]
