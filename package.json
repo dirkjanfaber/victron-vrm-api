@@ -9,7 +9,9 @@
     "test:integration": "jest test/integration",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "standard --fix"
+    "lint": "standard --fix",
+    "build:alpha": "node scripts/build-alpha.js",
+    "publish:alpha": "node scripts/publish-alpha.js"
   },
   "keywords": [
     "node-red",
