@@ -104,11 +104,11 @@ module.exports = function (RED) {
           const messages = [null, null]
 
           // Output 1: Raw data (always sent)
-          messages[0] = {
-            payload: result.data,
-            topic: msg.topic,
-            url: result.url
-          }
+          // Clone the original message to preserve HTTP context and custom properties
+          messages[0] = RED.util.cloneMessage(msg)
+          messages[0].payload = result.data
+          messages[0].topic = msg.topic
+          messages[0].url = result.url
 
           // Store in global context if requested
           if (config.store_in_global_context === true) {
@@ -126,11 +126,11 @@ module.exports = function (RED) {
             try {
               const transformed = transformPriceSchedule(result.data.records || result.data)
 
-              messages[1] = {
-                payload: transformed.payload,
-                metadata: transformed.metadata,
-                topic: 'price-schedule'
-              }
+              // Clone the original message for output 2 as well
+              messages[1] = RED.util.cloneMessage(msg)
+              messages[1].payload = transformed.payload
+              messages[1].metadata = transformed.metadata
+              messages[1].topic = 'price-schedule'
 
               node.status({
                 fill: 'green',
