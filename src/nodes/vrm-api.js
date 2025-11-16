@@ -21,7 +21,6 @@ module.exports = function (RED) {
       // This doesn't actually change the node, but documents the intent
     }
 
-
     node.on('input', async function (msg) {
       const currentTime = Date.now()
 
@@ -55,7 +54,7 @@ module.exports = function (RED) {
         let result
 
         // Handle custom API calls (advanced usage)
-        if (msg.query && /^(GET|POST|PATCH)$/i.test(msg.method)) {
+        if (msg.query && /^(GET|POST|PATCH|PUT|DELETE)$/i.test(msg.method)) {
           const customUrl = (msg.url || 'https://vrmapi.victronenergy.com/v2') + '/' + msg.query
           result = await apiService.makeCustomCall(customUrl, msg.method, msg.payload)
           msg.topic = msg.topic || 'custom'
@@ -117,7 +116,7 @@ module.exports = function (RED) {
           }
 
           // Check if we should transform price schedule
-          const shouldTransform = config.transform_price_schedule && 
+          const shouldTransform = config.transform_price_schedule &&
                                   config.installations === 'stats' &&
                                   config.attribute === 'dynamic_ess'
 

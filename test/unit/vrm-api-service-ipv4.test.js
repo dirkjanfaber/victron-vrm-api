@@ -37,7 +37,7 @@ describe('VRMAPIService IPv4 Agent Configuration', () => {
       })
 
       expect(service.forceIpv4).toBe(true)
-      
+
       // Verify axios defaults were set
       expect(axios.defaults.httpAgent).toBeInstanceOf(http.Agent)
       expect(axios.defaults.httpsAgent).toBeInstanceOf(https.Agent)
@@ -62,7 +62,7 @@ describe('VRMAPIService IPv4 Agent Configuration', () => {
 
       // Verify the request was made
       expect(axios.get).toHaveBeenCalled()
-      
+
       // Verify that axios defaults have agents configured
       expect(axios.defaults.httpAgent).toBeDefined()
       expect(axios.defaults.httpsAgent).toBeDefined()
@@ -89,7 +89,7 @@ describe('VRMAPIService IPv4 Agent Configuration', () => {
 
       // Verify the request was made
       expect(axios.get).toHaveBeenCalled()
-      
+
       // Verify that axios defaults do not have agents
       expect(axios.defaults.httpAgent).toBeUndefined()
       expect(axios.defaults.httpsAgent).toBeUndefined()
@@ -100,14 +100,14 @@ describe('VRMAPIService IPv4 Agent Configuration', () => {
     it('should handle multiple services with different IPv4 configurations', () => {
       // Note: axios.defaults is global, so the last configuration wins
       // This test documents this behavior
-      
+
       const service1 = new VRMAPIService('token1', { forceIpv4: false })
       expect(axios.defaults.httpAgent).toBeUndefined()
-      
+
       const service2 = new VRMAPIService('token2', { forceIpv4: true })
       expect(axios.defaults.httpAgent).toBeInstanceOf(http.Agent)
       expect(axios.defaults.httpsAgent).toBeInstanceOf(https.Agent)
-      
+
       // Verify both services maintain their individual settings
       expect(service1.forceIpv4).toBe(false)
       expect(service2.forceIpv4).toBe(true)

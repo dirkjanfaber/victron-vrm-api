@@ -44,7 +44,7 @@ const filesToCopy = [
 filesToCopy.forEach(file => {
   const source = path.join(rootDir, file)
   const dest = path.join(buildDir, file)
-  
+
   if (fs.existsSync(source)) {
     copyRecursive(source, dest)
   }
@@ -150,11 +150,11 @@ console.log('Modifying example flows...')
 const examplesDir = path.join(buildDir, 'examples')
 if (fs.existsSync(examplesDir)) {
   const exampleFiles = fs.readdirSync(examplesDir).filter(f => f.endsWith('.json'))
-  
+
   exampleFiles.forEach(file => {
     const examplePath = path.join(examplesDir, file)
     let exampleContent = fs.readFileSync(examplePath, 'utf8')
-    
+
     exampleContent = exampleContent.replace(
       /"type":\s*"vrm-api"/g,
       '"type": "vrm-api-alpha"'
@@ -163,16 +163,16 @@ if (fs.existsSync(examplesDir)) {
       /"type":\s*"config-vrm-api"/g,
       '"type": "config-vrm-api-alpha"'
     )
-    
+
     fs.writeFileSync(examplePath, exampleContent)
   })
-  
+
   console.log(`  Updated ${exampleFiles.length} example file(s)`)
 }
 
 console.log('\n✓ Alpha package built successfully!')
 console.log(`✓ Build directory: ${buildDir}`)
-console.log(`✓ Package name: victron-vrm-api-alpha`)
+console.log('✓ Package name: victron-vrm-api-alpha')
 console.log(`✓ Version: ${alphaVersion}`)
 console.log('\nTo publish, run:')
 console.log('  npm run publish:alpha')
@@ -184,7 +184,7 @@ console.log('  npm run publish:alpha')
  */
 function calculateAlphaVersion (version) {
   const alphaMatch = version.match(/^(.+)-alpha\.(\d+)$/)
-  
+
   if (alphaMatch) {
     // Already an alpha version, increment the counter
     const baseVersion = alphaMatch[1]
@@ -201,13 +201,13 @@ function calculateAlphaVersion (version) {
  */
 function copyRecursive (src, dest) {
   const stat = fs.statSync(src)
-  
+
   if (stat.isDirectory()) {
     // Create directory
     if (!fs.existsSync(dest)) {
       fs.mkdirSync(dest, { recursive: true })
     }
-    
+
     // Copy contents
     const entries = fs.readdirSync(src)
     entries.forEach(entry => {

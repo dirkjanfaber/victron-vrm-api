@@ -331,6 +331,58 @@ class VRMAPIService {
       color: 'green'
     }
   }
+
+  /**
+   * Make a custom API call to any VRM API endpoint
+   */
+  async makeCustomCall (url, method = 'GET', payload = null, customHeaders = {}) {
+    const headers = this._buildHeaders(customHeaders)
+    const actualMethod = method.toLowerCase()
+
+    debug(`${actualMethod.toUpperCase()} ${url}`, payload ? { payload } : '')
+
+    try {
+      let response
+      switch (actualMethod) {
+        case 'get':
+          response = await axios.get(url, { headers })
+          break
+        case 'post':
+          response = await axios.post(url, payload, { headers })
+          break
+        case 'patch':
+          response = await axios.patch(url, payload, { headers })
+          break
+        case 'put':
+          response = await axios.put(url, payload, { headers })
+          break
+        case 'delete':
+          response = await axios.delete(url, { headers })
+          break
+        default:
+          throw new Error(`Unsupported method: ${actualMethod}`)
+      }
+
+      debug(`Response ${response.status}:`, response.data)
+      return {
+        success: true,
+        status: response.status,
+        data: response.data,
+        url,
+        method: actualMethod
+      }
+    } catch (error) {
+      debug('API Error:', error.response?.status, error.response?.data)
+      return {
+        success: false,
+        status: error.response?.status,
+        data: error.response?.data,
+        error: error.message,
+        url,
+        method: actualMethod
+      }
+    }
+  }
 }
 
 module.exports = VRMAPIService

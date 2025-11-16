@@ -2,7 +2,7 @@
 
 /**
  * Transform VRM Dynamic ESS price data into a clear schedule
- * 
+ *
  * @param {Object} data - Raw VRM API response containing deGb and deGs
  * @param {Array} data.deGb - Buy prices (grid to battery) as [timestamp, price][]
  * @param {Array} data.deGs - Sell prices (battery to grid) as [timestamp, price][]

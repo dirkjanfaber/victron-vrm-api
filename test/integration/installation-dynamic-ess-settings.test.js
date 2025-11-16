@@ -165,7 +165,7 @@ xdescribe('VRM API Integration - Dynamic ESS Settings PATCH Bug Detection', () =
       expect(patchResult.data.data.isGreenModeOn).toBe(!currentGreenMode)
     } else {
       console.log(`   Error: ${patchResult.error}`)
-      console.log(`   Response data:`, patchResult.data)
+      console.log('   Response data:', patchResult.data)
     }
 
     // Important: Patch back to original value to avoid affecting other tests
