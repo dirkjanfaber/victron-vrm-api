@@ -467,7 +467,7 @@ describe('VRMAPIService Unit Tests', () => {
     const result = await service.callInstallationsAPI('123456', 'patch-dynamic-ess-settings', 'PATCH', patchPayload)
 
     expect(axios.patch).toHaveBeenCalledWith(
-    'https://vrmapi.victronenergy.com/v2/installations/123456/dynamic-ess-settings',
+      'https://vrmapi.victronenergy.com/v2/installations/123456/dynamic-ess-settings',
       patchPayload,
       expect.any(Object)
     )

@@ -15,6 +15,10 @@ function buildStatsParameters (config) {
     }
   } else {
     parameters.type = config.attribute
+    // Default interval for dynamic_ess
+    if (!config.stats_interval && !config.interval) {
+      parameters.interval = 'hours'
+    }
   }
 
   // Add interval for all types (including dynamic_ess)
@@ -48,10 +52,10 @@ function buildStatsParameters (config) {
   }
 
   // Set start time
-  if (config.stats_start) {      // interpret 'now', 'boy' 'bod' and 'bot'
+  if (config.stats_start) { // interpret 'now', 'boy' 'bod' and 'bot'
     if (config.stats_start === 'now') {
       parameters.start = floorToHour(nowTs)
-    } else if (config.stats_start === 'boy' ) {
+    } else if (config.stats_start === 'boy') {
       const yesterday = new Date(now)
       yesterday.setDate(yesterday.getDate() - 1)
       parameters.start = getStartOfDay(yesterday)
@@ -68,7 +72,7 @@ function buildStatsParameters (config) {
   }
 
   // Set end time
-  if (config.stats_end) {      // interpret 'eod', 'eoy', 'eot', and 'eoyr'
+  if (config.stats_end) { // interpret 'eod', 'eoy', 'eot', and 'eoyr'
     if (config.stats_end === 'eod') {
       const endOfDay = new Date(now)
       // Set to start of next day (24:00:00 = 00:00:00 + 1 day) for API preference

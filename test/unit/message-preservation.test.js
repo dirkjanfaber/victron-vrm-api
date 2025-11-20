@@ -84,8 +84,8 @@ describe('Message Property Preservation', () => {
         data: {
           success: true,
           records: {
-            '800': [[1234567890, 0.15], [1234567900, 0.20]],
-            '801': [[1234567890, 0.18], [1234567900, 0.22]]
+            800: [[1234567890, 0.15], [1234567900, 0.20]],
+            801: [[1234567890, 0.18], [1234567900, 0.22]]
           }
         }
       })
@@ -136,9 +136,8 @@ describe('Message Property Preservation', () => {
 
       expect(result.success).toBe(true)
       expect(axios.get).toHaveBeenCalledWith(
-        expect.stringContaining('/widgets/Graph'),
+        expect.stringContaining('/widgets/Graph?instance=1'),
         expect.objectContaining({
-          params: { instance: 1 },
           headers: expect.any(Object)
         })
       )
@@ -147,7 +146,7 @@ describe('Message Property Preservation', () => {
 
   describe('Custom API Call Message Preservation', () => {
     it('should preserve message properties for custom API calls', async () => {
-      axios.request = jest.fn().mockResolvedValue({
+      axios.get = jest.fn().mockResolvedValue({
         status: 200,
         data: { custom: 'response' }
       })

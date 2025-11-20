@@ -21,7 +21,6 @@ module.exports = function (RED) {
       // This doesn't actually change the node, but documents the intent
     }
 
-
     node.on('input', async function (msg) {
       const currentTime = Date.now()
 
@@ -63,8 +62,10 @@ module.exports = function (RED) {
           // Handle standard API types
           switch (config.api_type) {
             case 'users': {
-              result = await apiService.callUsersAPI(config.users, config.idUser)
-              msg.topic = `users ${config.users}`
+              // Backwards compatibility: fallback to 'users' field for old flows
+              const usersQuery = config.usersQuery || config.users || 'me'
+              result = await apiService.callUsersAPI(usersQuery, config.idUser)
+              msg.topic = `users ${usersQuery}`
               break
             }
 
@@ -117,7 +118,7 @@ module.exports = function (RED) {
           }
 
           // Check if we should transform price schedule
-          const shouldTransform = config.transform_price_schedule && 
+          const shouldTransform = config.transform_price_schedule &&
                                   config.installations === 'stats' &&
                                   config.attribute === 'dynamic_ess'
 
@@ -154,7 +155,9 @@ module.exports = function (RED) {
 
               // Use service methods to interpret different response types
               if (config.api_type === 'users' && result.data) {
-                statusInfo = apiService.interpretUsersStatus(result.data, config.users)
+                // Backwards compatibility: fallback to 'users' field for old flows
+                const usersQuery = config.usersQuery || config.users || 'me'
+                statusInfo = apiService.interpretUsersStatus(result.data, usersQuery)
               } else if (config.installations === 'stats' && result.data) {
                 statusInfo = apiService.interpretStatsStatus(result.data)
               } else if (config.installations === 'dynamic-ess-settings' && result.data) {

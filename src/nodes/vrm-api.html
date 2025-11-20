@@ -59,7 +59,7 @@
         [
             'users-idUser'
         ].map( x => { $('#input-'+x).hide() })
-        const selected = $('select#node-input-users').val()
+        const selected = $('select#node-input-usersQuery').val()
         if (selected !== 'me') { $('#input-users-idUser').show() }
     }
 
@@ -74,7 +74,7 @@
 
             // users
             idUser: { value: "", validate: RED.validators.regex(/^(|[0-9]{1,12})$/)},
-            users: { value: "", required: false},
+            usersQuery: { value: "me", required: false},
 
             // installations
             idSite: { value: "", validate: RED.validators.regex(/^(|[0-9]{1,12}|\{\{(node|flow|global)\..*\}\}|)$/)},
@@ -88,8 +88,6 @@
 
             gps_start: {value: '', required: false },
             gps_end: {value: '', required: false },
-
-            stats_interval: {value: ""},
 
             // widgets
             // taking idSite from installations
@@ -113,7 +111,7 @@
 
             switch (this.api_type) {
                 case 'users': {
-                    label += ' - ' + this.users
+                    label += ' - ' + (this.usersQuery || 'me')
                 }
                 break;
                 case 'installations': {
@@ -139,7 +137,13 @@
             return "output";
         },
         oneditprepare: function oneditprepare() {
+            // Backwards compatibility: migrate old 'users' field to 'usersQuery'
+            if (this.users && !this.usersQuery) {
+                this.usersQuery = this.users;
+            }
+
             checkSelectedAPIType()
+            checkSelectedUsers()
 
             // NEW: Function to update outputs count
             const updateOutputs = () => {
@@ -189,11 +193,15 @@
 <script type="text/html" data-template-name="vrm-api">
     <input type="hidden" id="node-input-outputs">
     <div class="form-row">
+        <label for="node-input-aap"><i class="fa fa-tag"></i> Aap</label>
+        <input type="text" id="node-input-aap" placeholder="Aap">
+    </div>
+    <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">
     </div>
     <div class="form-row">
-        <label for="node-input-vrm"><i class="fa fa-tag"></i> VRM</label>
+        <label for="node-input-vrm"><i class="fa fa-tag"></i> VRM - new </label>
         <input type="text" id="node-input-vrm" placeholder="VRM">
     </div>
     <div class="form-row">
@@ -206,10 +214,10 @@
     </div>
     <div id="input-users">
         <div class="form-row">
-            <label for="node-input-users"><i class="fa fa-location-arrow"></i> Users</label>
-            <select id="node-input-users" onchange="checkSelectedUsers()">
+            <label for="node-input-usersQuery"><i class="fa fa-location-arrow"></i> Users</label>
+            <select id="node-input-usersQuery" onchange="checkSelectedUsers()">
+                <option value="me" selected="selected">Basic user information</option>
                 <option value="installations">All installations/sites</option>
-                <option value="me">Basic user information</option>
             </select>
         </div>
         <div id="input-users-idUser">
@@ -411,7 +419,7 @@ There are currently 3 API types to choose from:
 
 Depending on the API type, more or less extra fields appear.
 
-In case of installation `stats` there appear some extra configuration options  
+In case of installation `stats` there appear some extra configuration options
 : Attribute (string) : Which attribute to fetch
 : Interval (string) : Time between retrieved data points
 : Show instance (boolean) : If checked, attributes will be grouped by instance
@@ -458,4 +466,3 @@ Please use either the issues on the GitHub site or the Node-RED space on our com
 - [VRM API documentation](https://vrm-api-docs.victronenergy.com/#) - The VRM API documentation.
 
 </script>
-

@@ -11,14 +11,14 @@ describe('buildStatsParameters', () => {
     // Mock Date to return consistent results
     originalDate = Date
     global.Date = class extends Date {
-      constructor(...args) {
+      constructor (...args) {
         if (args.length === 0) {
           return new originalDate(fixedDate)
         }
         return new originalDate(...args)
       }
-      
-      static now() {
+
+      static now () {
         return fixedDate.getTime()
       }
     }
@@ -95,7 +95,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should floor to hour: 1697380200 - (1697380200 % 3600) = 1697378400
       expect(result.start).toBe(1697378400)
     })
@@ -107,7 +107,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should be start of October 15, 2023 (local time)
       const expectedStart = Math.floor(new Date('2023-10-15T00:00:00.000').getTime() / 1000)
       expect(result.start).toBe(expectedStart)
@@ -121,7 +121,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should be start of October 15, 2023 UTC
       const expectedStart = Math.floor(new Date('2023-10-15T00:00:00.000Z').getTime() / 1000)
       expect(result.start).toBe(expectedStart)
@@ -134,7 +134,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should be start of October 14, 2023 (local time)
       const expectedStart = Math.floor(new Date('2023-10-14T00:00:00.000').getTime() / 1000)
       expect(result.start).toBe(expectedStart)
@@ -147,7 +147,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should be start of October 16, 2023 (local time)
       const expectedStart = Math.floor(new Date('2023-10-16T00:00:00.000').getTime() / 1000)
       expect(result.start).toBe(expectedStart)
@@ -160,10 +160,10 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should be now - 3600 seconds, floored to hour
-      const expectedStart = nowTs - 3600  // 1697380200 - 3600 = 1697376600
-      const flooredStart = expectedStart - (expectedStart % 3600)  // 1697376600 - 0 = 1697376600
+      const expectedStart = nowTs - 3600 // 1697380200 - 3600 = 1697376600
+      const flooredStart = expectedStart - (expectedStart % 3600) // 1697376600 - 0 = 1697376600
       expect(result.start).toBe(flooredStart)
     })
 
@@ -174,7 +174,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       expect(result.start).toBeUndefined()
     })
   })
@@ -189,7 +189,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should be start of October 16, 2023 (local time) - 00:00:00 of next day
       const expectedEnd = Math.floor(new Date('2023-10-16T00:00:00.000').getTime() / 1000)
       expect(result.end).toBe(expectedEnd)
@@ -203,7 +203,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should be start of October 16, 2023 UTC - 00:00:00 of next day
       const expectedEnd = Math.floor(new Date('2023-10-16T00:00:00.000Z').getTime() / 1000)
       expect(result.end).toBe(expectedEnd)
@@ -216,7 +216,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       const endOfYesterday = new Date(fixedDate)
       endOfYesterday.setDate(endOfYesterday.getDate() - 1)
       endOfYesterday.setHours(23, 59, 59, 999)
@@ -278,7 +278,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       // Should be now + 7200 seconds, floored to hour
       const expectedEnd = nowTs + 7200
       const flooredEnd = expectedEnd - (expectedEnd % 3600)
@@ -292,7 +292,7 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       expect(result.end).toBeUndefined()
     })
   })
@@ -384,10 +384,10 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       const nowTs = Math.floor(fixedDate.getTime() / 1000)
       const flooredNow = nowTs - (nowTs % 3600)
-      
+
       expect(result.start).toBe(flooredNow)
       expect(result.end).toBe(flooredNow)
     })
@@ -399,11 +399,11 @@ describe('buildStatsParameters', () => {
       }
 
       const result = buildStatsParameters(config)
-      
+
       const nowTs = Math.floor(fixedDate.getTime() / 1000)
       const expectedStart = nowTs - (-3600) // now + 3600
       const flooredStart = expectedStart - (expectedStart % 3600)
-      
+
       expect(result.start).toBe(flooredStart)
     })
   })

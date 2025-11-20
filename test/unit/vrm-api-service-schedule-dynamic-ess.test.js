@@ -37,14 +37,14 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
 
       expect(axios.get).toHaveBeenCalledTimes(1)
       const callUrl = axios.get.mock.calls[0][0]
-      
+
       // Verify correct endpoint
       expect(callUrl).toContain('/schedule-dynamic-ess')
       expect(callUrl).not.toContain('/stats')
-      
+
       // Verify async parameter
       expect(callUrl).toContain('async=0')
-      
+
       // Verify full URL structure
       expect(callUrl).toBe(
         `https://vrmapi.victronenergy.com/v2/installations/${testSiteId}/schedule-dynamic-ess?async=0`
@@ -83,7 +83,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
       )
 
       const callHeaders = axios.get.mock.calls[0][1].headers
-      
+
       expect(callHeaders['X-Authorization']).toBe(`Token ${testToken}`)
       expect(callHeaders.accept).toBe('application/json')
       expect(callHeaders['User-Agent']).toMatch(/nrc-vrm-api/)
@@ -152,7 +152,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
       )
 
       const callUrl = axios.get.mock.calls[0][0]
-      
+
       // These should NOT be in the URL
       expect(callUrl).not.toContain('type=')
       expect(callUrl).not.toContain('interval=')
@@ -265,7 +265,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
     it('should use correct base URL', async () => {
       const customBaseUrl = 'https://custom-api.example.com/v2'
       const customService = new VRMAPIService(testToken, { baseUrl: customBaseUrl })
-      
+
       const mockResponse = {
         status: 200,
         data: { success: true }
