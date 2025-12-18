@@ -65,5 +65,13 @@
     "setupFilesAfterEnv": [
       "<rootDir>/test/setup.js"
     ]
+  },
+  "standard": {
+    "env": [
+      "jest"
+    ],
+    "ignore": [
+      "build-alpha/**"
+    ]
   }
 }

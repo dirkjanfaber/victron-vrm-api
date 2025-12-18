@@ -26,20 +26,6 @@ describe('Message Property Preservation', () => {
         data: { success: true, records: [] }
       })
 
-      // Simulate a message from HTTP In node
-      const originalMsg = {
-        payload: {},
-        req: {
-          method: 'GET',
-          url: '/api/test',
-          headers: { 'user-agent': 'test' }
-        },
-        res: {
-          _res: 'mock-response-object'
-        },
-        topic: 'test'
-      }
-
       // Call the API (this tests the service, but the real preservation happens in the node)
       const result = await service.callInstallationsAPI('12345', 'stats')
 
@@ -59,15 +45,6 @@ describe('Message Property Preservation', () => {
         status: 200,
         data: { success: true, installations: [] }
       })
-
-      // Message with custom properties
-      const originalMsg = {
-        payload: {},
-        customProp: 'custom-value',
-        nested: { data: 'nested-value' },
-        _msgid: '12345.67890',
-        topic: 'test'
-      }
 
       const result = await service.callUsersAPI('me')
 

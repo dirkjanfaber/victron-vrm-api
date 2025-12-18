@@ -5,7 +5,6 @@ const http = require('http')
 const https = require('https')
 const debug = require('debug')('victron-vrm-api:service')
 const path = require('path')
-const { buildStatsParameters } = require('../utils/stats-parameters')
 
 // Get package version for User-Agent
 const packageJson = require(path.join(__dirname, '../../', 'package.json'))

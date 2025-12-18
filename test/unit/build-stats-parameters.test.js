@@ -5,17 +5,17 @@ const { buildStatsParameters } = require('../../src/utils/stats-parameters')
 describe('buildStatsParameters', () => {
   // Helper to create a fixed date for consistent testing
   const fixedDate = new Date('2023-10-15T14:30:00.000Z') // Sunday, October 15, 2023, 14:30 UTC
-  let originalDate
+  let OriginalDate
 
   beforeAll(() => {
     // Mock Date to return consistent results
-    originalDate = Date
+    OriginalDate = Date
     global.Date = class extends Date {
       constructor (...args) {
         if (args.length === 0) {
-          return new originalDate(fixedDate)
+          return new OriginalDate(fixedDate)
         }
-        return new originalDate(...args)
+        return new OriginalDate(...args)
       }
 
       static now () {
@@ -25,7 +25,7 @@ describe('buildStatsParameters', () => {
   })
 
   afterAll(() => {
-    global.Date = originalDate
+    global.Date = OriginalDate
   })
 
   describe('Basic parameter building', () => {

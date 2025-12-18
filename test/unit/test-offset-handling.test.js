@@ -5,16 +5,16 @@ const { buildStatsParameters } = require('../../src/utils/stats-parameters')
 
 describe('Offset handling for stats_end (PR #36)', () => {
   const fixedDate = new Date('2023-10-15T14:30:00.000Z')
-  let originalDate
+  let OriginalDate
 
   beforeAll(() => {
-    originalDate = Date
+    OriginalDate = Date
     global.Date = class extends Date {
       constructor (...args) {
         if (args.length === 0) {
-          return new originalDate(fixedDate)
+          return new OriginalDate(fixedDate)
         }
-        return new originalDate(...args)
+        return new OriginalDate(...args)
       }
 
       static now () {
@@ -24,7 +24,7 @@ describe('Offset handling for stats_end (PR #36)', () => {
   })
 
   afterAll(() => {
-    global.Date = originalDate
+    global.Date = OriginalDate
   })
 
   describe('stats_end offset should be added, not subtracted', () => {
