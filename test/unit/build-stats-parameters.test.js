@@ -153,17 +153,29 @@ describe('buildStatsParameters', () => {
       expect(result.start).toBe(expectedStart)
     })
 
-    it('should handle numeric offset for start time', () => {
+    it('should handle negative numeric offset for start time (past)', () => {
       const config = {
         attribute: 'Dc/0/Power',
-        stats_start: '3600' // 1 hour ago
+        stats_start: '-3600' // 1 hour ago
       }
 
       const result = buildStatsParameters(config)
 
-      // Should be now - 3600 seconds, floored to hour
-      const expectedStart = nowTs - 3600 // 1697380200 - 3600 = 1697376600
-      const flooredStart = expectedStart - (expectedStart % 3600) // 1697376600 - 0 = 1697376600
+      const expectedStart = nowTs - 3600
+      const flooredStart = expectedStart - (expectedStart % 3600)
+      expect(result.start).toBe(flooredStart)
+    })
+
+    it('should handle positive numeric offset for start time (future)', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: '3600' // 1 hour from now
+      }
+
+      const result = buildStatsParameters(config)
+
+      const expectedStart = nowTs + 3600
+      const flooredStart = expectedStart - (expectedStart % 3600)
       expect(result.start).toBe(flooredStart)
     })
 
@@ -392,19 +404,36 @@ describe('buildStatsParameters', () => {
       expect(result.end).toBe(flooredNow)
     })
 
-    it('should handle negative numeric offset', () => {
+    it('should handle -24 hours offset (issue #45)', () => {
       const config = {
         attribute: 'Dc/0/Power',
-        stats_start: '-3600' // This would be future time
+        stats_start: '-86400' // -24 hours (from UI dropdown)
       }
 
       const result = buildStatsParameters(config)
 
       const nowTs = Math.floor(fixedDate.getTime() / 1000)
-      const expectedStart = nowTs - (-3600) // now + 3600
+      const expectedStart = nowTs - 86400
       const flooredStart = expectedStart - (expectedStart % 3600)
 
       expect(result.start).toBe(flooredStart)
+      expect(result.start).toBeLessThan(nowTs)
+    })
+
+    it('should handle -48 hours offset (issue #45)', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: '-172800' // -48 hours (from UI dropdown)
+      }
+
+      const result = buildStatsParameters(config)
+
+      const nowTs = Math.floor(fixedDate.getTime() / 1000)
+      const expectedStart = nowTs - 172800
+      const flooredStart = expectedStart - (expectedStart % 3600)
+
+      expect(result.start).toBe(flooredStart)
+      expect(result.start).toBeLessThan(nowTs)
     })
   })
 })

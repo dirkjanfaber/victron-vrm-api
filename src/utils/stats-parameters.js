@@ -67,7 +67,7 @@ function buildStatsParameters (config) {
       parameters.start = getStartOfDay(tomorrow)
     } else if (!isNaN(parseInt(config.stats_start))) {
       // the value is an offset in seconds from now
-      parameters.start = floorToHour(nowTs - parseInt(config.stats_start))
+      parameters.start = floorToHour(nowTs + parseInt(config.stats_start))
     }
   }
 

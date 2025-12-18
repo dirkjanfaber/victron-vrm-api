@@ -98,16 +98,16 @@ describe('Offset handling for stats_end (PR #36)', () => {
       expect(result.end).toBeGreaterThan(result.start)
     })
 
-    it('should handle time range from positive start offset to positive end offset', () => {
+    it('should handle time range from negative start offset to positive end offset', () => {
       const config = {
         attribute: 'Dc/0/Power',
-        stats_start: '3600', // Used to mean "1 hour ago" but with subtract means "1 hour from now"
+        stats_start: '-3600', // -1 hour (1 hour ago)
         stats_end: '86400' // +24 hours from now
       }
 
       const result = buildStatsParameters(config)
 
-      const expectedStart = nowTs - parseInt(config.stats_start)
+      const expectedStart = nowTs + parseInt(config.stats_start)
       const flooredStart = expectedStart - (expectedStart % 3600)
       expect(result.start).toBe(flooredStart)
 
