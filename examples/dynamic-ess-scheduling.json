@@ -501,22 +501,30 @@
         "y": 640,
         "wires": [
             [
-                "14        "type": "delay",
+                "14a36f4c55a0ae1a"
+            ]
+        ]
+    },
+    {
+        "id": "f22621fcf6b896e1",
+        "type": "link in",
         "z": "dd54dd45922062eb",
         "g": "d9455186613b5f12",
-        "name": "Be a bit friendly for the dbus",
-        "pauseType": "delay",
-        "timeout": "0.1",
-        "timeoutUnits": "seconds",
-        "rate": "1",
-        "nbRateUnits": "1",
-        "rateUnits": "second",
-        "randomFirst": "1",
-        "randomLast": "5",
-        "randomUnits": "seconds",
-        "drop": false,
-        "allowrate": false,
-        "config-vrm-api",
+        "name": "link in 1",
+        "links": [
+            "2164b4a2d865544a"
+        ],
+        "x": 95,
+        "y": 580,
+        "wires": [
+            [
+                "5672407a3f8c36e0"
+            ]
+        ]
+    },
+    {
+        "id": "4e54da6b2db12c18",
+        "type": "config-vrm-api",
         "name": "",
         "forceIpv4": true
     }
