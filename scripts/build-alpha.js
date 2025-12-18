@@ -3,7 +3,6 @@
 
 const fs = require('fs')
 const path = require('path')
-const { execSync } = require('child_process')
 
 const ALPHA_COLOR = '#4a90e2' // Blue
 const ORIGINAL_COLOR = '#f7ab3e' // Orange

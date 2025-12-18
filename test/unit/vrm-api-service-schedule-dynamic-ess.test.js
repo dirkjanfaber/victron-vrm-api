@@ -35,6 +35,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         'GET'
       )
 
+      expect(result.success).toBe(true)
       expect(axios.get).toHaveBeenCalledTimes(1)
       const callUrl = axios.get.mock.calls[0][0]
 
