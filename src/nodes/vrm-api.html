@@ -27,7 +27,7 @@
 
     function checkSelectedInstallations() {
         [
-            'stats', 'gps-download', 'fetch--ess-schedules'
+            'stats', 'gps-download', 'fetch--ess-schedules', 'post-adjust-consumption'
         ].map( x => { $('#input-'+x).hide() })
 
         const selected = $('select#node-input-installations').val()
@@ -40,6 +40,9 @@
         }
         if (selected === 'fetch-dynamic-ess-schedules' ) {
             $('#input-fetch-dynamic-ess-schedules').show()
+        }
+        if (selected === 'post-adjust-consumption') {
+            $('#input-post-adjust-consumption').show()
         }
 
         const apiType = $('#node-input-api_type').val();
@@ -243,7 +246,29 @@
                 <option value="dynamic-ess-settings">Get Dynamic ESS configuration</option>
                 <option value="patch-dynamic-ess-settings">Modify Dynamic ESS configuration</option>
                 <option value="fetch-dynamic-ess-schedules">Fetch Dynamic ESS schedules</option>
+                <option value="post-adjust-consumption">Adjust Consumption Forecast (beta)</option>
             </select>
+        </div>
+        <div id="input-post-adjust-consumption" style="display:none;">
+            <div class="form-row">
+                <p style="margin-left: 102px; color: #666; max-width: 380px;">
+                    Send <code>msg.payload</code> as a single object or array of hourly entries:<br>
+                    <code>{ "offset": 2, "ev": 10500, "hp": 4000, "base": 2000 }</code><br>
+                    <code>"offset"</code> is hours from the current hour (0 = now).
+                    When all three of <code>ev</code>, <code>hp</code>, and <code>base</code> are provided,
+                    the total is computed automatically. Omit any key to leave it unchanged.
+                    Use <code>-1</code> for <code>"ev"</code> or <code>"hp"</code> to reset that hour to the base forecast.
+                </p>
+                <p style="margin-left: 102px; color: #666; max-width: 380px;">
+                    To reset hours to the base forecast, set <code>msg.reset</code> to an array of offsets
+                    instead of using <code>msg.payload</code>:<br>
+                    <code>msg.reset = [0, 1, 2]</code> (offsets from current hour)
+                </p>
+                <p style="margin-left: 102px; color: #888; font-style: italic; font-size: 0.9em; max-width: 380px;">
+                    <code>offset</code> can also be an absolute Unix timestamp (full hours only, future only).
+                    Requires Full control or Technician access on the installation.
+                </p>
+            </div>
         </div>
         <div id="input-fetch-dynamic-ess-schedules" style="display:none;">
             <div class="form-row">
@@ -270,6 +295,10 @@
                     <option value="evE">EV Charging Consumption (beta)</option>
                     <option value="dhE">Heating Consumption (beta)</option>
                     <option value="daE">AC Load Consumption (beta)</option>
+                    <option value="vrm_consum_evcs">EV Charging Consumption</option>
+                    <option value="vrm_consum_hp">Heating Consumption</option>
+                    <option value="vrm_consum_ac">AC Load Consumption</option>
+                    <option value="vrm_consum_base">Base Load Consumption</option>
                     <option value="vrm_consumption_fc">Consumption Forecast</option>
                     <option value="vrm_consum_evcs_fc">EV Charging Consumption Forecast</option>
                     <option value="vrm_consum_hp_fc">Heating Consumption Forecast</option>

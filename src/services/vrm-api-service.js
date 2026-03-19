@@ -55,6 +55,9 @@ class VRMAPIService {
     } else if (endpoint === 'patch-dynamic-ess-settings') {
       actualEndpoint = 'dynamic-ess-settings'
       actualMethod = 'patch'
+    } else if (endpoint === 'post-adjust-consumption') {
+      actualEndpoint = 'adjust-consumption'
+      actualMethod = 'post'
     } else if (endpoint === 'fetch-dynamic-ess-schedules') {
       // NEW: Use the correct schedule-dynamic-ess endpoint
       actualEndpoint = 'schedule-dynamic-ess'
