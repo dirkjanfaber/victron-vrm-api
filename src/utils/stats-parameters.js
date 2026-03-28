@@ -31,6 +31,11 @@ function buildStatsParameters (config) {
     parameters.type = 'evcs'
   }
 
+  if (['vrm_consum_hp', 'vrm_consum_evcs', 'vrm_consum_ac', 'vrm_consum_base'].includes(config.attribute)) {
+    delete parameters['attributeCodes[]']
+    parameters.type = 'live_feed_kwh'
+  }
+
   // Handle time parameters
   const now = new Date()
   const nowTs = Math.floor(now.getTime() / 1000)

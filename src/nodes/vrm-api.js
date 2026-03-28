@@ -6,6 +6,7 @@ module.exports = function (RED) {
   const debug = require('debug')('victron-vrm-api')
 
   const { transformPriceSchedule } = require('../utils/price-schedule-transformer')
+  const { buildAdjustConsumptionBody } = require('../utils/adjust-consumption-builder')
 
   function VRMAPI (config) {
     RED.nodes.createNode(this, config)
@@ -43,22 +44,23 @@ module.exports = function (RED) {
       // Attributes only available on the beta API environment.
       // Add new beta-only attributes here; remove them once they land on production.
       const BETA_ATTRIBUTES = []
+      // Endpoints only available on the beta API environment.
+      const BETA_ENDPOINTS = ['post-adjust-consumption']
       const BETA_BASE_URL = 'https://betavrmapi.victronenergy.com/v2'
 
       const useBetaApi = this.vrm && this.vrm.useBetaApi
 
-      if (config.installations === 'stats' && BETA_ATTRIBUTES.includes(config.attribute) && !useBetaApi && !msg.url) {
-        node.status({ fill: 'yellow', shape: 'dot', text: `${config.attribute} requires beta API - enable in config` })
-        return
-      }
-
       const isBetaAttribute = config.installations === 'stats' && BETA_ATTRIBUTES.includes(config.attribute)
+      const isBetaEndpoint = BETA_ENDPOINTS.includes(config.installations)
 
       let baseUrl
       if (msg.url) {
         baseUrl = msg.url
-      } else if (useBetaApi && isBetaAttribute) {
+      } else if (useBetaApi && (isBetaAttribute || isBetaEndpoint)) {
         baseUrl = BETA_BASE_URL
+      } else if (isBetaAttribute || isBetaEndpoint) {
+        node.status({ fill: 'yellow', shape: 'dot', text: `${config.installations} requires beta API - enable in config` })
+        return
       }
 
       const serviceOptions = {}
@@ -73,6 +75,7 @@ module.exports = function (RED) {
 
       try {
         let result
+        let adjustConsumptionBody = null
 
         // Handle custom API calls (advanced usage)
         if (msg.query && /^(GET|POST|PATCH)$/i.test(msg.method)) {
@@ -100,7 +103,21 @@ module.exports = function (RED) {
                 options.parameters = buildStatsParameters(config)
               }
 
-              result = await apiService.callInstallationsAPI(siteId, config.installations, 'GET', msg.payload, options)
+              let installPayload = msg.payload
+
+              if (config.installations === 'post-adjust-consumption') {
+                try {
+                  adjustConsumptionBody = buildAdjustConsumptionBody(msg.payload, msg.reset, Date.now())
+                  installPayload = adjustConsumptionBody
+                } catch (err) {
+                  node.status({ fill: 'red', shape: 'dot', text: err.message })
+                  msg.payload = { error: err.message }
+                  node.send(msg)
+                  return
+                }
+              }
+
+              result = await apiService.callInstallationsAPI(siteId, config.installations, 'GET', installPayload, options)
               msg.topic = `installations ${config.installations}`
               break
             }
@@ -131,6 +148,24 @@ module.exports = function (RED) {
           messages[0].payload = result.data
           messages[0].topic = msg.topic
           messages[0].url = result.url
+
+          // Compute base load from live_feed_kwh data (total - dhE - evE - daE)
+          if (config.attribute === 'vrm_consum_base' && result.data && result.data.records) {
+            const r = result.data.records
+            const dhEMap = Object.fromEntries((r.dhE || []).map(([ts, v]) => [ts, v || 0]))
+            const evEMap = Object.fromEntries((r.evE || []).map(([ts, v]) => [ts, v || 0]))
+            const daEMap = Object.fromEntries((r.daE || []).map(([ts, v]) => [ts, v || 0]))
+            const baseRecords = (r.total_consumption || []).map(([ts, total]) =>
+              [ts, (total || 0) - (dhEMap[ts] || 0) - (evEMap[ts] || 0) - (daEMap[ts] || 0)]
+            )
+            const t = result.data.totals || {}
+            const baseTotal = (t.total_consumption || 0) - (t.dhE || 0) - (t.evE || 0) - (t.daE || 0)
+            messages[0].payload = {
+              success: result.data.success,
+              records: { base_load: baseRecords },
+              totals: { base_load: baseTotal }
+            }
+          }
 
           // Store in global context if requested
           if (config.store_in_global_context === true) {
@@ -183,6 +218,11 @@ module.exports = function (RED) {
                 statusInfo = apiService.interpretStatsStatus(result.data)
               } else if (config.installations === 'dynamic-ess-settings' && result.data) {
                 statusInfo = apiService.interpretDynamicEssStatus(result.data)
+              } else if (config.installations === 'post-adjust-consumption') {
+                const body = adjustConsumptionBody || {}
+                const count = (body.vrm_consumption_fc_adj || body.vrm_consum_evcs_fc_adj || body.vrm_consum_hp_fc_adj || []).length
+                const label = msg.reset !== undefined ? 'reset' : 'adjusted'
+                statusInfo = { text: `${count} hour${count === 1 ? '' : 's'} ${label}`, color: 'green' }
               } else if (config.api_type === 'widgets' && result.data) {
                 statusInfo = apiService.interpretWidgetsStatus(result.data, config.widgets, config.instance)
               }
@@ -204,11 +244,15 @@ module.exports = function (RED) {
 
         // Verbose logging
         if (config.verbose === true) {
-          node.warn({
+          const verboseInfo = {
             url: result.url,
             method: result.method,
             status: result.status
-          })
+          }
+          if (result.method !== 'get') {
+            verboseInfo.parameters = adjustConsumptionBody || msg.payload
+          }
+          node.warn(verboseInfo)
         }
       } catch (error) {
         node.status({ fill: 'red', shape: 'dot', text: 'Unexpected error' })
