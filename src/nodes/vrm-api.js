@@ -32,7 +32,8 @@ module.exports = function (RED) {
 
       // Get API token from config or flow context
       const flowContext = this.context().flow
-      const apiToken = this.vrm ? this.vrm.credentials.token : flowContext.get('vrm_api.credentials.token')
+      const rawToken = this.vrm ? this.vrm.credentials.token : flowContext.get('vrm_api.credentials.token')
+      const apiToken = rawToken ? rawToken.trim() : null
 
       if (!apiToken) {
         node.status({ fill: 'red', shape: 'ring', text: 'No API token configured' })
@@ -46,7 +47,7 @@ module.exports = function (RED) {
       }
 
       // Initialize API service
-      const apiService = new VRMAPIService(apiToken)
+      const apiService = new VRMAPIService(apiToken, serviceOptions)
 
       node.status({ fill: 'yellow', shape: 'ring', text: 'Connecting to VRM API' })
 
@@ -172,6 +173,17 @@ module.exports = function (RED) {
 
           node.lastValidUpdate = currentTime
           node.send(messages)
+        } else {
+          const statusText = {
+            401: 'Invalid API token',
+            403: 'Access denied',
+            429: 'Rate limited by API'
+          }[result.status] || (result.status ? `Error ${result.status}` : 'No response from VRM API')
+          node.status({ fill: 'red', shape: 'dot', text: statusText })
+          const errMsg = RED.util.cloneMessage(msg)
+          errMsg.payload = result.data || { error: result.error }
+          errMsg.status = result.status
+          node.send(errMsg)
         }
 
         // Verbose logging
