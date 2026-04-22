@@ -46,7 +46,7 @@ module.exports = function (RED) {
       // Add new beta-only attributes here; remove them once they land on production.
       const BETA_ATTRIBUTES = []
       // Endpoints only available on the beta API environment.
-      const BETA_ENDPOINTS = ['post-adjust-consumption']
+      const BETA_ENDPOINTS = []
       const BETA_BASE_URL = 'https://betavrmapi.victronenergy.com/v2'
 
       const useBetaApi = this.vrm && this.vrm.useBetaApi
