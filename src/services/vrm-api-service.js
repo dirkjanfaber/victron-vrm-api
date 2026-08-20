@@ -1,17 +1,11 @@
 'use strict'
 
-const axios = require('axios')
-const http = require('http')
-const https = require('https')
+const dns = require('dns')
 const debug = require('debug')('victron-vrm-api:service')
 const path = require('path')
 
-// Get package version for User-Agent
 const packageJson = require(path.join(__dirname, '../../', 'package.json'))
 
-/**
- * VRM API Service - Extracted logic from Node-RED node for testability
- */
 class VRMAPIService {
   constructor (apiToken, options = {}) {
     this.apiToken = apiToken
@@ -20,17 +14,12 @@ class VRMAPIService {
     this.userAgent = options.userAgent || `nrc-vrm-api/${packageJson.version}`
     this.forceIpv4 = options.forceIpv4 || false
 
-    // Configure axios to force IPv4 if requested
     if (this.forceIpv4) {
-      debug('Configuring axios to force IPv4 connections')
-      axios.defaults.httpAgent = new http.Agent({ family: 4 })
-      axios.defaults.httpsAgent = new https.Agent({ family: 4 })
+      debug('Configuring DNS to prefer IPv4 connections')
+      dns.setDefaultResultOrder('ipv4first')
     }
   }
 
-  /**
-   * Build standard headers for VRM API requests
-   */
   _buildHeaders (additionalHeaders = {}) {
     return {
       'X-Authorization': `Token ${this.apiToken}`,
@@ -40,15 +29,58 @@ class VRMAPIService {
     }
   }
 
-  /**
-   * Handle installations API calls
-   */
+  async _request (url, method, payload, headers) {
+    const options = { method: method.toUpperCase(), headers }
+
+    if (payload !== null && payload !== undefined && (method === 'post' || method === 'patch')) {
+      options.body = JSON.stringify(payload)
+      options.headers = { ...headers, 'Content-Type': 'application/json' }
+    }
+
+    debug(`${method.toUpperCase()} ${url}`, payload ? { payload } : '')
+
+    try {
+      const response = await fetch(url, options)
+      const data = await response.json()
+
+      debug(`Response ${response.status}:`, data)
+
+      if (!response.ok) {
+        return {
+          success: false,
+          status: response.status,
+          data,
+          error: `HTTP ${response.status}`,
+          url,
+          method
+        }
+      }
+
+      return {
+        success: true,
+        status: response.status,
+        data,
+        url,
+        method
+      }
+    } catch (error) {
+      debug('Request error:', error.message)
+      return {
+        success: false,
+        status: undefined,
+        data: undefined,
+        error: error.message,
+        url,
+        method
+      }
+    }
+  }
+
   async callInstallationsAPI (siteId, endpoint, method = 'GET', payload = null, options = {}) {
     let url = `${this.baseUrl}/installations/${siteId}`
     let actualMethod = method.toLowerCase()
     let actualEndpoint = endpoint
 
-    // Handle special endpoint transformations
     if (endpoint === 'post-alarms') {
       actualEndpoint = 'alarms'
       actualMethod = 'post'
@@ -59,21 +91,16 @@ class VRMAPIService {
       actualEndpoint = 'adjust-consumption'
       actualMethod = 'post'
     } else if (endpoint === 'fetch-dynamic-ess-schedules') {
-      // NEW: Use the correct schedule-dynamic-ess endpoint
       actualEndpoint = 'schedule-dynamic-ess'
       actualMethod = 'get'
-      // This endpoint doesn't need the complex stats parameters
-      // It just needs async=0
       options.parameters = { async: 0 }
     }
 
     url += `/${actualEndpoint}`
 
-    // Add query parameters based on endpoint type
     let queryParams = null
 
     if (actualEndpoint === 'stats' && options.parameters) {
-      // Handle stats endpoint parameters
       queryParams = new URLSearchParams()
       Object.entries(options.parameters).forEach(([key, value]) => {
         if (Array.isArray(value)) {
@@ -83,7 +110,6 @@ class VRMAPIService {
         }
       })
     } else if (actualEndpoint === 'schedule-dynamic-ess' && options.parameters) {
-      // Handle schedule-dynamic-ess endpoint parameters
       queryParams = new URLSearchParams()
       Object.entries(options.parameters).forEach(([key, value]) => {
         queryParams.append(key, value)
@@ -98,62 +124,9 @@ class VRMAPIService {
     }
 
     const headers = this._buildHeaders()
-
-    debug(`${actualMethod.toUpperCase()} ${url}`, payload ? { payload } : '')
-
-    try {
-      let response
-      switch (actualMethod) {
-        case 'get':
-          response = await axios.get(url, { headers })
-          break
-        case 'post':
-          response = await axios.post(url, payload, { headers })
-          break
-        case 'patch':
-          response = await axios.patch(url, payload, { headers })
-          break
-        default:
-          throw new Error(`Unsupported method: ${actualMethod}`)
-      }
-
-      debug(`Response ${response.status}:`, response.data)
-      return {
-        success: true,
-        status: response.status,
-        data: response.data,
-        url,
-        method: actualMethod
-      }
-    } catch (error) {
-      debug('API Error:', error.response?.status, error.response?.data)
-      return {
-        success: false,
-        status: error.response?.status,
-        data: error.response?.data,
-        error: error.message,
-        url,
-        method: actualMethod
-      }
-    }
+    return this._request(url, actualMethod, payload, headers)
   }
 
-  /**
-   * Handle users API calls
-   *
-   * Note: VRM API returns user data in this structure:
-   * {
-   *   "success": true,
-   *   "user": {
-   *     "id": 123456,
-   *     "name": "User Name",
-   *     "email": "user@example.com",
-   *     "country": "Country",
-   *     "idAccessToken": 1234,
-   *     "accessLevel": 1
-   *   }
-   * }
-   */
   async callUsersAPI (endpoint, userId = null) {
     let url = `${this.baseUrl}/users`
 
@@ -170,37 +143,9 @@ class VRMAPIService {
     }
 
     const headers = this._buildHeaders()
-
-    debug(`GET ${url}`)
-
-    try {
-      const response = await axios.get(url, { headers })
-
-      debug(`Response ${response.status}:`, response.data)
-
-      return {
-        success: true,
-        status: response.status,
-        data: response.data,
-        url,
-        method: 'get'
-      }
-    } catch (error) {
-      debug('API Error:', error.response?.status, error.response?.data)
-      return {
-        success: false,
-        status: error.response?.status,
-        data: error.response?.data,
-        error: error.message,
-        url,
-        method: 'get'
-      }
-    }
+    return this._request(url, 'get', null, headers)
   }
 
-  /**
-   * Handle widgets API calls
-   */
   async callWidgetsAPI (siteId, widgetType, instance = null) {
     let url = `${this.baseUrl}/installations/${siteId}/widgets/${widgetType}`
 
@@ -209,83 +154,14 @@ class VRMAPIService {
     }
 
     const headers = this._buildHeaders()
-
-    debug(`GET ${url}`)
-
-    try {
-      const response = await axios.get(url, { headers })
-
-      debug(`Response ${response.status}:`, response.data)
-
-      return {
-        success: true,
-        status: response.status,
-        data: response.data,
-        url,
-        method: 'get'
-      }
-    } catch (error) {
-      debug('API Error:', error.response?.status, error.response?.data)
-      return {
-        success: false,
-        status: error.response?.status,
-        data: error.response?.data,
-        error: error.message,
-        url,
-        method: 'get'
-      }
-    }
+    return this._request(url, 'get', null, headers)
   }
 
-  /**
-   * Generic method to make custom API calls (for advanced usage)
-   */
   async makeCustomCall (url, method = 'GET', payload = null, customHeaders = {}) {
     const headers = this._buildHeaders(customHeaders)
-
-    debug(`${method.toUpperCase()} ${url}`, payload ? { payload } : '')
-
-    try {
-      let response
-      switch (method.toLowerCase()) {
-        case 'get':
-          response = await axios.get(url, { headers })
-          break
-        case 'post':
-          response = await axios.post(url, payload, { headers })
-          break
-        case 'patch':
-          response = await axios.patch(url, payload, { headers })
-          break
-        default:
-          throw new Error(`Unsupported method: ${method}`)
-      }
-
-      debug(`Response ${response.status}:`, response.data)
-      return {
-        success: true,
-        status: response.status,
-        data: response.data,
-        url,
-        method: method.toLowerCase()
-      }
-    } catch (error) {
-      debug('API Error:', error.response?.status, error.response?.data)
-      return {
-        success: false,
-        status: error.response?.status,
-        data: error.response?.data,
-        error: error.message,
-        url,
-        method: method.toLowerCase()
-      }
-    }
+    return this._request(url, method.toLowerCase(), payload, headers)
   }
 
-  /**
-   * Helper method to extract user data from VRM API response
-   * Handles the nested structure where user data is in response.user
-   */
   extractUserData (apiResponse) {
     if (!apiResponse || !apiResponse.user) {
       return null
@@ -302,9 +178,6 @@ class VRMAPIService {
     }
   }
 
-  /**
-   * Interpret users API response for status display
-   */
   interpretUsersStatus (responseData, endpoint) {
     if (!responseData) {
       return {
@@ -361,7 +234,6 @@ class VRMAPIService {
       }
     }
 
-    // Default for other users endpoints
     return {
       text: 'Users data received',
       color: 'green',
@@ -369,9 +241,6 @@ class VRMAPIService {
     }
   }
 
-  /**
-   * Interpret stats API response for status display
-   */
   interpretStatsStatus (responseData) {
     if (!responseData || !responseData.totals) {
       return {
@@ -414,9 +283,6 @@ class VRMAPIService {
     }
   }
 
-  /**
-   * Interpret dynamic ESS settings response for status display
-   */
   interpretDynamicEssStatus (responseData) {
     const data = responseData?.data
 
@@ -461,9 +327,6 @@ class VRMAPIService {
     }
   }
 
-  /**
-   * Interpret widgets API response for status display
-   */
   interpretWidgetsStatus (responseData, widgetType, instance) {
     if (!responseData?.records?.data) {
       return {
@@ -476,7 +339,6 @@ class VRMAPIService {
 
     const data = responseData.records.data
 
-    // Check if we have actual device data (not just metadata)
     const hasActualData = Object.keys(data).some(key =>
       key !== 'hasOldData' && key !== 'secondsAgo' &&
     typeof data[key] === 'object' &&
@@ -493,7 +355,6 @@ class VRMAPIService {
       }
     }
 
-    // Widget configuration lookup table
     const widgetConfig = {
       EvChargerSummary: {
         lookupKey: '824',
@@ -507,28 +368,23 @@ class VRMAPIService {
         lookupCode: 'tsT',
         fallbackText: 'Temperature sensor',
         valueProperty: 'temperatureValue',
-        includeInstanceInText: true // Show instance info for temperature
+        includeInstanceInText: true
       }
     }
 
-    // Get configuration for this widget type
     const config = widgetConfig[widgetType]
 
     if (config) {
-    // Try different lookup strategies in order of preference
       let targetData = null
 
-      // 1. Try lookup by specific key (e.g., data["450"])
       if (config.lookupKey && data[config.lookupKey]) {
         targetData = data[config.lookupKey]
       }
 
-      // 2. Try lookup by code (e.g., code === 'evs')
       if (!targetData && config.lookupCode) {
         targetData = Object.values(data).find(item => item.code === config.lookupCode)
       }
 
-      // 3. Try lookup by dataAttributeName (e.g., dataAttributeName === 'Status')
       if (!targetData && config.lookupDataAttribute) {
         targetData = Object.values(data).find(item =>
           item.dataAttributeName === config.lookupDataAttribute
@@ -536,7 +392,6 @@ class VRMAPIService {
       }
 
       if (targetData && targetData.formattedValue) {
-      // Check data validity first - applies to all widgets
         if (targetData.isValid === 0) {
           return {
             text: 'Invalid data',
@@ -559,10 +414,8 @@ class VRMAPIService {
           }
         }
 
-        // Data is valid - format display text based on widget type
         let displayText = targetData.formattedValue
 
-        // Add instance info if configured for this widget type
         if (config.includeInstanceInText && instance) {
           if (widgetType === 'TempSummaryAndGraph') {
             displayText = `Temperature (inst. ${instance}): ${targetData.formattedValue}`
@@ -580,13 +433,11 @@ class VRMAPIService {
           raw: responseData
         }
 
-        // Add widget-specific property
         result[config.valueProperty] = targetData.formattedValue
 
         return result
       }
 
-      // Has data but no target field found
       let fallbackText = config.fallbackText
       if (config.includeInstanceInText && instance) {
         fallbackText = `${config.fallbackText} (inst. ${instance})`
@@ -602,7 +453,6 @@ class VRMAPIService {
       }
     }
 
-    // Default for unknown widget types - just show the widget type name
     return {
       text: widgetType,
       color: 'green',

@@ -3,11 +3,6 @@ const helper = require('node-red-node-test-helper')
 const configNode = require('../../src/nodes/config-vrm-api.js')
 const vrmApiNode = require('../../src/nodes/vrm-api.js')
 
-// Mock axios to avoid actual HTTP calls in unit tests
-jest.mock('axios')
-const axios = require('axios')
-
-// Initialize test helper
 helper.init(require.resolve('node-red'))
 
 describe('msg.url Override Functionality', () => {
@@ -24,11 +19,7 @@ describe('msg.url Override Functionality', () => {
   describe('URL Override with msg.url', () => {
     it('should use default VRM API URL when msg.url is not provided', (done) => {
       const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
+        { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
         {
           id: 'vrm1',
           type: 'vrm-api',
@@ -38,21 +29,15 @@ describe('msg.url Override Functionality', () => {
           users: 'me',
           wires: [['helper1']]
         },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
+        { id: 'helper1', type: 'helper' }
       ]
 
-      const credentials = {
-        config1: {
-          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-        }
-      }
+      const credentials = { config1: { token: 'test_token_64_characters_long_abcdef0123456789abcdef012345' } }
 
-      // Mock axios get method
-      axios.get = jest.fn().mockResolvedValue({
-        data: { user: { id: 123, email: 'test@example.com' } }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ user: { id: 123, email: 'test@example.com' } })
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -60,26 +45,20 @@ describe('msg.url Override Functionality', () => {
         const helperNode = helper.getNode('helper1')
 
         helperNode.on('input', (msg) => {
-          // Verify default VRM API URL was used
-          expect(axios.get).toHaveBeenCalledWith(
+          expect(global.fetch).toHaveBeenCalledWith(
             'https://vrmapi.victronenergy.com/v2/users/me',
             expect.any(Object)
           )
           done()
         })
 
-        // Send message without msg.url (should use default)
         vrmNode.receive({ payload: 'trigger' })
       })
     })
 
     it('should override default URL when msg.url is provided with GET method', (done) => {
       const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
+        { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
         {
           id: 'vrm1',
           type: 'vrm-api',
@@ -87,21 +66,15 @@ describe('msg.url Override Functionality', () => {
           vrm: 'config1',
           wires: [['helper1']]
         },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
+        { id: 'helper1', type: 'helper' }
       ]
 
-      const credentials = {
-        config1: {
-          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-        }
-      }
+      const credentials = { config1: { token: 'test_token_64_characters_long_abcdef0123456789abcdef012345' } }
 
-      // Mock axios get method
-      axios.get = jest.fn().mockResolvedValue({
-        data: { custom: 'response' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ custom: 'response' })
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -109,8 +82,7 @@ describe('msg.url Override Functionality', () => {
         const helperNode = helper.getNode('helper1')
 
         helperNode.on('input', (msg) => {
-          // Verify custom URL was used, with query appended
-          expect(axios.get).toHaveBeenCalledWith(
+          expect(global.fetch).toHaveBeenCalledWith(
             'https://custom-api.example.com/v1/test/endpoint',
             expect.objectContaining({
               headers: expect.objectContaining({
@@ -122,7 +94,6 @@ describe('msg.url Override Functionality', () => {
           done()
         })
 
-        // Send message with custom base URL and query (query gets appended)
         vrmNode.receive({
           payload: 'trigger',
           url: 'https://custom-api.example.com/v1',
@@ -134,11 +105,7 @@ describe('msg.url Override Functionality', () => {
 
     it('should override default URL when msg.url is provided with POST method', (done) => {
       const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
+        { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
         {
           id: 'vrm1',
           type: 'vrm-api',
@@ -146,21 +113,15 @@ describe('msg.url Override Functionality', () => {
           vrm: 'config1',
           wires: [['helper1']]
         },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
+        { id: 'helper1', type: 'helper' }
       ]
 
-      const credentials = {
-        config1: {
-          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-        }
-      }
+      const credentials = { config1: { token: 'test_token_64_characters_long_abcdef0123456789abcdef012345' } }
 
-      // Mock axios post method
-      axios.post = jest.fn().mockResolvedValue({
-        data: { created: 'response' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ created: 'response' })
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -168,11 +129,10 @@ describe('msg.url Override Functionality', () => {
         const helperNode = helper.getNode('helper1')
 
         helperNode.on('input', (msg) => {
-          // Verify custom URL was used with POST method (query appended)
-          expect(axios.post).toHaveBeenCalledWith(
+          expect(global.fetch).toHaveBeenCalledWith(
             'https://custom-api.example.com/v1/create',
-            { test: 'data' },
             expect.objectContaining({
+              method: 'POST',
               headers: expect.objectContaining({
                 'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
                 accept: 'application/json'
@@ -182,7 +142,6 @@ describe('msg.url Override Functionality', () => {
           done()
         })
 
-        // Send message with custom base URL and POST method
         vrmNode.receive({
           payload: { test: 'data' },
           url: 'https://custom-api.example.com/v1',
@@ -194,11 +153,7 @@ describe('msg.url Override Functionality', () => {
 
     it('should override default URL when msg.url is provided with PATCH method', (done) => {
       const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
+        { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
         {
           id: 'vrm1',
           type: 'vrm-api',
@@ -206,21 +161,15 @@ describe('msg.url Override Functionality', () => {
           vrm: 'config1',
           wires: [['helper1']]
         },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
+        { id: 'helper1', type: 'helper' }
       ]
 
-      const credentials = {
-        config1: {
-          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-        }
-      }
+      const credentials = { config1: { token: 'test_token_64_characters_long_abcdef0123456789abcdef012345' } }
 
-      // Mock axios patch method
-      axios.patch = jest.fn().mockResolvedValue({
-        data: { updated: 'response' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ updated: 'response' })
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -228,11 +177,10 @@ describe('msg.url Override Functionality', () => {
         const helperNode = helper.getNode('helper1')
 
         helperNode.on('input', (msg) => {
-          // Verify custom URL was used with PATCH method (query appended)
-          expect(axios.patch).toHaveBeenCalledWith(
+          expect(global.fetch).toHaveBeenCalledWith(
             'https://custom-api.example.com/v1/update/123',
-            { status: 'updated' },
             expect.objectContaining({
+              method: 'PATCH',
               headers: expect.objectContaining({
                 'X-Authorization': 'Token test_token_64_characters_long_abcdef0123456789abcdef012345',
                 accept: 'application/json'
@@ -242,7 +190,6 @@ describe('msg.url Override Functionality', () => {
           done()
         })
 
-        // Send message with custom base URL and PATCH method
         vrmNode.receive({
           payload: { status: 'updated' },
           url: 'https://custom-api.example.com/v1',
@@ -254,11 +201,7 @@ describe('msg.url Override Functionality', () => {
 
     it('should preserve existing headers when using custom URL', (done) => {
       const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
+        { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
         {
           id: 'vrm1',
           type: 'vrm-api',
@@ -266,21 +209,15 @@ describe('msg.url Override Functionality', () => {
           vrm: 'config1',
           wires: [['helper1']]
         },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
+        { id: 'helper1', type: 'helper' }
       ]
 
-      const credentials = {
-        config1: {
-          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-        }
-      }
+      const credentials = { config1: { token: 'test_token_64_characters_long_abcdef0123456789abcdef012345' } }
 
-      // Mock axios get method
-      axios.get = jest.fn().mockResolvedValue({
-        data: { custom: 'response' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ custom: 'response' })
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -288,8 +225,7 @@ describe('msg.url Override Functionality', () => {
         const helperNode = helper.getNode('helper1')
 
         helperNode.on('input', (msg) => {
-          // Verify that authentication and other headers are preserved (query appended)
-          expect(axios.get).toHaveBeenCalledWith(
+          expect(global.fetch).toHaveBeenCalledWith(
             'https://different-api.example.com/api/v2/data',
             expect.objectContaining({
               headers: expect.objectContaining({
@@ -302,7 +238,6 @@ describe('msg.url Override Functionality', () => {
           done()
         })
 
-        // Send message with custom base URL
         vrmNode.receive({
           payload: 'trigger',
           url: 'https://different-api.example.com/api/v2',
@@ -314,11 +249,7 @@ describe('msg.url Override Functionality', () => {
 
     it('should handle non-VRM API URLs correctly', (done) => {
       const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
+        { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
         {
           id: 'vrm1',
           type: 'vrm-api',
@@ -326,21 +257,15 @@ describe('msg.url Override Functionality', () => {
           vrm: 'config1',
           wires: [['helper1']]
         },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
+        { id: 'helper1', type: 'helper' }
       ]
 
-      const credentials = {
-        config1: {
-          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-        }
-      }
+      const credentials = { config1: { token: 'test_token_64_characters_long_abcdef0123456789abcdef012345' } }
 
-      // Mock axios get method
-      axios.get = jest.fn().mockResolvedValue({
-        data: { external: 'api response' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ external: 'api response' })
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -348,20 +273,17 @@ describe('msg.url Override Functionality', () => {
         const helperNode = helper.getNode('helper1')
 
         helperNode.on('input', (msg) => {
-          // Verify that completely different API URL is used (query appended)
-          expect(axios.get).toHaveBeenCalledWith(
+          expect(global.fetch).toHaveBeenCalledWith(
             'https://jsonplaceholder.typicode.com/posts/1',
             expect.any(Object)
           )
 
-          // Verify the call was made with expected headers
-          const callArgs = axios.get.mock.calls[0]
-          expect(callArgs[1].headers['X-Authorization']).toBe('Token test_token_64_characters_long_abcdef0123456789abcdef012345')
+          const calledHeaders = global.fetch.mock.calls[0][1].headers
+          expect(calledHeaders['X-Authorization']).toBe('Token test_token_64_characters_long_abcdef0123456789abcdef012345')
 
           done()
         })
 
-        // Send message with completely different API base URL
         vrmNode.receive({
           payload: 'trigger',
           url: 'https://jsonplaceholder.typicode.com',
@@ -373,11 +295,7 @@ describe('msg.url Override Functionality', () => {
 
     it('should use msg.url as base URL for standard installations calls', (done) => {
       const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
+        { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
         {
           id: 'vrm1',
           type: 'vrm-api',
@@ -390,22 +308,23 @@ describe('msg.url Override Functionality', () => {
           stats_interval: 'hours',
           wires: [['helper1']]
         },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
+        { id: 'helper1', type: 'helper' }
       ]
 
       const credentials = { config1: { token: 'test_token_64_characters_long_abcdef0123456789abcdef012345' } }
 
-      axios.get = jest.fn().mockResolvedValue({ status: 200, data: { success: true, records: {}, totals: {} } })
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ success: true, records: {}, totals: {} })
+      })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
         const vrmNode = helper.getNode('vrm1')
         const helperNode = helper.getNode('helper1')
 
         helperNode.on('input', () => {
-          const calledUrl = axios.get.mock.calls[0][0]
+          const calledUrl = global.fetch.mock.calls[0][0]
           expect(calledUrl).toMatch(/^https:\/\/betavrmapi\.victronenergy\.com\/v2\/installations\/102195\/stats/)
           done()
         })
@@ -416,11 +335,7 @@ describe('msg.url Override Functionality', () => {
 
     it('should use msg.url even when node configuration would build different URL', (done) => {
       const flow = [
-        {
-          id: 'config1',
-          type: 'config-vrm-api',
-          name: 'Test Config'
-        },
+        { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
         {
           id: 'vrm1',
           type: 'vrm-api',
@@ -431,21 +346,15 @@ describe('msg.url Override Functionality', () => {
           idSite: '123456',
           wires: [['helper1']]
         },
-        {
-          id: 'helper1',
-          type: 'helper'
-        }
+        { id: 'helper1', type: 'helper' }
       ]
 
-      const credentials = {
-        config1: {
-          token: 'test_token_64_characters_long_abcdef0123456789abcdef012345'
-        }
-      }
+      const credentials = { config1: { token: 'test_token_64_characters_long_abcdef0123456789abcdef012345' } }
 
-      // Mock axios get method
-      axios.get = jest.fn().mockResolvedValue({
-        data: { override: 'success' }
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue({ override: 'success' })
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -453,16 +362,13 @@ describe('msg.url Override Functionality', () => {
         const helperNode = helper.getNode('helper1')
 
         helperNode.on('input', (msg) => {
-          // Verify that msg.url overrides the configured installation endpoint
-          // (would normally be https://vrmapi.victronenergy.com/v2/installations/123456/basic)
-          expect(axios.get).toHaveBeenCalledWith(
+          expect(global.fetch).toHaveBeenCalledWith(
             'https://override-api.example.com/custom/endpoint',
             expect.any(Object)
           )
           done()
         })
 
-        // Send message with URL override, even though node is configured for installations
         vrmNode.receive({
           payload: 'trigger',
           url: 'https://override-api.example.com/custom',

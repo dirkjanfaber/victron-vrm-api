@@ -1,9 +1,13 @@
 // test/unit/vrm-api-service.test.js
 const VRMAPIService = require('../../src/services/vrm-api-service')
 
-// Mock axios to avoid actual HTTP calls in unit tests
-jest.mock('axios')
-const axios = require('axios')
+function mockFetch (data, status = 200) {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    json: jest.fn().mockResolvedValue(data)
+  })
+}
 
 describe('VRMAPIService Unit Tests', () => {
   let service
@@ -347,19 +351,12 @@ describe('VRMAPIService Unit Tests', () => {
   })
 
   describe('API Call Methods', () => {
-    beforeEach(() => {
-      axios.get = jest.fn()
-      axios.post = jest.fn()
-      axios.patch = jest.fn()
-    })
-
     it('should call installations API with correct URL', async () => {
-      const mockResponse = { status: 200, data: { success: true } }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       await service.callInstallationsAPI('123456', 'basic', 'GET')
 
-      expect(axios.get).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://vrmapi.victronenergy.com/v2/installations/123456/basic',
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -370,12 +367,11 @@ describe('VRMAPIService Unit Tests', () => {
     })
 
     it('should call users API with correct URL and response structure', async () => {
-      const mockResponse = { status: 200, data: { user: { id: 123, email: 'test@example.com' } } }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ user: { id: 123, email: 'test@example.com' } })
 
       const result = await service.callUsersAPI('me')
 
-      expect(axios.get).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://vrmapi.victronenergy.com/v2/users/me',
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -384,7 +380,6 @@ describe('VRMAPIService Unit Tests', () => {
         })
       )
 
-      // Verify the response structure matches actual VRM API
       expect(result.success).toBe(true)
       expect(result.data).toHaveProperty('user')
       expect(result.data.user).toHaveProperty('id')
@@ -392,21 +387,18 @@ describe('VRMAPIService Unit Tests', () => {
     })
 
     it('should transform endpoint names correctly', async () => {
-      const mockResponse = { status: 200, data: { success: true } }
-      axios.post.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       await service.callInstallationsAPI('123456', 'post-alarms', 'GET')
 
-      expect(axios.post).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://vrmapi.victronenergy.com/v2/installations/123456/alarms',
-        null,
-        expect.any(Object)
+        expect.objectContaining({ method: 'POST' })
       )
     })
 
     it('should handle stats parameters correctly', async () => {
-      const mockResponse = { status: 200, data: { success: true } }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       const options = {
         parameters: {
@@ -418,32 +410,28 @@ describe('VRMAPIService Unit Tests', () => {
 
       await service.callInstallationsAPI('123456', 'stats', 'GET', null, options)
 
-      const expectedUrl = 'https://vrmapi.victronenergy.com/v2/installations/123456/stats?type=custom&attributeCodes%5B%5D=consumption&attributeCodes%5B%5D=solar_yield&interval=hours'
-      expect(axios.get).toHaveBeenCalledWith(expectedUrl, expect.any(Object))
+      const calledUrl = global.fetch.mock.calls[0][0]
+      expect(calledUrl).toBe('https://vrmapi.victronenergy.com/v2/installations/123456/stats?type=custom&attributeCodes%5B%5D=consumption&attributeCodes%5B%5D=solar_yield&interval=hours')
     })
 
     it('should handle API errors gracefully', async () => {
-      const mockError = {
-        response: {
-          status: 404,
-          data: { error: 'Not found' }
-        },
-        message: 'Request failed'
-      }
-      axios.get.mockRejectedValue(mockError)
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: jest.fn().mockResolvedValue({ error: 'Not found' })
+      })
 
       const result = await service.callInstallationsAPI('999999', 'basic', 'GET')
 
       expect(result.success).toBe(false)
       expect(result.status).toBe(404)
       expect(result.data).toEqual({ error: 'Not found' })
-      expect(result.error).toBe('Request failed')
+      expect(result.error).toBe('HTTP 404')
     })
   })
 
   it('should pass payload for post-alarms endpoint', async () => {
-    const mockResponse = { status: 200, data: { success: true, id: 123 } }
-    axios.post.mockResolvedValue(mockResponse)
+    mockFetch({ success: true, id: 123 })
 
     const alarmPayload = {
       AlarmEnabled: 1,
@@ -458,49 +446,36 @@ describe('VRMAPIService Unit Tests', () => {
 
     const result = await service.callInstallationsAPI('123456', 'post-alarms', 'POST', alarmPayload)
 
-    expect(axios.post).toHaveBeenCalledWith(
-      'https://vrmapi.victronenergy.com/v2/installations/123456/alarms',
-      alarmPayload,
-      expect.any(Object)
-    )
+    const [calledUrl, calledOptions] = global.fetch.mock.calls[0]
+    expect(calledUrl).toBe('https://vrmapi.victronenergy.com/v2/installations/123456/alarms')
+    expect(calledOptions.method).toBe('POST')
+    expect(JSON.parse(calledOptions.body)).toEqual(alarmPayload)
     expect(result.success).toBe(true)
     expect(result.method).toBe('post')
   })
 
   it('should pass payload for patch-dynamic-ess-settings endpoint', async () => {
-    const mockResponse = {
-      status: 200,
-      data: {
-        success: true,
-        data: { isGreenModeOn: false }
-      }
-    }
-    axios.patch.mockResolvedValue(mockResponse)
+    mockFetch({ success: true, data: { isGreenModeOn: false } })
 
     const patchPayload = { isGreenModeOn: false }
 
     const result = await service.callInstallationsAPI('123456', 'patch-dynamic-ess-settings', 'PATCH', patchPayload)
 
-    expect(axios.patch).toHaveBeenCalledWith(
-      'https://vrmapi.victronenergy.com/v2/installations/123456/dynamic-ess-settings',
-      patchPayload,
-      expect.any(Object)
-    )
+    const [calledUrl, calledOptions] = global.fetch.mock.calls[0]
+    expect(calledUrl).toBe('https://vrmapi.victronenergy.com/v2/installations/123456/dynamic-ess-settings')
+    expect(calledOptions.method).toBe('PATCH')
+    expect(JSON.parse(calledOptions.body)).toEqual(patchPayload)
     expect(result.success).toBe(true)
     expect(result.method).toBe('patch')
   })
 
   it('should ignore payload for GET requests', async () => {
-    const mockResponse = { status: 200, data: { success: true } }
-    axios.get.mockResolvedValue(mockResponse)
+    mockFetch({ success: true })
 
-    // Pass a payload, but it should be ignored for GET
     await service.callInstallationsAPI('123456', 'basic', 'GET', { ignored: 'data' })
 
-    expect(axios.get).toHaveBeenCalledWith(
-      'https://vrmapi.victronenergy.com/v2/installations/123456/basic',
-      expect.any(Object)
-    )
-    // Axios.get doesn't receive the payload as a parameter
+    const calledOptions = global.fetch.mock.calls[0][1]
+    expect(calledOptions.method).toBe('GET')
+    expect(calledOptions.body).toBeUndefined()
   })
 })

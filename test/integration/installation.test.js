@@ -12,7 +12,7 @@ const logPayload = (payload, label = 'Response') => {
     return JSON.stringify(payload, null, 2)
   } catch (e) {
     if (e.message.includes('circular')) {
-      // Handle axios error responses with circular references
+      // Handle error responses with circular references
       const safePayload = {
         status: payload.status || 'unknown',
         statusText: payload.statusText || 'unknown',
@@ -114,7 +114,7 @@ describe('VRM API Integration - Installations Endpoint', () => {
             expect(msg.payload).toBeDefined()
             expect(typeof msg.payload).toBe('object')
 
-            // Check if this is an error response (axios error)
+            // Check if this is an error response
             if (msg.payload.status && msg.payload.status >= 400) {
               console.log(`❌ API returned error status: ${msg.payload.status}`)
               console.log('   This might indicate authentication or permission issues')
@@ -123,7 +123,7 @@ describe('VRM API Integration - Installations Endpoint', () => {
               return
             }
 
-            // VRM API response structure - the payload is the direct axios response.data
+            // VRM API response structure - the payload is the direct response data
             // Check for common VRM API response patterns
             const hasValidResponse =
               msg.payload.success === true ||
@@ -366,7 +366,7 @@ describe('VRM API Integration - Installations Endpoint', () => {
 
             expect(msg.payload).toBeDefined()
 
-            // Should receive an error response (axios error responses are sent to output)
+            // Should receive an error response (error responses are sent to output)
             const isAuthError =
               msg.payload.status >= 400 ||
               (msg.payload.data && msg.payload.data.status >= 400) ||

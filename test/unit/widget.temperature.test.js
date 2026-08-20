@@ -4,9 +4,13 @@ const configNode = require('../../src/nodes/config-vrm-api.js')
 const vrmApiNode = require('../../src/nodes/vrm-api.js')
 const VRMAPIService = require('../../src/services/vrm-api-service')
 
-// Mock axios to avoid actual HTTP calls in unit tests
-jest.mock('axios')
-const axios = require('axios')
+function mockFetch (data, status = 200) {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    json: jest.fn().mockResolvedValue(data)
+  })
+}
 
 // Initialize test helper
 helper.init(require.resolve('node-red'))
@@ -47,11 +51,11 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockResponse)
+      mockFetch(mockResponse.data, mockResponse.status)
 
       const result = await service.callWidgetsAPI('123456', 'TempSummaryAndGraph')
 
-      expect(axios.get).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://vrmapi.victronenergy.com/v2/installations/123456/widgets/TempSummaryAndGraph',
         expect.objectContaining({
           headers: expect.objectContaining({
@@ -97,11 +101,11 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockResponse)
+      mockFetch(mockResponse.data, mockResponse.status)
 
       const result = await service.callWidgetsAPI('123456', 'TempSummaryAndGraph', 20)
 
-      expect(axios.get).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         'https://vrmapi.victronenergy.com/v2/installations/123456/widgets/TempSummaryAndGraph?instance=20',
         expect.any(Object)
       )
@@ -115,22 +119,14 @@ describe('Temperature Widget Tests', () => {
     })
 
     it('should handle API errors gracefully', async () => {
-      const mockError = {
-        response: {
-          status: 404,
-          data: { error: 'Widget not found' }
-        },
-        message: 'Request failed'
-      }
-
-      axios.get = jest.fn().mockRejectedValue(mockError)
+      mockFetch({ error: 'Widget not found' }, 404)
 
       const result = await service.callWidgetsAPI('999999', 'TempSummaryAndGraph')
 
       expect(result.success).toBe(false)
       expect(result.status).toBe(404)
       expect(result.data).toEqual({ error: 'Widget not found' })
-      expect(result.error).toBe('Request failed')
+      expect(result.error).toBe('HTTP 404')
     })
 
     it('should detect empty instance data and provide helpful status', async () => {
@@ -151,7 +147,7 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockEmptyResponse)
+      mockFetch(mockEmptyResponse.data, mockEmptyResponse.status)
 
       const result = await service.callWidgetsAPI('123456', 'TempSummaryAndGraph', 0)
 
@@ -187,7 +183,7 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockDataResponse)
+      mockFetch(mockDataResponse.data, mockDataResponse.status)
       const resultWithData = await service.callWidgetsAPI('123456', 'TempSummaryAndGraph', 20)
 
       const hasActualData = Object.keys(resultWithData.data.records.data).some(key =>
@@ -408,7 +404,7 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockResponse)
+      mockFetch(mockResponse.data, mockResponse.status)
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
         const vrmNode = helper.getNode('vrm1')
@@ -418,7 +414,7 @@ describe('Temperature Widget Tests', () => {
           try {
             expect(msg.payload.success).toBe(true)
             expect(msg.topic).toBe('widgets TempSummaryAndGraph')
-            expect(axios.get).toHaveBeenCalledWith(
+            expect(global.fetch).toHaveBeenCalledWith(
               'https://vrmapi.victronenergy.com/v2/installations/123456/widgets/TempSummaryAndGraph?instance=20',
               expect.any(Object)
             )
@@ -478,7 +474,7 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockEmptyResponse)
+      mockFetch(mockEmptyResponse.data, mockEmptyResponse.status)
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
         const vrmNode = helper.getNode('vrm1')
@@ -555,7 +551,7 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockResponse)
+      mockFetch(mockResponse.data, mockResponse.status)
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
         const vrmNode = helper.getNode('vrm1')
@@ -623,7 +619,7 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockEmptyResponse)
+      mockFetch(mockEmptyResponse.data, mockEmptyResponse.status)
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
         const vrmNode = helper.getNode('vrm1')
@@ -699,7 +695,7 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockResponse)
+      mockFetch(mockResponse.data, mockResponse.status)
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
         const vrmNode = helper.getNode('vrm1')
@@ -778,7 +774,7 @@ describe('Temperature Widget Tests', () => {
         }
       }
 
-      axios.get = jest.fn().mockResolvedValue(mockInvalidResponse)
+      mockFetch(mockInvalidResponse.data, mockInvalidResponse.status)
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
         const vrmNode = helper.getNode('vrm1')
