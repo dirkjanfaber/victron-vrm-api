@@ -7,8 +7,13 @@
 
 const VRMAPIService = require('../../src/services/vrm-api-service')
 
-jest.mock('axios')
-const axios = require('axios')
+function mockFetch (data, status = 200) {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    json: jest.fn().mockResolvedValue(data)
+  })
+}
 
 describe('Message Property Preservation', () => {
   let service
@@ -21,16 +26,13 @@ describe('Message Property Preservation', () => {
   describe('HTTP Context Preservation', () => {
     it('should preserve msg.res and msg.req for HTTP response flow', async () => {
       // Mock successful API response
-      axios.get = jest.fn().mockResolvedValue({
-        status: 200,
-        data: { success: true, records: [] }
-      })
+      mockFetch({ success: true, records: [] })
 
       // Call the API (this tests the service, but the real preservation happens in the node)
       const result = await service.callInstallationsAPI('12345', 'stats')
 
       // Verify API was called
-      expect(axios.get).toHaveBeenCalled()
+      expect(global.fetch).toHaveBeenCalled()
       expect(result.success).toBe(true)
 
       // Note: The actual message cloning happens in vrm-api.js
@@ -41,10 +43,7 @@ describe('Message Property Preservation', () => {
 
   describe('Custom Property Preservation', () => {
     it('should preserve custom message properties', async () => {
-      axios.get = jest.fn().mockResolvedValue({
-        status: 200,
-        data: { success: true, installations: [] }
-      })
+      mockFetch({ success: true, installations: [] })
 
       const result = await service.callUsersAPI('me')
 
@@ -56,14 +55,11 @@ describe('Message Property Preservation', () => {
   describe('Dual Output Independence', () => {
     it('should provide independent message clones for dual outputs', async () => {
       // Mock response suitable for price schedule transformation
-      axios.get = jest.fn().mockResolvedValue({
-        status: 200,
-        data: {
-          success: true,
-          records: {
-            800: [[1234567890, 0.15], [1234567900, 0.20]],
-            801: [[1234567890, 0.18], [1234567900, 0.22]]
-          }
+      mockFetch({
+        success: true,
+        records: {
+          800: [[1234567890, 0.15], [1234567900, 0.20]],
+          801: [[1234567890, 0.18], [1234567900, 0.22]]
         }
       })
 
@@ -81,18 +77,16 @@ describe('Message Property Preservation', () => {
 
   describe('Error Path Message Handling', () => {
     it('should preserve original message on API errors', async () => {
-      axios.get = jest.fn().mockRejectedValue({
-        response: {
-          status: 401,
-          data: { error: 'Unauthorized' }
-        },
-        message: 'Request failed'
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: jest.fn().mockResolvedValue({ error: 'Unauthorized' })
       })
 
       const result = await service.callInstallationsAPI('12345', 'stats')
 
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Request failed')
+      expect(result.error).toBe('HTTP 401')
 
       // The node's error handler (line 186) sends the original msg
       // which is correct behavior
@@ -101,18 +95,15 @@ describe('Message Property Preservation', () => {
 
   describe('Widget API Message Preservation', () => {
     it('should preserve message properties for widget API calls', async () => {
-      axios.get = jest.fn().mockResolvedValue({
-        status: 200,
-        data: {
-          success: true,
-          totals: { battery: 50 }
-        }
+      mockFetch({
+        success: true,
+        totals: { battery: 50 }
       })
 
       const result = await service.callWidgetsAPI('12345', 'Graph', 1)
 
       expect(result.success).toBe(true)
-      expect(axios.get).toHaveBeenCalledWith(
+      expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/widgets/Graph?instance=1'),
         expect.objectContaining({
           headers: expect.any(Object)
@@ -123,10 +114,7 @@ describe('Message Property Preservation', () => {
 
   describe('Custom API Call Message Preservation', () => {
     it('should preserve message properties for custom API calls', async () => {
-      axios.get = jest.fn().mockResolvedValue({
-        status: 200,
-        data: { custom: 'response' }
-      })
+      mockFetch({ custom: 'response' })
 
       const customUrl = 'https://vrmapi.victronenergy.com/v2/custom/endpoint'
       const result = await service.makeCustomCall(customUrl, 'GET', null)

@@ -3,10 +3,14 @@
  */
 
 const VRMAPIService = require('../../src/services/vrm-api-service')
-const axios = require('axios')
 
-// Mock axios
-jest.mock('axios')
+function mockFetch (data, status = 200) {
+  global.fetch = jest.fn().mockResolvedValue({
+    ok: status >= 200 && status < 300,
+    status,
+    json: jest.fn().mockResolvedValue(data)
+  })
+}
 
 describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
   let service
@@ -20,14 +24,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
 
   describe('fetch-dynamic-ess-schedules endpoint', () => {
     it('should use schedule-dynamic-ess endpoint, not stats', async () => {
-      const mockResponse = {
-        status: 200,
-        data: {
-          success: true,
-          records: []
-        }
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true, records: [] })
 
       const result = await service.callInstallationsAPI(
         testSiteId,
@@ -36,8 +33,8 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
       )
 
       expect(result.success).toBe(true)
-      expect(axios.get).toHaveBeenCalledTimes(1)
-      const callUrl = axios.get.mock.calls[0][0]
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+      const callUrl = global.fetch.mock.calls[0][0]
 
       // Verify correct endpoint
       expect(callUrl).toContain('/schedule-dynamic-ess')
@@ -53,11 +50,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
     })
 
     it('should use GET method', async () => {
-      const mockResponse = {
-        status: 200,
-        data: { success: true }
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       await service.callInstallationsAPI(
         testSiteId,
@@ -65,17 +58,12 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         'GET'
       )
 
-      expect(axios.get).toHaveBeenCalled()
-      expect(axios.post).not.toHaveBeenCalled()
-      expect(axios.patch).not.toHaveBeenCalled()
+      expect(global.fetch).toHaveBeenCalledTimes(1)
+      expect(global.fetch.mock.calls[0][1].method).toBe('GET')
     })
 
     it('should include proper headers', async () => {
-      const mockResponse = {
-        status: 200,
-        data: { success: true }
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       await service.callInstallationsAPI(
         testSiteId,
@@ -83,7 +71,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         'GET'
       )
 
-      const callHeaders = axios.get.mock.calls[0][1].headers
+      const callHeaders = global.fetch.mock.calls[0][1].headers
 
       expect(callHeaders['X-Authorization']).toBe(`Token ${testToken}`)
       expect(callHeaders.accept).toBe('application/json')
@@ -98,11 +86,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
           { timestamp: 1234567900, value: 0.30 }
         ]
       }
-      const mockResponse = {
-        status: 200,
-        data: mockData
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch(mockData)
 
       const result = await service.callInstallationsAPI(
         testSiteId,
@@ -118,14 +102,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
     })
 
     it('should handle API errors gracefully', async () => {
-      const mockError = {
-        response: {
-          status: 404,
-          data: { error: 'Not found' }
-        },
-        message: 'Request failed with status code 404'
-      }
-      axios.get.mockRejectedValue(mockError)
+      mockFetch({ error: 'Not found' }, 404)
 
       const result = await service.callInstallationsAPI(
         testSiteId,
@@ -135,16 +112,12 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
 
       expect(result.success).toBe(false)
       expect(result.status).toBe(404)
-      expect(result.error).toBe('Request failed with status code 404')
+      expect(result.error).toBe('HTTP 404')
       expect(result.data).toEqual({ error: 'Not found' })
     })
 
     it('should not include stats-related parameters', async () => {
-      const mockResponse = {
-        status: 200,
-        data: { success: true }
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       await service.callInstallationsAPI(
         testSiteId,
@@ -152,7 +125,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         'GET'
       )
 
-      const callUrl = axios.get.mock.calls[0][0]
+      const callUrl = global.fetch.mock.calls[0][0]
 
       // These should NOT be in the URL
       expect(callUrl).not.toContain('type=')
@@ -165,11 +138,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
 
   describe('Comparison with other endpoints', () => {
     it('should be different from stats endpoint', async () => {
-      const mockResponse = {
-        status: 200,
-        data: { success: true }
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       // Call the new endpoint
       await service.callInstallationsAPI(
@@ -177,10 +146,11 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         'fetch-dynamic-ess-schedules',
         'GET'
       )
-      const schedulesUrl = axios.get.mock.calls[0][0]
+      const schedulesUrl = global.fetch.mock.calls[0][0]
 
       // Clear and call stats endpoint
       jest.clearAllMocks()
+      mockFetch({ success: true })
       await service.callInstallationsAPI(
         testSiteId,
         'stats',
@@ -188,7 +158,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         null,
         { parameters: { type: 'dynamic_ess', interval: 'hours' } }
       )
-      const statsUrl = axios.get.mock.calls[0][0]
+      const statsUrl = global.fetch.mock.calls[0][0]
 
       // They should be different
       expect(schedulesUrl).not.toBe(statsUrl)
@@ -197,11 +167,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
     })
 
     it('should be different from dynamic-ess-settings endpoint', async () => {
-      const mockResponse = {
-        status: 200,
-        data: { success: true }
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       // Call schedule endpoint
       await service.callInstallationsAPI(
@@ -209,16 +175,17 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         'fetch-dynamic-ess-schedules',
         'GET'
       )
-      const scheduleUrl = axios.get.mock.calls[0][0]
+      const scheduleUrl = global.fetch.mock.calls[0][0]
 
       // Clear and call settings endpoint
       jest.clearAllMocks()
+      mockFetch({ success: true })
       await service.callInstallationsAPI(
         testSiteId,
         'dynamic-ess-settings',
         'GET'
       )
-      const settingsUrl = axios.get.mock.calls[0][0]
+      const settingsUrl = global.fetch.mock.calls[0][0]
 
       // They should be different
       expect(scheduleUrl).toContain('/schedule-dynamic-ess')
@@ -229,11 +196,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
 
   describe('Edge cases', () => {
     it('should handle network timeout', async () => {
-      const mockError = {
-        message: 'timeout of 5000ms exceeded',
-        code: 'ECONNABORTED'
-      }
-      axios.get.mockRejectedValue(mockError)
+      global.fetch = jest.fn().mockRejectedValue(new Error('timeout of 5000ms exceeded'))
 
       const result = await service.callInstallationsAPI(
         testSiteId,
@@ -246,11 +209,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
     })
 
     it('should handle invalid site ID format', async () => {
-      const mockResponse = {
-        status: 200,
-        data: { success: true }
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       const invalidSiteId = 'invalid-site-id'
       await service.callInstallationsAPI(
@@ -259,7 +218,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         'GET'
       )
 
-      const callUrl = axios.get.mock.calls[0][0]
+      const callUrl = global.fetch.mock.calls[0][0]
       expect(callUrl).toContain(`/installations/${invalidSiteId}/schedule-dynamic-ess`)
     })
 
@@ -267,11 +226,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
       const customBaseUrl = 'https://custom-api.example.com/v2'
       const customService = new VRMAPIService(testToken, { baseUrl: customBaseUrl })
 
-      const mockResponse = {
-        status: 200,
-        data: { success: true }
-      }
-      axios.get.mockResolvedValue(mockResponse)
+      mockFetch({ success: true })
 
       await customService.callInstallationsAPI(
         testSiteId,
@@ -279,7 +234,7 @@ describe('VRMAPIService - schedule-dynamic-ess endpoint', () => {
         'GET'
       )
 
-      const callUrl = axios.get.mock.calls[0][0]
+      const callUrl = global.fetch.mock.calls[0][0]
       expect(callUrl).toContain(customBaseUrl)
       expect(callUrl).toBe(
         `${customBaseUrl}/installations/${testSiteId}/schedule-dynamic-ess?async=0`

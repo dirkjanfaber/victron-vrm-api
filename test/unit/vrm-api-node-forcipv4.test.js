@@ -1,15 +1,13 @@
 // test/unit/vrm-api-node-forcipv4.test.js
 //
 // Verifies that the vrm-api node passes forceIpv4 from the config node
-// through to VRMAPIService, so the axios HTTP agents are actually configured.
-const http = require('http')
-const https = require('https')
+// through to VRMAPIService, so DNS is configured for IPv4-first lookups.
 const helper = require('node-red-node-test-helper')
 const configNode = require('../../src/nodes/config-vrm-api.js')
 const vrmApiNode = require('../../src/nodes/vrm-api.js')
 
-jest.mock('axios')
-const axios = require('axios')
+jest.mock('dns')
+const dns = require('dns')
 
 helper.init(require.resolve('node-red'))
 
@@ -17,18 +15,16 @@ const TOKEN = 'test_token_64_characters_long_abcdef0123456789abcdef012345'
 
 describe('vrm-api node forceIpv4 propagation', () => {
   beforeEach((done) => {
-    delete axios.defaults.httpAgent
-    delete axios.defaults.httpsAgent
+    jest.clearAllMocks()
     helper.startServer(done)
   })
 
   afterEach((done) => {
     helper.unload()
     helper.stopServer(done)
-    jest.clearAllMocks()
   })
 
-  it('should configure IPv4 agents when forceIpv4 is enabled in config node', (done) => {
+  it('should configure IPv4 DNS when forceIpv4 is enabled in config node', (done) => {
     const flow = [
       { id: 'config1', type: 'config-vrm-api', name: 'Test Config', forceIpv4: true },
       {
@@ -42,9 +38,10 @@ describe('vrm-api node forceIpv4 propagation', () => {
       { id: 'helper1', type: 'helper' }
     ]
 
-    axios.get = jest.fn().mockResolvedValue({
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       status: 200,
-      data: { success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } }
+      json: jest.fn().mockResolvedValue({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } })
     })
 
     helper.load([configNode, vrmApiNode], flow, { config1: { token: TOKEN } }, () => {
@@ -52,8 +49,7 @@ describe('vrm-api node forceIpv4 propagation', () => {
       const helperNode = helper.getNode('helper1')
 
       helperNode.on('input', () => {
-        expect(axios.defaults.httpAgent).toBeInstanceOf(http.Agent)
-        expect(axios.defaults.httpsAgent).toBeInstanceOf(https.Agent)
+        expect(dns.setDefaultResultOrder).toHaveBeenCalledWith('ipv4first')
         done()
       })
 
@@ -61,7 +57,7 @@ describe('vrm-api node forceIpv4 propagation', () => {
     })
   })
 
-  it('should not configure IPv4 agents when forceIpv4 is disabled in config node', (done) => {
+  it('should not configure IPv4 DNS when forceIpv4 is disabled in config node', (done) => {
     const flow = [
       { id: 'config1', type: 'config-vrm-api', name: 'Test Config', forceIpv4: false },
       {
@@ -75,9 +71,10 @@ describe('vrm-api node forceIpv4 propagation', () => {
       { id: 'helper1', type: 'helper' }
     ]
 
-    axios.get = jest.fn().mockResolvedValue({
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
       status: 200,
-      data: { success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } }
+      json: jest.fn().mockResolvedValue({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } })
     })
 
     helper.load([configNode, vrmApiNode], flow, { config1: { token: TOKEN } }, () => {
@@ -85,8 +82,7 @@ describe('vrm-api node forceIpv4 propagation', () => {
       const helperNode = helper.getNode('helper1')
 
       helperNode.on('input', () => {
-        expect(axios.defaults.httpAgent).toBeUndefined()
-        expect(axios.defaults.httpsAgent).toBeUndefined()
+        expect(dns.setDefaultResultOrder).not.toHaveBeenCalled()
         done()
       })
 
