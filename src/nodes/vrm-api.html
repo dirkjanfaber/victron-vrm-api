@@ -302,6 +302,8 @@
                     <option value="vrm_consumption_fc">Consumption Forecast</option>
                     <option value="vrm_consum_evcs_fc">EV Charging Consumption Forecast</option>
                     <option value="vrm_consum_hp_fc">Heating Consumption Forecast</option>
+                    <option value="vrm_to_grid_fc">Dynamic ESS Grid Flow Forecast</option>
+                    <option value="vrm_to_battery_fc">Dynamic ESS Battery Flow Forecast</option>
                     <option value="vrm_pv_inverter_yield_fc">PV Inverter Yield Forecast</option>
                     <option value="vrm_pv_charger_yield_fc">PV Solar Charger Yield Forecast</option>
                     <option value="vrm_solar_irradiance">Solar Irradiance</option>
@@ -457,6 +459,10 @@ In case of installation `stats` there appear some extra configuration options
 : End (integer) : Timestamp to which to fetch data
 : UTC (boolean) : Use universal time (UTC) instead of the local time?
 : Group by instance (boolean): Group attributes by instance?
+
+The `vrm_to_grid_fc` and `vrm_to_battery_fc` stats attributes report the Dynamic ESS forecasted
+grid/battery flow. Positive values mean flow *to* the grid/battery (export/charging); negative
+values mean flow *from* the grid/battery (import/discharging).
 
 In case of installation `dess` there are even more configuration options.
 
