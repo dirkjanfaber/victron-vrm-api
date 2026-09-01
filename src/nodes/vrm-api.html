@@ -460,11 +460,11 @@ In case of installation `stats` there appear some extra configuration options
 : UTC (boolean) : Use universal time (UTC) instead of the local time?
 : Group by instance (boolean): Group attributes by instance?
 
-In case of installation `dess` there are even more configuration options.
-
 The `vrm_to_grid_fc` and `vrm_to_battery_fc` stats attributes report the Dynamic ESS forecasted
-grid/battery flow. Positive values mean flow *to* the grid or battery (export/charging); negative
-values mean flow *from* it (import/discharging).
+grid/battery flow. Positive values mean flow *to* the grid/battery (export/charging); negative
+values mean flow *from* the grid/battery (import/discharging).
+
+In case of installation `dess` there are even more configuration options.
 
 Note that instead of filling out the number of the VRM site id for installations and widgets in the box, you
 can also use context variables, e.g. `{{flow.siteId}}` or `{{global.vrmId}}`. This allows to query the site
