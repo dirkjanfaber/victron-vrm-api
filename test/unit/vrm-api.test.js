@@ -381,6 +381,31 @@ describe('VRMAPIService Unit Tests', () => {
       expect(result.data).toBe('<html><body>502 Bad Gateway</body></html>')
     })
 
+    it.each([
+      ['an object as JSON', { isGreenModeOn: true }, '{"isGreenModeOn":true}'],
+      ['a JSON string unchanged', '{"isGreenModeOn":true}', '{"isGreenModeOn":true}'],
+      ['a Buffer unchanged', Buffer.from('{"isGreenModeOn":true}'), Buffer.from('{"isGreenModeOn":true}')]
+    ])('should send %s', async (label, payload, expectedBody) => {
+      mockFetch({ success: true })
+
+      await service.callInstallationsAPI('123456', 'patch-dynamic-ess-settings', 'PATCH', payload)
+
+      const options = global.fetch.mock.calls[0][1]
+      expect(options.method).toBe('PATCH')
+      expect(options.body).toEqual(expectedBody)
+      expect(options.headers['Content-Type']).toBe('application/json')
+    })
+
+    it('should report the underlying cause of a network error', async () => {
+      global.fetch = jest.fn().mockRejectedValue(new TypeError('fetch failed', { cause: new Error('getaddrinfo ENOTFOUND vrmapi.victronenergy.com') }))
+
+      const result = await service.callUsersAPI('me')
+
+      expect(result.success).toBe(false)
+      expect(result.status).toBeUndefined()
+      expect(result.error).toBe('getaddrinfo ENOTFOUND vrmapi.victronenergy.com')
+    })
+
     it('should treat an empty successful response as success', async () => {
       mockFetchText('', 204)
 

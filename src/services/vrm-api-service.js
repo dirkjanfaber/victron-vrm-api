@@ -1,6 +1,7 @@
 'use strict'
 
 const dns = require('dns')
+const net = require('net')
 const debug = require('debug')('victron-vrm-api:service')
 const path = require('path')
 
@@ -17,6 +18,12 @@ class VRMAPIService {
     if (this.forceIpv4) {
       debug('Configuring DNS to prefer IPv4 connections')
       dns.setDefaultResultOrder('ipv4first')
+      // Otherwise Node 20+ moves on to the IPv6 address when the IPv4
+      // connect takes over 250ms, e.g. on a cellular or satellite link.
+      // Missing before Node 18.18, which has no such fallback anyway
+      if (net.setDefaultAutoSelectFamily) {
+        net.setDefaultAutoSelectFamily(false)
+      }
     }
   }
 
@@ -33,7 +40,8 @@ class VRMAPIService {
     const options = { method: method.toUpperCase(), headers }
 
     if (payload !== null && payload !== undefined && (method === 'post' || method === 'patch')) {
-      options.body = JSON.stringify(payload)
+      // Strings and Buffers from msg.payload are already serialised
+      options.body = typeof payload === 'string' || Buffer.isBuffer(payload) ? payload : JSON.stringify(payload)
       options.headers = { ...headers, 'Content-Type': 'application/json' }
     }
 
@@ -42,7 +50,7 @@ class VRMAPIService {
     try {
       const response = await fetch(url, options)
       // Proxy error pages and empty bodies are not JSON; keep the raw text
-      // so the status still reaches the caller, as it did with axios
+      // so the status and body still reach the caller
       const text = await response.text()
       let data = text
       try {
@@ -70,12 +78,15 @@ class VRMAPIService {
         method
       }
     } catch (error) {
-      debug('Request error:', error.message)
+      // fetch rejects with a generic "fetch failed"; the reason (DNS,
+      // refused, timeout) is in error.cause
+      const message = error.cause?.message || error.message
+      debug('Request error:', message)
       return {
         success: false,
         status: undefined,
         data: undefined,
-        error: error.message,
+        error: message,
         url,
         method
       }

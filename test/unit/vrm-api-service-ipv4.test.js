@@ -3,6 +3,8 @@ const VRMAPIService = require('../../src/services/vrm-api-service')
 
 jest.mock('dns')
 const dns = require('dns')
+jest.mock('net')
+const net = require('net')
 
 describe('VRMAPIService IPv4 Configuration', () => {
   beforeEach(() => {
@@ -15,6 +17,7 @@ describe('VRMAPIService IPv4 Configuration', () => {
 
       expect(service.forceIpv4).toBe(false)
       expect(dns.setDefaultResultOrder).not.toHaveBeenCalled()
+      expect(net.setDefaultAutoSelectFamily).not.toHaveBeenCalled()
     })
 
     it('should not configure DNS when forceIpv4 is not specified', () => {
@@ -29,6 +32,13 @@ describe('VRMAPIService IPv4 Configuration', () => {
 
       expect(service.forceIpv4).toBe(true)
       expect(dns.setDefaultResultOrder).toHaveBeenCalledWith('ipv4first')
+    })
+
+    it('should stop falling back to IPv6 when forceIpv4 is true', () => {
+      // eslint-disable-next-line no-new
+      new VRMAPIService('test_token', { forceIpv4: true })
+
+      expect(net.setDefaultAutoSelectFamily).toHaveBeenCalledWith(false)
     })
   })
 
