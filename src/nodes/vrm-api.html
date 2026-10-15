@@ -3,9 +3,6 @@
 
 <script type="text/javascript">
 
-    // Version given to nodes added from the palette; see the `version` default
-    const VRM_API_LATEST_VERSION = 2
-
     function checkSelectedAPIType() {
         [
             'users', 'installations', 'widgets', 'dynamic-ess', 'instalations_and_widgets'
@@ -77,8 +74,10 @@
             vrm: {value: "", type: "config-vrm-api", required: false},
             name: { value: "" },
             // Not editable: only nodes added from the palette get this value,
-            // existing flows load without it and keep their old behaviour
-            version: { value: VRM_API_LATEST_VERSION },
+            // existing flows load without it and keep their old behaviour.
+            // Read elsewhere through this._def, not a global: the stable and
+            // alpha editor scripts share one global scope
+            version: { value: 2 },
             api_type: { value: "", validate: RED.validators.regex(/^(users|installations|widgets|dynamic-ess)$/)},
 
             // users
@@ -190,7 +189,7 @@
             // Only offer the update where the old behaviour differs from the
             // latest: version 2 rounds "now" to the quarter for 15 minute stats
             const updateVersionNotice = () => {
-                const isOutdated = !(this.version >= VRM_API_LATEST_VERSION) &&
+                const isOutdated = !(this.version >= this._def.defaults.version.value) &&
                     $('#node-input-api_type').val() === 'installations' &&
                     $('#node-input-installations').val() === 'stats' &&
                     $('#node-input-stats_interval').val() === '15mins';
@@ -217,7 +216,7 @@
             // Set here rather than through an input, so nodes saved without
             // pressing "Update to latest" keep having no version at all
             if ($('#vrm-api-version-update').data('requested')) {
-                this.version = VRM_API_LATEST_VERSION;
+                this.version = this._def.defaults.version.value;
             }
         }
     });
