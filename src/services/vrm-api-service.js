@@ -277,9 +277,8 @@ class VRMAPIService {
       return { text: 'No Dynamic ESS plan', color: 'yellow', raw: responseData }
     }
     return {
-      text: `${plan.length} interval${plan.length === 1 ? '' : 's'}`,
+      text: `${plan.length} planned interval${plan.length === 1 ? '' : 's'}`,
       color: 'green',
-      count: plan.length,
       raw: responseData
     }
   }

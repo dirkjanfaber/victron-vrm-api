@@ -59,7 +59,7 @@ describe('Dynamic ESS stats status', () => {
         try {
           expect(msg.payload).toEqual(dessResponse)
           const statusCalls = vrmNode.status.args.map(a => a[0])
-          expect(statusCalls[statusCalls.length - 1]).toEqual({ fill: 'green', shape: 'dot', text: '2 intervals' })
+          expect(statusCalls[statusCalls.length - 1]).toEqual({ fill: 'green', shape: 'dot', text: '2 planned intervals' })
           done()
         } catch (err) {
           done(err)
