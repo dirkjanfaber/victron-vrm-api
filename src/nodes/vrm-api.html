@@ -73,6 +73,9 @@
         defaults: {
             vrm: {value: "", type: "config-vrm-api", required: false},
             name: { value: "" },
+            // Not editable: only nodes added from the palette get this value,
+            // existing flows load without it and keep their old behaviour
+            version: { value: 2 },
             api_type: { value: "", validate: RED.validators.regex(/^(users|installations|widgets|dynamic-ess)$/)},
 
             // users

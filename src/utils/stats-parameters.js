@@ -40,10 +40,13 @@ function buildStatsParameters (config) {
   const now = new Date()
   const nowTs = Math.floor(now.getTime() / 1000)
 
-  // Helper function to floor to hour
-  const floorToHour = (ts) => {
+  // Relative times floor to the hour. Nodes created from version 2 on floor
+  // to the quarter hour for the 15 minutes interval, so that "now" is the
+  // current 15 minute slot; older nodes keep their behaviour
+  const floorSeconds = parameters.interval === '15mins' && config.version >= 2 ? 900 : 3600
+  const floorToSlot = (ts) => {
     if (ts === undefined || ts === null) return ts
-    return ts - (ts % 3600)
+    return ts - (ts % floorSeconds)
   }
 
   const getStartOfDay = (date) => {
@@ -59,7 +62,7 @@ function buildStatsParameters (config) {
   // Set start time
   if (config.stats_start) { // interpret 'now', 'boy' 'bod' and 'bot'
     if (config.stats_start === 'now') {
-      parameters.start = floorToHour(nowTs)
+      parameters.start = floorToSlot(nowTs)
     } else if (config.stats_start === 'boy') {
       const yesterday = new Date(now)
       yesterday.setDate(yesterday.getDate() - 1)
@@ -72,7 +75,7 @@ function buildStatsParameters (config) {
       parameters.start = getStartOfDay(tomorrow)
     } else if (!isNaN(parseInt(config.stats_start))) {
       // the value is an offset in seconds from now
-      parameters.start = floorToHour(nowTs + parseInt(config.stats_start))
+      parameters.start = floorToSlot(nowTs + parseInt(config.stats_start))
     }
   }
 
@@ -119,8 +122,14 @@ function buildStatsParameters (config) {
       parameters.end = Math.floor(endOfYear.getTime() / 1000)
     } else if (!isNaN(parseInt(config.stats_end))) {
       // the value is an offset in seconds from now
-      parameters.end = floorToHour(nowTs + parseInt(config.stats_end))
+      parameters.end = floorToSlot(nowTs + parseInt(config.stats_end))
     }
+  }
+
+  // VRM returns no records for start === end (e.g. Start and End both "now"),
+  // but does include the record at `start` when the window is one second long
+  if (parameters.start !== undefined && parameters.start === parameters.end) {
+    parameters.end = parameters.start + 1
   }
 
   return parameters
