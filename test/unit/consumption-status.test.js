@@ -1,4 +1,4 @@
-// test/unit/base-load-status.test.js
+// test/unit/consumption-status.test.js
 const helper = require('node-red-node-test-helper')
 const configNode = require('../../src/nodes/config-vrm-api.js')
 const vrmApiNode = require('../../src/nodes/vrm-api.js')
@@ -8,7 +8,7 @@ const axios = require('axios')
 
 helper.init(require.resolve('node-red'))
 
-const flow = [
+const makeFlow = (attribute) => [
   { id: 'config1', type: 'config-vrm-api', name: 'Test Config' },
   {
     id: 'vrm1',
@@ -18,7 +18,7 @@ const flow = [
     api_type: 'installations',
     installations: 'stats',
     idSite: '102195',
-    attribute: 'vrm_consum_base',
+    attribute,
     stats_interval: 'days',
     wires: [['helper1']]
   },
@@ -40,7 +40,7 @@ const liveFeedResponse = {
   totals: { total_solar_yield: 7.5, total_consumption: 12, dhE: 3, evE: 2, daE: 1 }
 }
 
-describe('Base load consumption status', () => {
+describe('Consumption sub-type status', () => {
   beforeEach((done) => {
     helper.startServer(done)
   })
@@ -51,18 +51,18 @@ describe('Base load consumption status', () => {
     jest.clearAllMocks()
   })
 
-  it('should show the computed base load in the status, not the first live_feed_kwh total', (done) => {
+  function expectLastStatus (attribute, expectedText, done, checkMsg = () => {}) {
     axios.get = jest.fn().mockResolvedValue({ status: 200, data: liveFeedResponse })
 
-    helper.load([configNode, vrmApiNode], flow, credentials, () => {
+    helper.load([configNode, vrmApiNode], makeFlow(attribute), credentials, () => {
       const vrmNode = helper.getNode('vrm1')
       const helperNode = helper.getNode('helper1')
 
       helperNode.on('input', (msg) => {
         try {
-          expect(msg.payload.totals).toEqual({ base_load: 6 })
+          checkMsg(msg)
           const statusCalls = vrmNode.status.args.map(a => a[0])
-          expect(statusCalls[statusCalls.length - 1]).toEqual({ fill: 'green', shape: 'dot', text: 'base load: 6.0' })
+          expect(statusCalls[statusCalls.length - 1]).toEqual({ fill: 'green', shape: 'dot', text: expectedText })
           done()
         } catch (err) {
           done(err)
@@ -70,6 +70,22 @@ describe('Base load consumption status', () => {
       })
 
       vrmNode.receive({ payload: 'trigger' })
+    })
+  }
+
+  it('should show the computed base load in the status, not the first live_feed_kwh total', (done) => {
+    expectLastStatus('vrm_consum_base', 'base load: 6.0', done, (msg) => {
+      expect(msg.payload.totals).toEqual({ base_load: 6 })
+    })
+  })
+
+  it.each([
+    ['vrm_consum_hp', 'Heating: 3.0'],
+    ['vrm_consum_evcs', 'EV charging: 2.0'],
+    ['vrm_consum_ac', 'AC load: 1.0']
+  ])('should show the selected series total for %s', (attribute, expectedText, done) => {
+    expectLastStatus(attribute, expectedText, done, (msg) => {
+      expect(msg.payload).toEqual(liveFeedResponse)
     })
   })
 })
