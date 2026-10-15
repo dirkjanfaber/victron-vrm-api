@@ -14,10 +14,32 @@ const path = require('path')
 
 const ENTRY_URL = 'https://vrm-api-docs.victronenergy.com/docs/docs/openapi.yaml'
 const BASE_URL = 'https://vrm-api-docs.victronenergy.com/docs/'
-const outDir = path.resolve(process.argv[2] || path.join(__dirname, '..', 'api-spec'))
 
-// Matches `$ref: 'x'`, `$ref: "x"` and `$ref: x`
-const REF_PATTERN = /\$ref:\s*['"]?([^'"\s#]*)/g
+// Matches the file part of `$ref: x`, `"$ref": "x"` and `{$ref: x}`; stops
+// at a fragment, quote, whitespace or flow-collection delimiter
+const REF_PATTERN = /['"]?\$ref['"]?\s*:\s*['"]?([^'"\s#,{}[\]]*)/g
+
+function extractRefs (text) {
+  // Refs within the same file (`#/components/...`) leave an empty file part
+  return [...text.matchAll(REF_PATTERN)].map(match => match[1]).filter(Boolean)
+}
+
+function resolveRef (ref, fromUrl) {
+  const url = new URL(ref, fromUrl)
+  // A query string keeps its `../` through URL normalisation and would
+  // otherwise end up in the file path
+  url.search = ''
+  url.hash = ''
+  return url.href
+}
+
+function mirrorPath (outDir, relativePath) {
+  const target = path.resolve(outDir, relativePath)
+  if (!target.startsWith(outDir + path.sep)) {
+    throw new Error(`Refusing to write outside ${outDir}: ${relativePath}`)
+  }
+  return target
+}
 
 async function fetchText (url) {
   const response = await fetch(url)
@@ -29,6 +51,7 @@ async function fetchText (url) {
 }
 
 async function main () {
+  const outDir = path.resolve(process.argv[2] || path.join(__dirname, '..', 'api-spec'))
   const queue = [ENTRY_URL]
   // Referenced URL -> files referencing it
   const referrers = new Map([[ENTRY_URL, new Set()]])
@@ -48,10 +71,8 @@ async function main () {
     const relativePath = url.slice(BASE_URL.length)
     files.set(relativePath, text)
 
-    for (const match of text.matchAll(REF_PATTERN)) {
-      // Local refs (`#/components/...`) leave an empty file part
-      if (!match[1]) continue
-      const refUrl = new URL(match[1], url).href
+    for (const ref of extractRefs(text)) {
+      const refUrl = resolveRef(ref, url)
       if (!referrers.has(refUrl)) {
         referrers.set(refUrl, new Set())
         queue.push(refUrl)
@@ -63,7 +84,7 @@ async function main () {
   // Rebuild from scratch so files dropped upstream show up as deletions
   fs.rmSync(outDir, { recursive: true, force: true })
   for (const [relativePath, text] of files) {
-    const target = path.join(outDir, relativePath)
+    const target = mirrorPath(outDir, relativePath)
     fs.mkdirSync(path.dirname(target), { recursive: true })
     fs.writeFileSync(target, text)
   }
@@ -76,7 +97,11 @@ async function main () {
   console.log(`Wrote ${files.size} spec files to ${outDir}`)
 }
 
-main().catch((err) => {
-  console.error(err.message)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err.message)
+    process.exit(1)
+  })
+}
+
+module.exports = { extractRefs, resolveRef, mirrorPath, BASE_URL }
