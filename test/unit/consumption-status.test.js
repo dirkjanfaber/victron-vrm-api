@@ -3,9 +3,6 @@ const helper = require('node-red-node-test-helper')
 const configNode = require('../../src/nodes/config-vrm-api.js')
 const vrmApiNode = require('../../src/nodes/vrm-api.js')
 
-jest.mock('axios')
-const axios = require('axios')
-
 helper.init(require.resolve('node-red'))
 
 const makeFlow = (attribute) => [
@@ -52,7 +49,11 @@ describe('Consumption sub-type status', () => {
   })
 
   function expectLastStatus (attribute, expectedText, done, checkMsg = () => {}) {
-    axios.get = jest.fn().mockResolvedValue({ status: 200, data: liveFeedResponse })
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: jest.fn().mockResolvedValue(JSON.stringify(liveFeedResponse))
+    })
 
     helper.load([configNode, vrmApiNode], makeFlow(attribute), credentials, () => {
       const vrmNode = helper.getNode('vrm1')
