@@ -348,6 +348,18 @@ describe('VRMAPIService Unit Tests', () => {
       const result = service.interpretStatsStatus({ totals: { daE: 0.1 } })
       expect(result.text).toBe('AC load: 0.1')
     })
+
+    it('should show the requested key instead of the first total', () => {
+      const result = service.interpretStatsStatus({ totals: { total_solar_yield: 7.5, evE: 3.9 } }, 'evE')
+      expect(result.text).toBe('EV charging: 3.9')
+      expect(result.key).toBe('evE')
+    })
+
+    it('should report no totals when the requested key is missing', () => {
+      const result = service.interpretStatsStatus({ totals: { total_solar_yield: 7.5 } }, 'evE')
+      expect(result.text).toBe('No totals')
+      expect(result.color).toBe('yellow')
+    })
   })
 
   describe('API Call Methods', () => {

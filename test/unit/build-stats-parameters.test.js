@@ -115,6 +115,38 @@ describe('buildStatsParameters', () => {
     })
   })
 
+  describe('Quarter-hour rounding for the 15 minutes interval in version 2 nodes (issue #69)', () => {
+    const nowTs = Math.floor(fixedDate.getTime() / 1000) // 1697380200, 14:30 UTC
+
+    it('should return the current quarter for Start and End "now"', () => {
+      const result = buildStatsParameters({ attribute: 'dynamic_ess', version: 2, stats_interval: '15mins', stats_start: '0', stats_end: '0' })
+
+      expect(result.start).toBe(nowTs)
+      expect(result.end).toBe(nowTs + 1)
+    })
+
+    it('should floor offsets to the quarter hour', () => {
+      const result = buildStatsParameters({ attribute: 'dynamic_ess', version: 2, stats_interval: '15mins', stats_start: '-60', stats_end: '86340' })
+
+      expect(result.start).toBe(nowTs - 900)
+      expect(result.end).toBe(nowTs + 86400 - 900)
+    })
+
+    it('should keep flooring to the hour for other intervals', () => {
+      const result = buildStatsParameters({ attribute: 'dynamic_ess', version: 2, stats_interval: 'hours', stats_start: '-60', stats_end: '3600' })
+
+      expect(result.start).toBe(nowTs - 1800)
+      expect(result.end).toBe(nowTs + 1800)
+    })
+
+    it('should keep flooring to the hour for nodes created before version 2', () => {
+      const result = buildStatsParameters({ attribute: 'dynamic_ess', stats_interval: '15mins', stats_start: '-60', stats_end: '0' })
+
+      expect(result.start).toBe(nowTs - 1800)
+      expect(result.end).toBe(nowTs - 1800 + 1)
+    })
+  })
+
   describe('Start time parameter handling', () => {
     const nowTs = Math.floor(fixedDate.getTime() / 1000) // 1697380200
 
@@ -431,7 +463,7 @@ describe('buildStatsParameters', () => {
       const flooredNow = nowTs - (nowTs % 3600)
 
       expect(result.start).toBe(flooredNow)
-      expect(result.end).toBe(flooredNow)
+      expect(result.end).toBe(flooredNow + 1)
     })
 
     it('should handle -24 hours offset (issue #45)', () => {

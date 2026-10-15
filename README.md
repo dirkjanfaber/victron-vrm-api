@@ -6,7 +6,7 @@ retrieve the solar forecast data.
 ![VRM API flow](./img/vrm-api-flow.png)
 
 In order to allow the node to query your site, an
-[access-token](https://vrm.victronenergy.com/access-tokens) needs to be created
+[access-token](https://vrm.victronenergy.com/profile/integrations) needs to be created
 and filled out in the configuration node.
 
 ## Inputs
