@@ -495,6 +495,11 @@ The `vrm_to_grid_fc` and `vrm_to_battery_fc` stats attributes report the Dynamic
 grid/battery flow. Positive values mean flow *to* the grid/battery (export/charging); negative
 values mean flow *from* the grid/battery (import/discharging).
 
+The solar yield, solar irradiance and consumption forecasts (`solar_yield_forecast`, `vrm_solar_irradiance_fc`,
+`vrm_consumption_fc`, `vrm_consum_hp_fc` and `vrm_consum_evcs_fc`) are only available per hour. With the
+interval set to `15 minutes`, VRM still returns one value per hour for these, stamped at the start of the hour.
+`vrm_to_grid_fc` and `vrm_to_battery_fc` do follow the 15 minutes interval.
+
 In case of installation `dess` there are even more configuration options.
 
 Note that instead of filling out the number of the VRM site id for installations and widgets in the box, you
