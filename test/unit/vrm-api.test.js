@@ -201,6 +201,33 @@ describe('VRMAPIService Unit Tests', () => {
     })
   })
 
+  describe('Dynamic ESS Stats Status Interpretation', () => {
+    it('should show the number of planned intervals', () => {
+      const plan = [[1, 40], [2, 45], [3, 50]]
+      const result = service.interpretDynamicEssStatsStatus({ records: { vrm_to_grid_fc: [[1, 9]], vrm_soc_plan: plan }, totals: { vrm_to_grid_fc: 169 } })
+
+      expect(result.text).toBe('3 planned intervals')
+      expect(result.color).toBe('green')
+    })
+
+    it('should use the singular for one interval', () => {
+      const result = service.interpretDynamicEssStatsStatus({ records: { vrm_soc_plan: [[1, 47.4]] } })
+
+      expect(result.text).toBe('1 planned interval')
+    })
+
+    it.each([
+      ['missing', { records: {} }],
+      ['reported as false', { records: { vrm_soc_plan: false } }],
+      ['empty', { records: { vrm_soc_plan: [] } }]
+    ])('should report no plan when the plan series is %s', (label, responseData) => {
+      const result = service.interpretDynamicEssStatsStatus(responseData)
+
+      expect(result.text).toBe('No Dynamic ESS plan')
+      expect(result.color).toBe('yellow')
+    })
+  })
+
   describe('Dynamic ESS Status Interpretation', () => {
     it('should interpret all valid mode combinations correctly', () => {
       const testCases = [

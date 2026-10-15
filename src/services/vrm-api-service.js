@@ -269,6 +269,20 @@ class VRMAPIService {
     }
   }
 
+  // Most dynamic_ess totals are sums of forecasts or SOC percentages, so
+  // count the planned intervals instead of showing a total
+  interpretDynamicEssStatsStatus (responseData) {
+    const plan = responseData?.records?.vrm_soc_plan
+    if (!Array.isArray(plan) || plan.length === 0) {
+      return { text: 'No Dynamic ESS plan', color: 'yellow', raw: responseData }
+    }
+    return {
+      text: `${plan.length} planned interval${plan.length === 1 ? '' : 's'}`,
+      color: 'green',
+      raw: responseData
+    }
+  }
+
   /**
    * @param {string} [selectedKey] - totals key to show; defaults to the first one
    */

@@ -224,7 +224,9 @@ module.exports = function (RED) {
                 const usersQuery = config.usersQuery || config.users || 'me'
                 statusInfo = apiService.interpretUsersStatus(result.data, usersQuery)
               } else if (config.installations === 'stats' && result.data) {
-                statusInfo = apiService.interpretStatsStatus(messages[0].payload, LIVE_FEED_SERIES[config.attribute])
+                statusInfo = config.attribute === 'dynamic_ess'
+                  ? apiService.interpretDynamicEssStatsStatus(messages[0].payload)
+                  : apiService.interpretStatsStatus(messages[0].payload, LIVE_FEED_SERIES[config.attribute])
               } else if (config.installations === 'dynamic-ess-settings' && result.data) {
                 statusInfo = apiService.interpretDynamicEssStatus(result.data)
               } else if (config.installations === 'post-adjust-consumption') {
