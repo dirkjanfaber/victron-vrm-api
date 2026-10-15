@@ -133,6 +133,20 @@ class VRMAPIService {
     return this._request(url, actualMethod, payload, headers)
   }
 
+  /**
+   * Note: VRM API returns user data in this structure:
+   * {
+   *   "success": true,
+   *   "user": {
+   *     "id": 123456,
+   *     "name": "User Name",
+   *     "email": "user@example.com",
+   *     "country": "Country",
+   *     "idAccessToken": 1234,
+   *     "accessLevel": 1
+   *   }
+   * }
+   */
   async callUsersAPI (endpoint, userId = null) {
     let url = `${this.baseUrl}/users`
 
