@@ -12,6 +12,7 @@ permissions:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
     - uses: actions/checkout@v6
@@ -19,7 +20,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v6
       with:
-        node-version: 20.x
+        node-version: 24.x
 
     - name: Mirror published spec
       run: node scripts/sync-api-spec.js

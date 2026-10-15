@@ -14,6 +14,7 @@ const path = require('path')
 
 const ENTRY_URL = 'https://vrm-api-docs.victronenergy.com/docs/docs/openapi.yaml'
 const BASE_URL = 'https://vrm-api-docs.victronenergy.com/docs/'
+const FETCH_TIMEOUT_MS = 30000
 
 // Matches the file part of `$ref: x`, `"$ref": "x"` and `{$ref: x}`; stops
 // at a fragment, quote, whitespace or flow-collection delimiter
@@ -41,8 +42,23 @@ function mirrorPath (outDir, relativePath) {
   return target
 }
 
+// Rebuilds outDir from scratch so files dropped upstream show up as
+// deletions. Everything is checked before anything is deleted.
+function writeMirror (outDir, files) {
+  if (path.basename(outDir) !== 'api-spec') {
+    throw new Error(`Refusing to replace ${outDir}: the mirror directory must be named api-spec`)
+  }
+  const targets = [...files].map(([relativePath, text]) => [mirrorPath(outDir, relativePath), text])
+
+  fs.rmSync(outDir, { recursive: true, force: true })
+  for (const [target, text] of targets) {
+    fs.mkdirSync(path.dirname(target), { recursive: true })
+    fs.writeFileSync(target, text)
+  }
+}
+
 async function fetchText (url) {
-  const response = await fetch(url)
+  const response = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) })
   if (response.status === 404) return null
   if (!response.ok) {
     throw new Error(`${url}: HTTP ${response.status}`)
@@ -81,20 +97,14 @@ async function main () {
     }
   }
 
-  // Rebuild from scratch so files dropped upstream show up as deletions
-  fs.rmSync(outDir, { recursive: true, force: true })
-  for (const [relativePath, text] of files) {
-    const target = mirrorPath(outDir, relativePath)
-    fs.mkdirSync(path.dirname(target), { recursive: true })
-    fs.writeFileSync(target, text)
-  }
-
+  const specFileCount = files.size
   if (brokenRefs.length > 0) {
     const lines = brokenRefs.flatMap(url => [...referrers.get(url)].map(from => `${from} -> ${url}`))
-    fs.writeFileSync(path.join(outDir, 'broken-refs.txt'), lines.sort().join('\n') + '\n')
+    files.set('broken-refs.txt', lines.sort().join('\n') + '\n')
   }
+  writeMirror(outDir, files)
 
-  console.log(`Wrote ${files.size} spec files to ${outDir}`)
+  console.log(`Wrote ${specFileCount} spec files to ${outDir}`)
 }
 
 if (require.main === module) {
@@ -104,4 +114,4 @@ if (require.main === module) {
   })
 }
 
-module.exports = { extractRefs, resolveRef, mirrorPath, BASE_URL }
+module.exports = { extractRefs, resolveRef, mirrorPath, writeMirror, BASE_URL }

@@ -1,10 +1,12 @@
 // test/unit/sync-api-spec.test.js
+const fs = require('fs')
+const os = require('os')
 const path = require('path')
 
 // Importing must not start a sync: the script takes its output directory
 // from process.argv[2], which under Jest is this test file
 const fetchSpy = jest.spyOn(global, 'fetch')
-const { extractRefs, resolveRef, mirrorPath, BASE_URL } = require('../../scripts/sync-api-spec')
+const { extractRefs, resolveRef, mirrorPath, writeMirror, BASE_URL } = require('../../scripts/sync-api-spec')
 
 describe('sync-api-spec', () => {
   it('should not fetch anything when imported', () => {
@@ -65,6 +67,49 @@ describe('sync-api-spec', () => {
     it('should refuse paths that resolve outside the mirror directory', () => {
       expect(() => mirrorPath(outDir, 'docs/x.yaml?q=/../../../../package.json')).toThrow(/outside/)
       expect(() => mirrorPath(outDir, '../api-spec-evil/x.yaml')).toThrow(/outside/)
+    })
+  })
+
+  describe('writeMirror', () => {
+    let tmp
+
+    beforeEach(() => {
+      tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sync-api-spec-'))
+    })
+
+    afterEach(() => {
+      fs.rmSync(tmp, { recursive: true, force: true })
+    })
+
+    it('should replace the mirror, dropping files that are gone upstream', () => {
+      const outDir = path.join(tmp, 'api-spec')
+      fs.mkdirSync(path.join(outDir, 'Commands'), { recursive: true })
+      fs.writeFileSync(path.join(outDir, 'Commands', 'Removed.yaml'), 'old')
+
+      writeMirror(outDir, new Map([['docs/openapi.yaml', 'new']]))
+
+      expect(fs.readFileSync(path.join(outDir, 'docs', 'openapi.yaml'), 'utf8')).toBe('new')
+      expect(fs.existsSync(path.join(outDir, 'Commands', 'Removed.yaml'))).toBe(false)
+    })
+
+    it('should refuse to replace a directory not named api-spec', () => {
+      const keep = path.join(tmp, 'keep.txt')
+      fs.writeFileSync(keep, 'precious')
+
+      expect(() => writeMirror(tmp, new Map([['docs/openapi.yaml', 'new']]))).toThrow(/api-spec/)
+      expect(fs.readFileSync(keep, 'utf8')).toBe('precious')
+    })
+
+    it('should leave the old mirror intact when a path is refused', () => {
+      const outDir = path.join(tmp, 'api-spec')
+      fs.mkdirSync(outDir)
+      fs.writeFileSync(path.join(outDir, 'openapi.yaml'), 'old')
+
+      const files = new Map([['docs/openapi.yaml', 'new'], ['../escaped.txt', 'x']])
+      expect(() => writeMirror(outDir, files)).toThrow(/outside/)
+
+      expect(fs.readFileSync(path.join(outDir, 'openapi.yaml'), 'utf8')).toBe('old')
+      expect(fs.existsSync(path.join(tmp, 'escaped.txt'))).toBe(false)
     })
   })
 })
