@@ -1,0 +1,4 @@
+Commands/User/docs/AccessTokenCommand.yaml -> https://vrm-api-docs.victronenergy.com/docs/components.yaml
+Commands/User/docs/DeleteAccessTokenCommand.yaml -> https://vrm-api-docs.victronenergy.com/docs/components.yaml
+Commands/docs/InstallationOverviewDownloadCommand.yaml -> https://vrm-api-docs.victronenergy.com/docs/components.yaml
+Commands/docs/LogoutEverywhereCommand.yaml -> https://vrm-api-docs.victronenergy.com/docs/components.yaml

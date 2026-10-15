@@ -1,0 +1,47 @@
+post:
+  operationId: installations/idSite/unlink
+  summary: Unlink yourself from an installation
+  description: Removes the currently authenticated user's access to the specified installation. The installation must already be linked to the user's account.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Unlink result.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the user was successfully unlinked.
+                type: boolean
+              idSite:
+                description: ID of the installation that was unlinked.
+                type: integer
+                example: 60
+              error_code:
+                description: |-
+                  Error code if the request failed. Possible values:
+                  - `site_not_linked`: The installation is not linked to this account.
+                  - `installation_linked_via_team`: Your access comes through a team or installation group, not an individual link; leave the team or group instead.
+                  - `installation_was_not_unlinked`: The unlink operation failed.
+                type: string
+              errors:
+                description: Human-readable error messages.
+                type: array
+                items:
+                  type: string
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

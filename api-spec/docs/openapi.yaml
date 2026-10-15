@@ -1,0 +1,120 @@
+openapi: 3.1.0
+info:
+  title: VRM API
+  version: '2'
+  description: |-
+    ## Introduction
+    This document provides a brief overview of some of the available endpoints and their parameters. The API is a REST API, accepting JSON as request body. You can use the try-it tool to play around with it, or use software like Postman.
+
+    ## Authentication
+    Most endpoints require authentication, using a JWT token. This token should be placed in the `x-authorization` field in the HTTP header. There are two types of tokens.
+    - Access token. Uses the `Token <token_value>` format. This is commonly used for third party applications using the VRM API. Can be created using [/users/{idUser}/accesstokens/create](/operations/users/idUser/accesstokens/create).
+    - **Deprecated from 1st of June 2026 onwards:** Bearer token. Uses the `Bearer <token_value>` format.
+
+    ⚠️ **Please migrate to access tokens if you are still doing requests with Bearer tokens.**
+
+    ## Rate limiting
+    Most endpoints are by default rate limited with a rolling window of max 200 requests, where every 0.33 seconds a request gets removed from the rolling window. (so on average maximum of 3 requests per second won't get rate limited). There are different types of ratelimiting in VRM. If you receive a 429 with a JSON response, you can check the Retry-After response header to check the amount of seconds you have to wait until retrying.
+
+    ## Related APIs
+    Some functionality has moved out of this API into dedicated services. In particular, generating reports (including CSV / XLSX exports of energy data and alarm / fault logs across one or multiple installations) is now served by **vrm-reports-api**. See its interactive documentation at [https://vrm-reports-api.victronenergy.com/docs](https://vrm-reports-api.victronenergy.com/docs).
+
+    ## WARNING & DISCLAIMER
+    Whilst publicly available, Victron Energy does not offer support to professional customers or end-users that implement features using the here documented functionality, except in really specific situations (i.e such as a special arrangement with a large OEM customer).
+
+    The recommended method for support on the VRM API is to use the Modifications section on Victron Community. This space is frequently visited by many people using the API, and other methods of integrating with Victron products.
+    Direct company support is only offered on a limited basis via your Victron representative.
+servers:
+  - url: 'https://vrmapi.victronenergy.com/v2'
+paths:
+  # Users
+  /users/{idUser}/addsite:
+    $ref: '../Commands/User/docs/AddSiteCommand.yaml'
+  /users/{idUser}/installations:
+    $ref: '../Commands/User/docs/InstallationsCommand.yaml'
+  /users/{idUser}/accesstokens:
+    $ref: '../Commands/User/docs/AccessTokenCommand.yaml'
+  /users/{idUser}/accesstokens/{idAccessToken}:
+    $ref: '../Commands/User/docs/DeleteAccessTokenCommand.yaml'
+  /users/{idUser}/get-site-id:
+    $ref: '../Commands/User/docs/GetSiteIdCommand.yaml'
+  /users/me:
+    $ref: '../Commands/User/docs/InfoMeCommand.yaml'
+  /users/{idUser}/search:
+    $ref: '../Commands/User/docs/SearchCommand.yaml'
+  /users/{idUser}/invites:
+    $ref: '../Commands/User/docs/InvitesCommand.yaml'
+  /users/{idUser}/logout-everywhere:
+    $ref: '../Commands/docs/LogoutEverywhereCommand.yaml'
+
+  # Installation
+  /installations/{idSite}/alarms:
+    $ref: '../Commands/Installation/docs/AlarmsCommand.yaml'
+  /installations/{idSite}/alarm-log:
+    $ref: '../Commands/Installation/docs/AlarmLogCommand.yaml'
+  /installations/{idSite}/clear-alarm:
+    $ref: '../Commands/Installation/docs/ClearAlarmCommand.yaml'
+  /installations/{idSite}/system-overview:
+    $ref: '../Commands/Installation/docs/SystemOverviewCommand.yaml'
+  /installations/{idSite}/diagnostics:
+    $ref: '../Commands/Installation/docs/DiagnosticsCommand.yaml'
+  /installations/{idSite}/dynamic-ess:
+    $ref: '../Commands/Installation/docs/DynamicESSCommand.yaml'
+  /installations/{idSite}/dynamic-ess-settings:
+    $ref: '../Commands/Installation/docs/DynamicEssSettingsCommand.yaml'
+  /installations/{idSite}/vehicle-dess-settings:
+    $ref: '../Commands/docs/VehicleDynamicEssSettingsCommand.yaml'
+  /installations/{idSite}/custom-ev-schedule:
+    $ref: '../Commands/docs/CustomEvScheduleCommand.yaml'
+  /installations/{idSite}/gps-download:
+    $ref: '../Commands/Installation/docs/GPSDownloadCommand.yaml'
+  /installations/{idSite}/photo-upload:
+    $ref: '../Commands/Installation/docs/PhotoUploadCommand.yaml'
+  /installations/{idSite}/tags:
+    $ref: '../Commands/Installation/docs/TagsCommand.yaml'
+  /installations/{idSite}/bulk-tags:
+    $ref: '../Commands/Installation/docs/BulkTagsCommand.yaml'
+  /installations/{idSite}/data-download:
+    $ref: '../Commands/Installation/docs/DataDownloadCommand.yaml'
+  /installations/{idSite}/stats:
+    $ref: '../Commands/Installation/docs/StatsCommand.yaml#/components/operations'
+  /installations/{idSite}/overallstats:
+    $ref: '../Commands/Installation/docs/OverallStatsCommand.yaml#/components/operations'
+  /installations/{idSite}/settings:
+    $ref: '../Commands/Installation/docs/SettingsCommand.yaml'
+  /installations/{idSite}/invite:
+    $ref: '../Commands/Installation/docs/InviteCommand.yaml'
+  /installations/{idSite}/users:
+    $ref: '../Commands/Installation/docs/UsersCommand.yaml'
+  /installations/{idSite}/unlink-user:
+    $ref: '../Commands/Installation/docs/UnlinkUserCommand.yaml'
+  /installations/{idSite}/unlink:
+    $ref: '../Commands/Installation/docs/UnlinkCommand.yaml'
+  /installations/{idSite}/user-rights:
+    $ref: '../Commands/Installation/docs/UserRightsCommand.yaml'
+  /installations/{idSite}/invite-rights:
+    $ref: '../Commands/Installation/docs/InviteRightsCommand.yaml'
+  /installations/{idSite}/link-user-groups:
+    $ref: '../Commands/Installation/docs/LinkUserGroupsCommand.yaml'
+  /installations/{idSite}/user-group-access-level:
+    $ref: '../Commands/Installation/docs/UserGroupAccessLevelCommand.yaml'
+  /installations/{idSite}/reset-forecasts:
+    $ref: '../Commands/Installation/docs/ResetForecastsCommand.yaml'
+  /installations/{idSite}/custom-widget:
+    $ref: '../Commands/Installation/docs/CustomWidgetCommand.yaml'
+  /installation-overview-download:
+    $ref: '../Commands/docs/InstallationOverviewDownloadCommand.yaml'
+  /installation-data-attributes:
+    $ref: '../Commands/Admin/docs/InstallationDataAttributesCommand.yaml'
+  /data-attributes:
+    $ref: '../Commands/docs/DataAttributesCommand.yaml'
+  /installations/{idSite}/favorite:
+    $ref: '../Commands/Installation/docs/FavoriteCommand.yaml'
+
+  # Admin
+  /admin/devices:
+    $ref: '../Commands/Admin/docs/DevicesCommand.yaml'
+  /admin/installation-data-attributes-count:
+    $ref: '../Commands/Admin/docs/InstallationDataAttributesCountCommand.yaml'
+  /admin/search-download:
+    $ref: '../Commands/Admin/docs/InstallationSearchDownloadCommand.yaml'

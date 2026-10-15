@@ -1,0 +1,86 @@
+get:
+  operationId: installations/idSite/data-download
+  summary: Download installation data
+  deprecated: true
+  description: Retrieves a base64 encoded string containing the specified installation data, in the specified format.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: start
+      description: Timestamp from which to fetch data, defaults to one day ago.
+      in: query
+      required: false
+      schema:
+        type: integer
+    - name: end
+      description: Timestamp to which to fetch data, defaults to now.
+      in: query
+      required: false
+      schema:
+        type: integer
+    - name: datatype
+      description: Type of data to export, defaults to log.
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - log
+          - benchmark
+          - kwh
+    - name: format
+      description: Export data file format, defaults to csv.
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          - csv
+          - excelxml
+          - xls
+          - xlsx
+          - html
+    - name: debug
+      description: Include debug attributes, only for admins and restricted admins, defaults to false.
+      in: query
+      required: false
+      schema:
+        type: boolean
+    - name: async
+      description: If true, the request is executed asynchronously and the result is not included in the response but sent to the email address of the requesting account.
+      in: query
+      required: false
+      schema:
+        type: boolean
+
+  responses:
+    '200':
+      description: Successfully exported / started exporting data.
+      content:
+        application/json:
+          schema:
+            description: The asynchronous export was successfully started.
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+            required:
+              - success
+        text/html: {}
+        text/csv: {}
+        application/vnd.ms-excel: {}
+        application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: {}
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

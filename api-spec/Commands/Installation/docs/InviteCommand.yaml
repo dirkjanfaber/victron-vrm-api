@@ -1,0 +1,84 @@
+post:
+  summary: Invite user to installation
+  description: Sends an invitation to a user to gain access to a specific installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              required: true
+              example: "Andrew"
+            email:
+              type: string
+              required: true
+              example: "andrew@example.com"
+            accessLevel:
+              description: The access level the invited user should have. Value 0 gives demo rights, value 1 gives user rights, and value 2 gives admin rights.
+              type: number
+              required: true
+              example: 1
+        examples:
+          string:
+            summary: Inviting Andrew to access the installation.
+            value:
+              name: "Andrew"
+              email: "andrew@example.com"
+              accessLevel: 1
+
+  responses:
+    '200':
+      description: Invitation sent.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              user:
+                description:
+                type: boolean
+                example: false
+              data:
+                # $ref: '#/components/schemas/data'
+                description: Description of added user
+                type: object
+                properties:
+                  idUser:
+                    type: number
+                    example: 1
+                  idSite:
+                    description: ID of the installation.
+                    type: number
+                    example: 60
+                  created:
+                    description: Timestamp when user was invited.
+                    type: number
+                    example: 1698415280
+                  name:
+                    type: string
+                    example: "Andrew"
+                  email:
+                    type: string
+                    example: "andrew@example.com"
+                  accessLevel:
+                    type: number
+                    example: 1
+                  idInvite:
+                    type: number
+                    example: 0

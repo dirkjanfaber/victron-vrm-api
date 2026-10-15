@@ -1,0 +1,146 @@
+get:
+  summary: Get Alarm Log (historical fault log)
+  description: |-
+    Returns the historical alarm / fault log entries for an installation, including grid-related events such as voltage and frequency faults, phase rotation, grid lost, overload, low SoC and inverter errors. Each entry has a `started` timestamp and (when the condition cleared) a `cleared` timestamp; the duration of the fault is `cleared - started`.
+
+    Active (not yet cleared) entries are returned first, followed by historical (cleared) entries, both ordered by `started DESC`.
+
+    Note: this endpoint is distinct from `GET /installations/{idSite}/alarms`, which returns the *configured* alarm rules for an installation, not the historical event log. If you are looking for actual fault events, use this endpoint.
+
+    For CSV / XLSX exports, or to aggregate alarm events across multiple installations in a single request, use the `POST /alarms-report` endpoint on **vrm-reports-api** instead — see [https://vrm-reports-api.victronenergy.com/docs](https://vrm-reports-api.victronenergy.com/docs).
+
+    Filtering by fault type, affected phase or device is done client-side using the `type`, `description`, `instance` and `device` fields of the response. The underlying attribute code (e.g. `agl` for grid lost, `aPr` for phase rotation, `meHV` / `meLV` for high / low voltage, `iE` for inverter error) is identified by `idDataAttribute` and reflected in `description` / `nameEnum`.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID.
+      in: path
+      required: true
+      schema:
+        type: integer
+    - name: start
+      description: Lower bound (inclusive) of the alarm window, as a Unix timestamp in seconds. When omitted, no lower bound is applied (recommended for best performance when also omitting `end`).
+      in: query
+      required: false
+      schema:
+        type: integer
+        example: 1714000000
+    - name: end
+      description: Upper bound (inclusive) of the alarm window, as a Unix timestamp in seconds. Must be passed together with `start` to take effect.
+      in: query
+      required: false
+      schema:
+        type: integer
+        example: 1714600000
+    - name: page
+      description: Pagination page number (1-indexed). Values <= 0 are coerced to 1.
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 1
+    - name: count
+      description: Page size (number of records to return per page).
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 3000
+  responses:
+    '200':
+      description: Alarm log retrieved successfully (or no entries matched the filter).
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - type: object
+                description: At least one record found.
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  records:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AlarmLogRecord'
+                  num_records:
+                    description: Total number of alarm log entries matching the filter (across all pages).
+                    type: integer
+                    example: 12345
+              - type: object
+                description: No records matched the filter.
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error_code:
+                    type: string
+                    example: no_results_found
+                  errors:
+                    type: array
+                    items:
+                      type: string
+                    example: ["No alarm log found."]
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+components:
+  schemas:
+    AlarmLogRecord:
+      type: object
+      properties:
+        idAlarm:
+          description: Internal alarm event identifier.
+          type: integer
+          example: 987654321
+        idSite:
+          description: Installation ID.
+          type: integer
+          example: 32223
+        instance:
+          description: VE.Bus / device instance the alarm originated from. Used to map the event to a specific phase or device when combined with `device` / device metadata.
+          type: integer
+          example: 0
+        type:
+          description: Severity / class of the alarm as stored on the event (e.g. warning, alarm).
+          type: integer
+          example: 2
+        description:
+          description: Human-readable description of the alarm condition.
+          type: string
+          example: "Grid lost alarm"
+        started:
+          description: Unix timestamp (seconds) when the alarm condition started.
+          type: integer
+          example: 1714000123
+        cleared:
+          description: Unix timestamp (seconds) when the alarm condition cleared. `null` while the alarm is still active.
+          type: [integer, "null"]
+          example: 1714000456
+        idDataAttribute:
+          description: Identifier of the underlying data attribute that triggered the alarm. Map to attribute codes such as `agl` (grid lost), `aPr` (phase rotation), `meHV` / `meLV` (high / low voltage), `iE` (inverter error) via the `attributes` payload on `GET /installations/{idSite}/alarms`.
+          type: integer
+          example: 630
+        isActive:
+          description: 1 when the alarm is still active (no `cleared` timestamp), 0 otherwise.
+          type: integer
+          enum: [0, 1]
+          example: 0
+        device:
+          description: Device type label that emitted the alarm (e.g. "Multi", "Quattro", "Gateway").
+          type: string
+          example: "Multi"
+        customName:
+          description: User-assigned name for the device, when set.
+          type: [string, "null"]
+          example: "Inverter A"
+        nameEnum:
+          description: For enum-based alarms, the human-readable name of the triggering enum value.
+          type: [string, "null"]
+          example: "Alarm"

@@ -1,0 +1,132 @@
+get:
+  operationId: users/idUser/invites
+  summary: Return user invitations
+  description: Retrieves the installation group and teams invites of a specific user
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idUser
+      description: Id of the user
+      in: path
+      required: true
+      schema:
+        type: number
+  responses:
+    '200':
+      description: Successfully retrieved installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              data:
+                description: Invites of the user.
+                type: object
+                properties:
+                  invitesSiteGroups:
+                    description: Invites to site groups/installation groups.
+                    properties:
+                      idSiteGroup:
+                        type: number
+                        description: Id of the site group/installation group.
+                        example: 1234
+                      siteGroupName:
+                        type: string
+                        description: Name of the site group/installation group.
+                        example: "Installation Group 1"
+                      personalMessage:
+                        type: string
+                        description: Message wrote by the inviter to the invitee.
+                        example: "Welcome to Installation Group 1"
+                      inviteKey:
+                        type: string
+                        description: Invite key.
+                        example: "abcdef123344"
+                      inviterName:
+                        type: string
+                        description: Name of the person that created the invite.
+                        example: "John Doe"
+                      inviteTimestamp:
+                        type: number
+                        description: Moment when the invite was created.
+                        example: 1752046191
+                  invitesUserGroups:
+                    description: Invites to user groups/teams.
+                    properties:
+                      idUserGroup:
+                        type: number
+                        description: Id of the user group/team.
+                        example: 1234
+                      userGroupName:
+                        type: string
+                        description: Name of the team.
+                        example: "Team 1"
+                      personalMessage:
+                        type: string
+                        description: Message wrote by the inviter to the invitee.
+                        example: "Welcome to Team 1"
+                      inviteKey:
+                        type: string
+                        description: Invite key.
+                        example: "abcdef123344"
+                      inviterName:
+                        type: string
+                        description: Name of the person that created the invite.
+                        example: "John Doe"
+                      inviteTimestamp:
+                        type: number
+                        description: Moment when the invite was created.
+                        example: 1752046191
+                  requestsUserGroups:
+                    description: Requests to join user groups/teams awaiting approval.
+                    properties:
+                      idUserGroup:
+                        type: number
+                        description: Id of the user group/team.
+                        example: 1234
+                      userGroupName:
+                        type: string
+                        description: Name of the team.
+                        example: "Team 1"
+                      inviteeName:
+                        type: string
+                        description: Name of the user requesting access.
+                        example: "Jane Doe"
+                      idUser:
+                        type: number
+                        description: Id of the user requesting access.
+                        example: 5678
+                      inviteTimestamp:
+                        type: number
+                        description: Moment when the request was created.
+                        example: 1752046191
+                  requestsInstallations:
+                    description: Requests to access installations awaiting approval.
+                    properties:
+                      idSite:
+                        type: number
+                        description: Id of the installation.
+                        example: 4321
+                      installationName:
+                        type: string
+                        description: Name of the installation.
+                        example: "Main Site"
+                      inviteeName:
+                        type: string
+                        description: Name of the user requesting access.
+                        example: "Jane Doe"
+                      idUser:
+                        type: number
+                        description: Id of the user requesting access.
+                        example: 5678
+                      inviteTimestamp:
+                        type: number
+                        description: Moment when the request was created.
+                        example: 1752046191
+            required:
+              - success
+              - records

@@ -1,0 +1,346 @@
+get:
+  summary: Get vehicle DESS settings
+  description: |
+    Retrieves Dynamic ESS settings for a specific vehicle.
+  tags:
+    - Installations
+  parameters:
+    - name: idSite
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - name: idVehicle
+      in: query
+      description: The ID of the vehicle
+      required: true
+      schema:
+        type: string
+    - $ref: '../../docs/components.yaml#/components/parameters/authorization'
+  responses:
+    '200':
+      description: Successfully retrieved vehicle DESS settings.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              records:
+                $ref: '#/components/schemas/VehicleDessSettingsResponse'
+    '404':
+      description: Vehicle settings not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+post:
+  summary: Create vehicle DESS settings
+  description: |
+    Creates Dynamic ESS settings for a specific vehicle.
+    Note: If isTargetSocEditable is false (car reports target SOC via Enode),
+    setting targetSOC will be rejected.
+  tags:
+    - Installations
+  parameters:
+    - name: idSite
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - $ref: '../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/VehicleDessSettingsRequest'
+  responses:
+    '200':
+      description: Successfully created vehicle DESS settings.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              records:
+                $ref: '#/components/schemas/VehicleDessSettingsResponse'
+    '400':
+      description: Bad request - target SOC is managed by car app and cannot be modified.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '404':
+      description: Vehicle settings already exist or could not be saved.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+put:
+  summary: Update vehicle DESS settings (full replace)
+  description: |
+    Updates all Dynamic ESS settings for a specific vehicle.
+    Note: If isTargetSocEditable is false (car reports target SOC via Enode),
+    setting targetSOC will be rejected.
+  tags:
+    - Installations
+  parameters:
+    - name: idSite
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - $ref: '../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/VehicleDessSettingsRequest'
+  responses:
+    '200':
+      description: Successfully updated vehicle DESS settings.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              records:
+                $ref: '#/components/schemas/VehicleDessSettingsResponse'
+    '400':
+      description: Bad request - target SOC is managed by car app and cannot be modified.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '404':
+      description: Vehicle settings not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+patch:
+  summary: Partially update vehicle DESS settings
+  description: |
+    Partially updates Dynamic ESS settings for a specific vehicle.
+    Note: If isTargetSocEditable is false (car reports target SOC via Enode),
+    setting targetSOC will be rejected.
+  tags:
+    - Installations
+  parameters:
+    - name: idSite
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - $ref: '../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/VehicleDessSettingsRequest'
+  responses:
+    '200':
+      description: Successfully updated vehicle DESS settings.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              records:
+                $ref: '#/components/schemas/VehicleDessSettingsResponse'
+    '400':
+      description: Bad request - target SOC is managed by car app and cannot be modified.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '404':
+      description: Vehicle settings not found or could not be saved.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+delete:
+  summary: Delete vehicle DESS settings
+  description: |
+    Deletes Dynamic ESS settings for a specific vehicle.
+  tags:
+    - Installations
+  parameters:
+    - name: idSite
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - name: idVehicle
+      in: query
+      description: The ID of the vehicle
+      required: true
+      schema:
+        type: string
+    - $ref: '../../docs/components.yaml#/components/parameters/authorization'
+  responses:
+    '200':
+      description: Successfully deleted vehicle DESS settings.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              message:
+                type: string
+    '404':
+      description: Vehicle settings not found or failed to delete.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    VehicleDessSettingsRequest:
+      type: object
+      required:
+        - idVehicle
+      properties:
+        idVehicle:
+          description: The unique identifier of the vehicle.
+          type: string
+        targetSOC:
+          description: |
+            The desired state of charge percentage.
+            Only settable when isTargetSocEditable is true (car does not report target SOC via Enode).
+          type: integer
+          minimum: 0
+          maximum: 100
+        handOffTime:
+          description: The time by which charging should be complete (HH:MM format, 24-hour).
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: '07:00'
+        optimalChargingEnabled:
+          description: Whether optimal charging is enabled for this vehicle.
+          type: boolean
+        customMaxChargeRate:
+          description: Custom maximum charge rate override in kW.
+          type: number
+        customBatteryCapacity:
+          description: Custom battery capacity override in kWh.
+          type: number
+        customMinChargeRate:
+          description: Custom minimum charge rate override in kW (defaults to 6.9).
+          type: number
+
+    VehicleDessSettingsResponse:
+      type: object
+      properties:
+        idVehicle:
+          description: The unique identifier of the vehicle.
+          type: string
+        idSite:
+          description: The installation ID.
+          type: integer
+        targetSOC:
+          description: The desired state of charge percentage (user-configured).
+          type: integer
+        handOffTime:
+          description: The time by which charging should be complete (HH:MM format).
+          type: string
+        optimalChargingEnabled:
+          description: Whether optimal charging is enabled for this vehicle.
+          type: boolean
+        chargeNowTriggeredAt:
+          description: Unix timestamp when charge-now was last triggered.
+          type: integer
+          nullable: true
+        customMaxChargeRate:
+          description: Custom maximum charge rate override in kW.
+          type: number
+          nullable: true
+        customBatteryCapacity:
+          description: Custom battery capacity override in kWh.
+          type: number
+          nullable: true
+        customMinChargeRate:
+          description: Custom minimum charge rate override in kW (defaults to 6.9).
+          type: number
+          nullable: true
+        defaults:
+          description: |
+            The user's stored defaults — the source of truth for the Settings page form
+            when the field is editable. Saving the form should write these values back
+            via this same endpoint.
+          type: object
+          properties:
+            targetSOC:
+              description: The user's stored default target SOC.
+              type: integer
+              minimum: 0
+              maximum: 100
+              nullable: true
+            handOffTime:
+              description: The user's stored default hand-off time (HH:MM, 24-hour).
+              type: string
+              nullable: true
+        effective:
+          description: |
+            The values currently in force. Display targetSoc here when isTargetSocEditable
+            is false (evts wins, read-only). When isTargetSocEditable is true, the Settings
+            page form should bind to defaults.targetSOC, not effective.targetSoc — this
+            endpoint does not consider session overrides, but the convention matches
+            /dynamic-ess and /dynamic-ess-settings.
+          type: object
+          properties:
+            targetSoc:
+              description: |
+                Effective target SOC. evts > stored default > 80.
+              type: integer
+              minimum: 0
+              maximum: 100
+            isTargetSocEditable:
+              description: |
+                False when the car is reporting its own target SOC via Enode (evts present)
+                — users should change it in their vehicle app instead of VRM.
+              type: boolean
+        targetSoc:
+          deprecated: true
+          description: |
+            Deprecated. Use `effective.targetSoc` instead. Backwards-compat shim — will be
+            removed once frontend consumers migrate to the nested defaults/effective shape.
+          type: integer
+          minimum: 0
+          maximum: 100
+        isTargetSocEditable:
+          deprecated: true
+          description: Deprecated. Use `effective.isTargetSocEditable` instead.
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: string
+        error_code:
+          type:
+            - 'null'
+            - string

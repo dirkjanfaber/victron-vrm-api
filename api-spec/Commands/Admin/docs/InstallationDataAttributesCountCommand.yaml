@@ -1,0 +1,33 @@
+get:
+  operationId: admin/installation-data-attributes-count
+  summary: Get total number of records that match the given query
+  description: 
+  tags:
+    - Admin
+
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: query
+      description: Query that was used in the data attribute search. Cannot contain more than 10 conditions.
+      in: path
+      required: true
+      schema:
+        type: string
+
+    responses:
+    '200':
+      description: Request was processed successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: Whether the query could be executed or not. If more than 10 conditions were given, this will be false.
+                type: boolean
+              num_records:
+                description: The total number of records matching the given query.
+                type: integer
+            required:
+              - success
+              - num_records

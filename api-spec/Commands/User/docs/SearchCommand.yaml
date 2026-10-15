@@ -1,0 +1,72 @@
+get:
+  operationId: users/idUser/search
+  summary: Search
+  description: Search for sites that you have access to based on ID of the site, email of a user, name of a user, serial number of a device attached to a site, site identifier or email domain
+  tags:
+    - Users
+  parameters:
+    - name: query
+      in: query
+      description: Search term to filter results.
+      required: true
+      schema:
+        type: string
+      example: "foo"
+  responses:
+    '200':
+      description: Query was successful.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+                example: true
+              count:
+                description: Number of sites found
+                type: integer
+                example: 1
+              results:
+                properties:
+                  site_id:
+                    type: integer
+                    description: installation id
+                    example: 1
+                  site_identifier:
+                    type: string
+                    description: site identifier
+                    example: "abcdef1234"
+                  site_name:
+                    type: string
+                    description: name of the site
+                    example: "foobar"
+                  avatar_url:
+                    type: string
+                    description: avatar_url
+                    example: ""
+                  highlight:
+                    type: array
+                    description: terms where the searched term is found with highlights
+                    example:
+                      site_name: ['<em>foo</em>bar']
+            required:
+              - success
+              - records
+    '400':
+      description: "Invalid query or missing"
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error_code:
+                type: string
+                example: "empty_search"
+              error:
+                type: array
+                example: ["No search string has been provided."]

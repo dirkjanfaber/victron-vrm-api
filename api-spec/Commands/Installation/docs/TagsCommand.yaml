@@ -1,0 +1,187 @@
+get:
+  summary: Get installation tags
+  description: Tags for an installation, grouped by source. Optionally filter by source using the `filter` query parameter.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: number
+    - name: filter
+      description: Filter tags by source.
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [user, team, group, predefined]
+  responses:
+    '200':
+      description: Successfully retrieved tags.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              tags:
+                description: Tags for this installation, grouped by source.
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+                example:
+                  predefined: ["No alarm"]
+                  group: ["foo"]
+                  team: ["bar"]
+                  user: ["baz"]
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+put:
+  summary: Add installation tag
+  description: Add tag for an installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            tag:
+              type: string
+              required: true
+              example: 'Foo'
+            source:
+              type: string
+              required: true
+              example: 'user'
+
+  responses:
+    '200':
+      description: Tag added successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+                example: true
+              idSite:
+                description: ID of the site where the tag was added.
+                type: number
+                example: 123
+              data:
+                description: Information of the new tag.
+                type: array
+                items:
+                  type: object
+                  required:
+                    - tag
+                    - source
+                  tag:
+                    type: string
+                    required: true
+                    example: 'Foo'
+                  source:
+                    type: string
+                    required: true
+                    example: 'user'
+
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+delete:
+  summary: Remove installation tag
+  description: Remove tag for an installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            tag:
+              type: string
+              required: true
+              example: 'Foo'
+            source:
+              type: string
+              required: true
+              example: 'user'
+
+  responses:
+    '200':
+      description: Tag removed successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+                example: true
+              idSite:
+                description: ID of the site where the tag was deleted.
+                type: number
+                example: 123
+              data:
+                description: Information of the removed tag.
+                type: array
+                items:
+                  type: object
+                  required:
+                    - tag
+                    - source
+                  tag:
+                    type: string
+                    required: true
+                    example: 'Foo'
+                  source:
+                    type: string
+                    required: true
+                    example: 'user'
+
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

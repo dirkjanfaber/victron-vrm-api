@@ -1,0 +1,117 @@
+post:
+  operationId: installations/idSite/bulk-tags
+  summary: Add tags to multiple installations
+  description: >
+    Add one or more tags to multiple installations at once.
+    The installation identified by `idSite` in the path always receives the tags,
+    regardless of the `siteIds` body parameter.
+    Installations can be specified directly via `siteIds`, via installation groups
+    using `siteGroupIds`, or both combined.
+    Duplicate tag assignments are silently ignored.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      in: path
+      description: ID of the primary installation. Always receives the tags.
+      required: true
+      schema:
+        type: integer
+        example: 123
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - tags
+          properties:
+            tags:
+              type: array
+              description: One or more tag labels to add. Tags are lowercased and trimmed automatically.
+              minItems: 1
+              items:
+                type: string
+                maxLength: 255
+              example: ['my-tag', 'another-tag']
+            siteIds:
+              type: array
+              description: Additional installation IDs to tag. The primary installation from the path is always included.
+              items:
+                type: integer
+              example: [456, 789]
+            siteGroupIds:
+              type: array
+              description: >
+                IDs of installation groups whose member installations will all receive the tags.
+                Each group is resolved to its member installations and access is checked
+                per installation; the caller must have tag-write access to each one.
+              items:
+                type: integer
+              example: [42]
+  responses:
+    '200':
+      description: Tags added successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                description: True when the tags were applied.
+                example: true
+              tags:
+                type: array
+                description: The tag labels that were added.
+                items:
+                  type: string
+                example: ['my-tag', 'another-tag']
+              siteIds:
+                type: array
+                description: All installation IDs that received the tags, including those resolved from site groups.
+                items:
+                  type: integer
+                example: [123, 456, 789, 101]
+              siteGroupIds:
+                type: array
+                description: The installation group IDs that were supplied in the request.
+                items:
+                  type: integer
+                example: [42]
+    '400':
+      description: Request validation failed.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+          examples:
+            missing_tags:
+              summary: tags field is empty or missing
+              value:
+                success: false
+                error_code: missing_required_fields
+                errors: ['Missing required fields: tags']
+            invalid_tag:
+              summary: A tag value failed validation
+              value:
+                success: false
+                error_code: validation_error
+                errors: ['This value is too long. It should have 255 characters or less.']
+    '403':
+      description: >
+        The caller does not have tag-write access to one or more of the requested
+        installations (including installations resolved from the supplied site groups).
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+          examples:
+            forbidden_site:
+              summary: No write access to one or more installations
+              value:
+                success: false
+                error_code: access_denied
+                errors: ['You do not have permission to add tags to the following site(s): 456']

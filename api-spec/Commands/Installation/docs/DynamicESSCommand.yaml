@@ -1,0 +1,278 @@
+get:
+  summary: Get Dynamic ESS scheduler data
+  description: |
+    Retrieves installation data for the Dynamic ESS scheduler, including vehicle information,
+    historical data, and settings needed for optimal charging scheduling.
+  tags:
+    - Installations
+  parameters:
+    - name: idSite
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - name: start
+      in: query
+      description: Unix timestamp for the start of the scheduling period (defaults to current hour)
+      required: false
+      schema:
+        type: integer
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  responses:
+    '200':
+      description: Successfully retrieved Dynamic ESS scheduler data.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              data:
+                type: object
+                properties:
+                  dynamicEssSettings:
+                    description: The Dynamic ESS configuration for this installation.
+                    type: object
+                  historicalData:
+                    type: object
+                    properties:
+                      essMinSoc:
+                        description: The current minimum SOC from ESS settings.
+                        type: number
+                        nullable: true
+                      lastHourConsumption:
+                        description: Energy consumption in the last hour (kWh).
+                        type: number
+                      lastHourProduction:
+                        description: Solar production in the last hour (kWh).
+                        type: number
+                  identifier:
+                    description: The installation identifier.
+                    type: string
+                  timezone:
+                    description: The installation timezone.
+                    type: string
+                  currency:
+                    description: The installation currency code.
+                    type: string
+                  vehicles:
+                    description: List of vehicles connected to this installation.
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DynamicESSVehicle'
+                  evChargingSessions:
+                    description: |
+                      Active EV charging sessions for this installation, shaped for the DESS
+                      scheduler algorithm. Each entry corresponds to one active session and
+                      reflects the values the algorithm should use right now (evts overrides
+                      the stored session targetSoc when present, so changes the user makes in
+                      the vehicle app via Enode propagate immediately).
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DynamicESSChargingSession'
+    '400':
+      description: No ESS settings found for this installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              errors:
+                type: string
+              error_code:
+                type:
+                  - 'null'
+                  - string
+    '403':
+      description: User is not authorized to access this installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              errors:
+                type: string
+              error_code:
+                type:
+                  - 'null'
+                  - string
+    '404':
+      description: Installation not found.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+              errors:
+                type: string
+              error_code:
+                type:
+                  - 'null'
+                  - string
+
+components:
+  schemas:
+    DynamicESSVehicle:
+      type: object
+      properties:
+        idVehicle:
+          description: The unique identifier of the vehicle.
+          type: string
+        VIN:
+          description: The Vehicle Identification Number.
+          type: string
+        instance:
+          description: The Electric Vehicle (EV) instance.
+          type: integer
+          nullable: true
+        isPluggedIn:
+          description: Whether the vehicle is currently plugged in.
+          type: boolean
+        batteryCapacity:
+          description: The battery capacity in kWh.
+          type: number
+          nullable: true
+        maxChargeRate:
+          description: The maximum charging rate in kW.
+          type: number
+          nullable: true
+        currentSoc:
+          description: The current state of charge percentage.
+          type: number
+          nullable: true
+        defaults:
+          description: |
+            The user's stored defaults for this vehicle — the source of truth for the
+            Settings page form when the field is editable. Saving the form should
+            write these values back via /vehicle-dess-settings.
+          type: object
+          properties:
+            targetSOC:
+              description: The user's stored default target SOC.
+              type: integer
+              minimum: 0
+              maximum: 100
+              nullable: true
+            handOffTime:
+              description: The user's stored default hand-off time (HH:MM, 24-hour).
+              type: string
+              nullable: true
+        effective:
+          description: |
+            The values currently in force, taking session overrides and evts into account.
+            Display targetSoc here when isTargetSocEditable is false (evts wins, read-only).
+            When isTargetSocEditable is true, the Settings page form should bind to
+            defaults.targetSOC, not effective.targetSoc — otherwise saving will overwrite
+            the persistent default with a transient session override.
+          type: object
+          properties:
+            targetSoc:
+              description: |
+                Effective target SOC. evts > active session override > stored default > 80.
+              type: integer
+              minimum: 0
+              maximum: 100
+            handOffTimestamp:
+              description: |
+                Effective hand-off timestamp (Unix seconds). Active session timestamp when
+                a non-OUTDATED session exists, otherwise computed from handOffTime in the
+                site timezone.
+              type: integer
+              nullable: true
+            isTargetSocEditable:
+              description: |
+                False when the car is reporting its own target SOC via Enode (evts present)
+                — users should change it in their vehicle app instead of VRM.
+              type: boolean
+            hasCustomSchedule:
+              description: True when a non-OUTDATED active EV charging session exists.
+              type: boolean
+        targetSoc:
+          deprecated: true
+          description: |
+            Deprecated. Use `effective.targetSoc` instead. Backwards-compat shim — will be
+            removed once frontend consumers migrate to the nested defaults/effective shape.
+          type: integer
+          minimum: 0
+          maximum: 100
+        isTargetSocEditable:
+          deprecated: true
+          description: Deprecated. Use `effective.isTargetSocEditable` instead.
+          type: boolean
+        handOffTimestamp:
+          deprecated: true
+          description: Deprecated. Use `effective.handOffTimestamp` instead.
+          type: integer
+          nullable: true
+        hasCustomSchedule:
+          deprecated: true
+          description: Deprecated. Use `effective.hasCustomSchedule` instead.
+          type: boolean
+        dessSettings:
+          description: The vehicle DESS settings, if configured.
+          type: object
+          nullable: true
+          properties:
+            targetSOC:
+              description: The desired state of charge percentage (user-configured).
+              type: integer
+            handOffTime:
+              description: The time by which charging should be complete (HH:MM format).
+              type: string
+            optimalChargingEnabled:
+              description: Whether optimal charging is enabled for this vehicle.
+              type: boolean
+            customMaxChargeRate:
+              description: Custom maximum charge rate override in kW.
+              type: number
+              nullable: true
+            customBatteryCapacity:
+              description: Custom battery capacity override in kWh.
+              type: number
+              nullable: true
+
+    DynamicESSChargingSession:
+      type: object
+      properties:
+        evcsInstance:
+          description: The EVCS (charger) instance for this session, stringified.
+          type: string
+          nullable: true
+        evInstance:
+          description: The EV (vehicle) instance matched to this session, stringified. Null in MATCHING / URGENT states before a match is established.
+          type: string
+          nullable: true
+        batteryCapacity:
+          description: Battery capacity in kWh — from EV log data when available, otherwise the vehicle's configured custom value.
+          type: number
+          nullable: true
+        maxChargeRate:
+          description: Maximum charge rate in kW — from EV log data when available, otherwise the vehicle's configured custom value.
+          type: number
+          nullable: true
+        currentSoC:
+          description: Current state of charge percentage (from EV log data).
+          type: number
+          nullable: true
+        targetSoC:
+          description: |
+            Target SOC for the algorithm. evts wins over the stored session targetSoc when
+            present, so the algorithm tracks evts changes the user makes mid-session via
+            their vehicle app. Null when neither evts nor a session value is set.
+          type: number
+          minimum: 0
+          maximum: 100
+          nullable: true
+        handoffTimestamp:
+          description: Unix timestamp by which charging should be complete.
+          type: integer
+          nullable: true

@@ -1,0 +1,122 @@
+get:
+  operationId: installations/idSite/users
+  summary: Get installation users
+  description: Returns all users, pending invites, pending access requests, user groups, and site groups linked to a specific installation. Users with full control or technician access see all members; monitoring-level users only see their own membership.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Successfully retrieved installation users.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+                example: true
+              users:
+                description: Users directly linked to this installation.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idUser:
+                      type: integer
+                      example: 1234
+                    name:
+                      type: string
+                      example: "Andrew"
+                    email:
+                      type: string
+                      example: "andrew@example.com"
+                    accessLevel:
+                      description: "Access level: 0 = monitoring, 1 = full control, 2 = technician."
+                      type: integer
+                      example: 1
+              invites:
+                description: Pending invitations for this installation.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idInvite:
+                      type: integer
+                      example: 42
+                    email:
+                      type: string
+                      example: "newuser@example.com"
+                    name:
+                      type: string
+                      example: "New User"
+                    accessLevel:
+                      type: integer
+                      example: 0
+                    created:
+                      description: Unix timestamp when the invite was created.
+                      type: integer
+                      example: 1698415280
+              pending:
+                description: Pending access requests for this installation (from invite link).
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idUser:
+                      type: integer
+                      example: 5678
+                    name:
+                      type: string
+                      example: "Pending User"
+                    email:
+                      type: string
+                      example: "pending@example.com"
+              userGroups:
+                description: User groups linked to this installation.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idUserGroup:
+                      type: integer
+                      example: 10
+                    name:
+                      type: string
+                      example: "Operations Team"
+                    accessLevel:
+                      description: "Access level for this group: 0 = monitoring, 1 = full control, 2 = technician."
+                      type: integer
+                      example: 0
+              siteGroups:
+                description: Installation groups that include this installation.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idSiteGroup:
+                      type: integer
+                      example: 3
+                    name:
+                      type: string
+                      example: "Fleet A"
+                    idOwner:
+                      type: integer
+                      example: 1234
+                    adminName:
+                      type: string
+                      example: "Andrew"
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

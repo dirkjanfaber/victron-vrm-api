@@ -1,0 +1,60 @@
+get:
+  operationId: users/me
+  summary: Basic information about logged in user
+  description: Retrieves id, name, email and country of the user that is currently logged in
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  responses:
+    '200':
+      description: Succesfully retrieved information.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              user:
+                description: The retrieved user information.
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: Id of the currently logged in user.
+                  name:
+                    type: string 
+                    description: Name of the currently logged in user.
+                  email:
+                    type: string 
+                    description: Email of the currently logged in user.
+                  country:
+                    type: string 
+                    description: Country of the currently logged in user.
+                  accessLevel:
+                    type: integer
+                    description: Access level of the currently logged in user.
+    '401':
+      description: User is not logged in (or no bearer token).
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              errors:
+                description: Any errors that occurred.
+                type: string
+              error_code:
+                description: The error code, if applicable.
+                type:
+                  - 'null'
+                  - string
+            required:
+              - success
+              - errors
+              - error_code

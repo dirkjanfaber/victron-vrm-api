@@ -1,0 +1,76 @@
+post:
+  operationId: installations/idSite/user-rights
+  summary: Update access levels for installation users
+  description: |-
+    Updates the access levels for one or more users on a specific installation. The `idUser` and `accessLevel` arrays must have matching indices. The update is rejected if it would leave the installation with no admin (access level 1) users. Requires full control or technician access on the installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: integer
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - idUser
+            - accessLevel
+          properties:
+            idUser:
+              description: Array of user IDs to update. Must match the length of `accessLevel`.
+              type: array
+              items:
+                type: integer
+              example: [1234, 5678]
+            accessLevel:
+              description: |-
+                Array of access levels corresponding to each user in `idUser`.
+                - `0` = monitoring
+                - `1` = full control
+                - `2` = technician
+              type: array
+              items:
+                type: integer
+                enum: [0, 1, 2]
+              example: [1, 0]
+        examples:
+          string:
+            summary: Set user 1234 as full control and user 5678 as monitoring.
+            value:
+              idUser: [1234, 5678]
+              accessLevel: [1, 0]
+  responses:
+    '200':
+      description: Access levels updated, or error if at least one admin would not remain.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the access levels were successfully updated.
+                type: boolean
+              error_code:
+                description: |-
+                  Error code if the request failed. Possible values:
+                  - `min_one_admin_required`: The update would leave no admins on the installation.
+                  - `accesslevel_and_user_required`: Both `accessLevel` and `idUser` arrays are required.
+                type: string
+              errors:
+                description: Human-readable error messages.
+                type: array
+                items:
+                  type: string
+    '403':
+      description: Insufficient access to modify this installation.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

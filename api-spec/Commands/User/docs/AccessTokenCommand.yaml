@@ -1,0 +1,131 @@
+get:
+  operationId: users/idUser/accesstokens-get
+  summary: List all access tokens for a user.
+  description: Retrieves a list of all access token details for this user, excluding the actual token itself. Always returns tokens for the requesting user, never for another, regardless of account type.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idUser
+      description: User id.
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Tokens retrieved successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: Whether the request was successful.
+                type: boolean
+              tokens:
+                description: List of tokens.
+                type: array
+                items:
+                  description: Token details, excluding actual token.
+                  type: object
+                  properties:
+                    name:
+                      description: Token name.
+                      type: string
+                    idAccessToken:
+                      description: Token id.
+                      type: string
+                    createdOn:
+                      description: Token creation timestamp, unix format.
+                      type: string
+                    scope:
+                      description: Token access scope.
+                      type: string
+                    expires:
+                      description: Token expiry timestamp, unix format. If null, the token does not expire.
+                      type:
+                        - 'null'
+                        - string
+                  required:
+                    - name
+                    - idAccessToken
+                    - createdOn
+                    - scope
+                    - expires
+            required:
+              - success
+              - tokens
+    '4xx':
+      description: Token retrieval failed, returns details about the error(s)
+      content:
+        application/json:
+          schema:
+            $ref: '../../../../docs/components.yaml#/components/schemas/generalError'
+
+post:
+  operationId: users/idUser/accesstokens-post
+  summary: Create an access token for a user.
+  description: Users can create personal access tokens for usage with external services. These tokens can be used as an alternative way of authentication against the VRM API. The token is returned, after which it is not possible to ever retrieve it again.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idUser
+      description: User id.
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            name:
+              description: Access token name, must not already exist for this user.
+              type: string
+            expiry:
+              description: Expiry timestamp
+              type: integer
+          required:
+            - name
+        examples:
+          createToken:
+            summary: Creating a new token.
+            value:
+              name: MyNewToken
+          createExpiringToken:
+            summary: Creating a new token.
+            value:
+              name: MyNewToken
+              expiry: 1685992714
+  responses:
+    '200':
+      description: Token created successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: Whether the request was successful.
+                type: boolean
+              token:
+                description: Generated access token.
+                type: integer
+              idAccessToken:
+                description: Access token id.
+                type: string
+            required:
+              - success
+              - token
+              - idAccessToken
+    '4xx':
+      description: Token creation failed, returns details about the error(s)
+      content:
+        application/json:
+          schema:
+            $ref: '../../../../docs/components.yaml#/components/schemas/generalError'

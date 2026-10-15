@@ -1,0 +1,197 @@
+get:
+  summary: Get Custom Widgets
+  description: Get a custom widget
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: ID of the installation.
+      in: path
+      required: true
+      schema:
+        type: number
+    - name: idCustomWidget
+      description: ID of the custom widget
+      in: path
+      required: true
+      schema:
+        type: number
+  responses:
+    '200':
+      description: Custom Widget data received successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              widget:
+                description: Custom Widget data received successfully.
+                type: object
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+post:
+  summary: Create Custom Widget
+  description: Create a custom widget
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: ID of the installation.
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              required: true
+              example: 'abc'
+            onlyAdmins:
+              type: integer
+              required: false
+              example: 0
+            yAxisScaling:
+              type: integer
+              required: true
+            parameters:
+              type: object
+              required: true
+            idCustomWidget:
+              type: integer
+              required: true
+              example: 123
+
+  responses:
+    '200':
+      description: Custom widget created successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              idCustomWidget:
+                description: ID of the custom widget.
+                type: integer
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+
+patch:
+  summary: Update Custom Widget
+  description: Update a custom widget
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: ID of the installation.
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            name:
+              type: string
+              required: true
+            onlyAdmins:
+              type: integer
+              required: false
+            yAxisScaling:
+              type: integer
+              required: true
+            parameters:
+              type: object
+              required: true
+            idCustomWidget:
+              type: integer
+              required: true
+
+  responses:
+    '200':
+      description: Custom widget updated successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+delete:
+  summary: Delete Custom Widget
+  description: Delete a custom widget
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: ID of the installation.
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            idCustomWidget:
+              description: ID of the custom widget that nees to be deleted.
+              type: integer
+              required: true
+
+  responses:
+    '200':
+      description: Custom widget deleted successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

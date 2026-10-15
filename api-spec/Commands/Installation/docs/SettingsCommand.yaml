@@ -1,0 +1,121 @@
+post:
+  operationId: installations/idSite/settings
+  summary: Update settings for a specific installation
+  description: Allows the user to modify settings related to a specific installation identified by its ID. You can send one or more of the fields you want to update at once.
+  tags:
+    - Installations
+  parameters:
+    - name: id
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            description:
+              type: string
+              description: Name of the installation
+            notes:
+              type: string
+              description: Any additional notes related to the installation.
+            phonenumber:
+              type: string
+              description: Phone number associated with the installation.
+            noDataAlarmTimeout:
+              type: integer
+              description: Timeout for no data alarm.
+            noDataAlarmActive:
+              type: boolean
+              description: Indicates if the no data alarm is active.
+            geofence:
+              type: object
+              description: Geofence settings for the installation.
+            geofenceEnabled:
+              type: boolean
+              description: Indicates if geofencing is enabled.
+            alarmMonitoring:
+              type: boolean
+              description: Indicates if alarm monitoring is active.
+            realtimeUpdates:
+              type: boolean
+              description: Indicates if real-time updates are enabled.
+            restrictNodeRed:
+              type: boolean
+              description: Indicates if restrict NodeRed access to users is enabled.
+            inverterChargerControl:
+              type: boolean
+              description: Indicates if inverter charger control is active.
+            favorite:
+              type: integer
+              description: Indicates if the installation is marked as favorite for the current user.
+  responses:
+    '200':
+      description: Successfully updated settings for the installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              idSite:
+                description: The ID of the updated installation site.
+                type: integer
+              data:
+                description: Contains the updated settings for the installation.
+                type: object
+                properties:
+                  description:
+                    type: string
+                    description: Description of the installation.
+    '403':
+      description: User is not authorized to access or modify this installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: False as the request was unsuccessful.
+                type: boolean
+              errors:
+                description: User is not authorized for this operation.
+                type: string
+              error_code:
+                description: The error code, if applicable.
+                type:
+                  - 'null'
+                  - string
+            required:
+              - success
+              - errors
+              - error_code
+    '404':
+      description: Installation not found.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              errors:
+                description: Installation with the given ID was not found.
+                type: string
+              error_code:
+                description: The error code, if applicable.
+                type:
+                  - 'null'
+                  - string
+            required:
+              - success
+              - errors
+              - error_code

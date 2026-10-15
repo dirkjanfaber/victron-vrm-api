@@ -1,0 +1,66 @@
+post:
+  operationId: installations/idSite/unlink-user
+  summary: Remove a user from an installation
+  description: |-
+    Removes a specific user's access to an installation. The authenticated user must have full control or technician access to remove others. A user may always remove themselves. The last admin on an installation cannot be removed.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: integer
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - idUser
+          properties:
+            idUser:
+              description: ID of the user to remove from the installation.
+              type: integer
+              example: 1234
+        examples:
+          string:
+            summary: Remove user 1234 from the installation.
+            value:
+              idUser: 1234
+  responses:
+    '200':
+      description: User removed or error response.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the user was successfully removed.
+                type: boolean
+              idSite:
+                description: ID of the installation the user was removed from.
+                type: integer
+                example: 60
+              error_code:
+                description: |-
+                  Error code if the request failed. Possible values:
+                  - `min_one_admin_required`: Cannot remove the last admin.
+                  - `user_linked_via_team`: The user has access through a team or installation group, not an individual link; manage it in the team or group.
+                  - `user_not_unlinked`: The user could not be unlinked.
+                type: string
+              errors:
+                description: Human-readable error messages.
+                type: array
+                items:
+                  type: string
+    '403':
+      description: Insufficient access to remove this user.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

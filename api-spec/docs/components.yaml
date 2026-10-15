@@ -1,0 +1,57 @@
+components:
+  schemas:
+    generalError:
+      type: object
+      properties:
+        success:
+          description: Whether the request was successful.
+          type: boolean
+        errors:
+          oneOf:
+            - description: Description of the error that occurred.
+              type: string
+            - description: Any errors that occurred.
+              type: object
+              additionalProperties:
+                description: Description of the error that occurred.
+                type: string
+        error_code:
+          description: The error code, if applicable.
+          type:
+            - 'null'
+            - string
+      required:
+        - success
+        - errors
+        - error_code
+
+  responses:
+    generalError:
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/generalError'
+          examples:
+            error:
+              summary: One or more errors occurred.
+              value:
+                success: false
+                errors: Error message
+                error_code: Error code
+
+  parameters:
+    authorization:
+      name: x-authorization
+      in: header
+      description: The bearer token to use.
+      required: true
+      schema:
+        type: string
+      examples:
+        bearer:
+          summary: Authenticate with a bearer token.
+          value: Bearer <bearer_token_value>
+        token:
+          summary: Authenticate with a access token.
+          value: Token <token_value>

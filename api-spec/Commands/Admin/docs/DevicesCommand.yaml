@@ -1,0 +1,84 @@
+---
+internal: true
+---
+get:
+  operationId: admin/devices
+  summary: Search all devices
+  description: This endpoint allows searching for devices based on their serial number. The search is performed in both the database and InfluxDB to gather relevant device information and last seen timestamps. The result is paginated and sorted based on specific criteria.
+  tags:
+    - Admin
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: q
+      in: query
+      description: The serial number of the device to search for. If empty, returns an empty response.
+      schema:
+        type: string
+    - name: count
+      in: query
+      description: The number of records to return per page.
+      required: false
+      schema:
+        type: integer
+        default: 10
+    - name: page
+      in: query
+      description: The page number for pagination.
+      required: false
+      schema:
+        type: integer
+        default: 1
+    - name: sorting[idSite]
+      in: query
+      description: Sort by site ID ('asc' or 'desc').
+      required: false
+      schema:
+        type: string
+        enum: [asc, desc]
+    - name: sorting[description]
+      in: query
+      description: Sort by device description ('asc' or 'desc').
+      required: false
+      schema:
+        type: string 
+        enum: [asc, desc]
+  examples:
+    Gateway:
+      summary: Search for a gateway
+      value:
+        q: 114
+  responses:
+    '200':
+      description: Success, returns an array of devices matching the search criteria.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: Indicates if the request was successful.
+                type: boolean
+              records:
+                description: An array of devices with additional information.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    description:
+                      description: The description of the device installation.
+                      type: string
+                    idSite:
+                      description: The ID of the site associated with the device.
+                      type: integer
+              num_records:
+                description: The total number of records found.
+                type: integer
+              num_active:
+                description: The number of active records (not used in the current implementation).
+                type: integer
+    '401':
+      description: Unauthorized, returns details about the error(s).
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

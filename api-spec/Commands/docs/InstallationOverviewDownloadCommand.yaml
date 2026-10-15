@@ -1,0 +1,116 @@
+post:
+  operationId: installationOverviewDownload
+  summary: Download installation overview
+  description: Fetches a customized overview of installations with specified columns, site IDs, and settings. The response can be either JSON or an XLSX file depending on the `jsonResponse` parameter.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            columns:
+              type: object
+              description: Configuration of the columns to include in the overview.
+              additionalProperties:
+                type: object
+                properties:
+                  header:
+                    type: string
+                    description: The header text for the column.
+                  enabled:
+                    type: boolean
+                    description: Whether the column is enabled.
+                  hide:
+                    type: boolean
+                    description: Whether the column is hidden (optional).
+                    nullable: true
+            siteIds:
+              type: array
+              description: List of site IDs to include in the overview.
+              items:
+                type: integer
+            onlyVisible:
+              type: boolean
+              description: Whether only visible items should be included.
+            jsonResponse:
+              type: boolean
+              description: Whether the response should be in JSON format. If false, an XLSX file will be returned.
+          required:
+            - columns
+            - siteIds
+            - onlyVisible
+            - jsonResponse
+  responses:
+    '200':
+      description: Successfully retrieved the installation overview.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                description: Indicates if the request was successful.
+              data:
+                type: object
+                additionalProperties:
+                  type: object
+                  description: Data for each installation.
+                  properties:
+                    Installation name:
+                      type: string
+                      description: Name of the installation.
+                    Battery Voltage:
+                      type: string
+                      description: Battery voltage (e.g., "50.00 V").
+                    Battery %:
+                      type: string
+                      description: Battery percentage (e.g., "100.0 %").
+                    Battery Mode:
+                      type: string
+                      description: Current battery mode (e.g., "Charging").
+                    Load:
+                      type: string
+                      description: Current load in watts (e.g., "118 W").
+                    Solar Yield:
+                      type: string
+                      description: Solar yield in watts (e.g., "117 W").
+                    Grid:
+                      type: string
+                      description: Grid power in watts.
+                    Generator:
+                      type: string
+                      description: Generator power in watts.
+                    Tanks:
+                      type: string
+                      description: Information about tank levels (e.g., "Fuel-20 %").
+                    Temperature:
+                      type: string
+                      description: Temperature readings (e.g., "Battery-27.0 °C").
+                    Last Update:
+                      type: string
+                      format: date-time
+                      description: Timestamp of the last update.
+        application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+          schema:
+            type: string
+            format: binary
+            description: XLSX file containing the installation overview.
+    '400':
+      description: Invalid request format or missing parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+    '403':
+      description: Not authorized to access installation overview data.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+

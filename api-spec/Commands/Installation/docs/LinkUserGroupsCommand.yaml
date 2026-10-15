@@ -1,0 +1,68 @@
+post:
+  operationId: installations/idSite/link-user-groups
+  summary: Link user groups to an installation
+  description: Links one or more user groups to the specified installation with the given access levels. Requires full control or technician access on the installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: integer
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - userGroups
+          properties:
+            userGroups:
+              description: List of user groups to link to this installation.
+              type: array
+              items:
+                type: object
+                required:
+                  - idUserGroup
+                  - accessLevel
+                properties:
+                  idUserGroup:
+                    description: ID of the user group to link.
+                    type: integer
+                    example: 10
+                  accessLevel:
+                    description: "Access level for this group: 0 = monitoring, 1 = full control, 2 = technician."
+                    type: integer
+                    enum: [0, 1, 2]
+                    example: 0
+        examples:
+          string:
+            summary: Link two user groups with different access levels.
+            value:
+              userGroups:
+                - idUserGroup: 10
+                  accessLevel: 0
+                - idUserGroup: 11
+                  accessLevel: 2
+  responses:
+    '200':
+      description: User groups linked successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the user groups were successfully linked.
+                type: boolean
+                example: true
+    '403':
+      description: Insufficient access to modify this installation.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

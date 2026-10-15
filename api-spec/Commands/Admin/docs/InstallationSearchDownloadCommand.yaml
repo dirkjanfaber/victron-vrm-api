@@ -1,0 +1,65 @@
+get:
+  operationId: admin/search-download
+  summary: Export visible installations table to .xlsx
+  description: 
+  tags:
+    - Admin
+
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: table
+      description: Which table view should be downloaded, i.e the 'normal' view or the 'dataAttribute' view
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: query
+      description: Query that was used in the data attribute search
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: page
+      description: Table page
+      in: path
+      required: false
+      schema:
+        type: string
+    - name: count
+      description: How many installations should appear per page
+      in: path
+      required: false
+      schema:
+        type: string
+    - name: filter
+      description: Filters to be applied to the installation search
+      in: path
+      required: false
+      schema:
+        type: string
+    - name: sorting
+      description: The order in which the results should be displayed
+      in: path
+      required: false
+      schema:
+        type: string
+
+    responses:
+    '200':
+      description: Successfully exported / started exporting data.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                description: The requestred spreadsheet.
+                type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+            required:
+              - data
+    '400':
+      description: Request unsuccessful, too many arguments provided in the query
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

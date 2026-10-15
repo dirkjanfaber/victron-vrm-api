@@ -1,0 +1,25 @@
+get:
+  summary: Retrieve filtered and sorted attributes
+  description: Returns a JSON object of attributes with `idDataAttribute` as string keys. Filters out `targetTable`, `idDeviceType`, and `idDataAttribute` fields.
+  responses:
+    '200':
+      description: Successful response
+      content:
+        application/json:
+          schema:
+            type: object
+            additionalProperties:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: The code of the attribute.
+                dataType:
+                  type: string
+                  description: The data type of the attribute.
+                description:
+                  type: string
+                  description: A detailed description of the attribute.
+                formatWithUnit:
+                  type: string
+                  description: The format string with the unit for the attribute.

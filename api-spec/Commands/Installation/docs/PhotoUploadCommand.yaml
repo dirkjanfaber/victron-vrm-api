@@ -1,0 +1,81 @@
+post:
+  summary: Upload installation photo
+  description: >
+    Upload a photo for an installation, for example from an installer's own tooling or CRM.
+    Send the image as a `multipart/form-data` request with the file in the `data` field.
+    Accepted formats are JPEG, PNG, WebP and HEIC/HEIF (the iPhone default). The image is
+    re-encoded to WebP before storage (scaled to fit 1920x1080, a 150x150 thumbnail is
+    generated) and image metadata such as EXIF/GPS is not preserved. Limits per file:
+    10 MiB, maximum dimensions 10000x10000, aspect ratio at most 10:1. An installation can
+    hold up to 100 images. Upload one file per request; requires Full Control or Technician
+    access to the installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: number
+    - name: is_avatar
+      description: Set to 1 to make the uploaded photo the installation's avatar image.
+      in: query
+      required: false
+      schema:
+        type: number
+        example: 0
+  requestBody:
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          required:
+            - data
+          properties:
+            data:
+              type: string
+              format: binary
+              description: The image file (JPEG, PNG, WebP or HEIC/HEIF).
+  responses:
+    '200':
+      description: >
+        Upload processed. `success` is true when the photo was stored; on validation
+        errors (unsupported format, file too large, image limit reached) `success` is
+        false and `errors` lists the reasons.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the photo was stored.
+                type: boolean
+                example: true
+              data:
+                description: The stored image record.
+                type: object
+                properties:
+                  idSite:
+                    description: Installation id the photo belongs to.
+                    type: number
+                    example: 1234
+                  imageName:
+                    description: Stored file name (always a .webp).
+                    type: string
+                    example: 68b1f2a3c4d5e6_7f8a9b0c1d2e3f40_image.webp
+                  url:
+                    description: Public URL of the stored image.
+                    type: string
+                    example: https://vrm.victronenergy.com/data/uploads/1234/68b1f2a3c4d5e6_7f8a9b0c1d2e3f40_image.webp
+                  is_avatar:
+                    description: Whether this photo is the installation's avatar.
+                    type: number
+                    example: 0
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
