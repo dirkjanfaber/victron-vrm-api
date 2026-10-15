@@ -18,12 +18,9 @@ class VRMAPIService {
     if (this.forceIpv4) {
       debug('Configuring DNS to prefer IPv4 connections')
       dns.setDefaultResultOrder('ipv4first')
-      // Otherwise Node 20+ moves on to the IPv6 address when the IPv4
-      // connect takes over 250ms, e.g. on a cellular or satellite link.
-      // Missing before Node 18.18, which has no such fallback anyway
-      if (net.setDefaultAutoSelectFamily) {
-        net.setDefaultAutoSelectFamily(false)
-      }
+      // Otherwise Node moves on to the IPv6 address when the IPv4 connect
+      // takes over 250ms, e.g. on a cellular or satellite link
+      net.setDefaultAutoSelectFamily(false)
     }
   }
 
