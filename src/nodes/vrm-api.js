@@ -8,6 +8,14 @@ module.exports = function (RED) {
   const { transformPriceSchedule } = require('../utils/price-schedule-transformer')
   const { buildAdjustConsumptionBody } = require('../utils/adjust-consumption-builder')
 
+  // These attributes fetch the whole live_feed_kwh response; the status shows
+  // only the selected series, as VRM's ordering of totals varies per site
+  const LIVE_FEED_SERIES = {
+    vrm_consum_hp: 'dhE',
+    vrm_consum_evcs: 'evE',
+    vrm_consum_ac: 'daE'
+  }
+
   function VRMAPI (config) {
     RED.nodes.createNode(this, config)
     debug('VRMAPI node created with config:', config)
@@ -216,7 +224,7 @@ module.exports = function (RED) {
                 const usersQuery = config.usersQuery || config.users || 'me'
                 statusInfo = apiService.interpretUsersStatus(result.data, usersQuery)
               } else if (config.installations === 'stats' && result.data) {
-                statusInfo = apiService.interpretStatsStatus(result.data)
+                statusInfo = apiService.interpretStatsStatus(messages[0].payload, LIVE_FEED_SERIES[config.attribute])
               } else if (config.installations === 'dynamic-ess-settings' && result.data) {
                 statusInfo = apiService.interpretDynamicEssStatus(result.data)
               } else if (config.installations === 'post-adjust-consumption') {

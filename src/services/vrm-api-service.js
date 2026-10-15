@@ -371,8 +371,9 @@ class VRMAPIService {
 
   /**
    * Interpret stats API response for status display
+   * @param {string} [selectedKey] - totals key to show; defaults to the first one
    */
-  interpretStatsStatus (responseData) {
+  interpretStatsStatus (responseData, selectedKey) {
     if (!responseData || !responseData.totals) {
       return {
         text: 'No stats data',
@@ -382,8 +383,8 @@ class VRMAPIService {
       }
     }
 
-    const key = Object.keys(responseData.totals)[0]
-    if (!key) {
+    const key = selectedKey || Object.keys(responseData.totals)[0]
+    if (!key || !(key in responseData.totals)) {
       return {
         text: 'No totals',
         color: 'yellow',
