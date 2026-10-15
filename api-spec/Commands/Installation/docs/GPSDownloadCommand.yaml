@@ -1,0 +1,38 @@
+get:
+  operationId: installations/idSite/gps-download
+  summary: GPS tracks for an installation
+  description: Retrieves GPS tracks for an installation as a KML file.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: start
+      description: Timestamp from which to fetch data.
+      in: query
+      required: true
+      schema:
+        type: integer
+    - name: end
+      description: Timestamp to which to fetch data.
+      in: query
+      required: true
+      schema:
+        type: integer
+
+  responses:
+    '200':
+      description: Successfully created KML file containing tracks.
+      content:
+        application/vnd.google-earth.kml+xml: {}
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

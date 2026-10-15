@@ -1,0 +1,362 @@
+get:
+  operationId: installations/idSite/system-overview
+  summary: Connected devices for a given installation
+  description: Retrieves a list of devices to which are connected to this installation. This endpoint is only accessible to users with access to the installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Successfully retrieved devices
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              records:
+                type: object
+                properties:
+                  devices:
+                    description: Configured devices belonging to this installation.
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        # Shared fields
+                        name:
+                          description: Device name.
+                          type: string
+                        customName:
+                          description: Custom device name.
+                          type:
+                            - 'null'
+                            - string
+                        productCode:
+                          description: Device product code.
+                          type: string
+                        productName:
+                          description: Device product name.
+                          type: string
+                        idSite:
+                          description: Installation to which the device belongs.
+                          type: integer
+                        firmwareVersion:
+                          description: Detailed firmware version information.
+                          type: string
+                        lastConnection:
+                          description: Device last connected timestamp, false if no timestamp available.
+                          type:
+                            - string
+                            - boolean
+                        class:
+                          description: Styling field used for VRM.
+                          type: string
+                        connection:
+                          description: Device connection string.
+                          type: string
+                        instance:
+                          description: Installation instance to which this device belongs.
+                          type: integer
+                        idDeviceType:
+                          description: Device type id.
+                          type: integer
+                        settings:
+                          description: Device settings.
+                          type: array
+                          items:
+                            type: object
+                            description: A setting for this device.
+                            properties:
+                              description:
+                                description: Setting description.
+                                type: string
+                              enumData:
+                                description: Possible enums.
+                                type: array
+                                items:
+                                  description: A single enum value.
+                                  type: object
+                                  properties:
+                                    nameEnum:
+                                      description: Enum name.
+                                      type: string
+                                    valueEnum:
+                                      description: Enum value.
+                                      type: integer
+
+                                    # Compound setting specific
+                                    values:
+                                      description: Underlying values corresponding to this value, only for compounded settings.
+                                      type: object
+                                      additionalProperties:
+                                        description: Key value pair with the data attribute id as key.
+                                        type: integer
+                                  required:
+                                    - nameEnum
+                                    - valueEnum
+                              idDataAttribute:
+                                description: The numeric data attribute id for this setting, or a description for compound settings.
+                                type: string
+                              idDeviceType:
+                                description: Device type id.
+                                type: string
+                              idSite:
+                                description: Installation id.
+                                type: string
+                              idUser:
+                                description: User id.
+                                type:
+                                  - 'null'
+                                  - string
+                              loggedTimestamp:
+                                description: Timestamp at which this setting was logged.
+                                type: string
+                              loggedValue:
+                                description: Value logged for this setting.
+                                type: integer
+                              timestamp:
+                                description: Timestamp at which this setting was queued.
+                                type:
+                                  - 'null'
+                                  - string
+                              user_name:
+                                description: User name.
+                                type:
+                                  - 'null'
+                                  - string
+                              value:
+                                description: Current value for this setting.
+                                type:
+                                  - 'null'
+                                  - integer
+
+                              # Compound setting specific properties
+                              attributes:
+                                description: Underlying data attributes, only for compound settings.
+                                type: array
+                                items:
+                                  description: Data attribute id.
+                                  type: integer
+                              values:
+                                description: Underlying values corresponding to this value, only for compounded settings.
+                                type: object
+                                additionalProperties:
+                                  description: Key value pair with the data attribute id as key.
+                                  type: object
+                                  properties:
+                                    loggedValue:
+                                      description: Value logged for this setting.
+                                      type: string
+                                    value:
+                                      description: Current value for this setting.
+                                      type: string
+                                  required:
+                                    - loggedValue
+                                    - value
+                            required:
+                              - description
+                              - enumData
+                              - idDataAttribute
+                              - idDeviceType
+                              - idSite
+                              - idUser
+                              - loggedTimestamp
+                              - loggedValue
+                              - timestamp
+                              - user_name
+                              - value
+
+                        # Gateway specific fields
+                        signalRSSI:
+                          description: Device formatted signal RSSI.
+                          type: string
+                        signalSNR:
+                          description: Device formatted signal SNR.
+                          type: string
+                        signalFrequency:
+                          description: Device formatted signal frequency.
+                          type: string
+                        antennaType:
+                          description: GlobalLink device antenna switch state.
+                          type: string
+                          enum:
+                            - Internal
+                            - External
+                        networkName:
+                          description: Device network name.
+                          type: string
+                        loggingInterval:
+                          description: Expected seconds between received logs from gateway device, or false if not set.
+                          type:
+                            - integer
+                            - boolean
+                        identifier:
+                          description: Gateway device identifier, not visible to demo user or using site sharing.
+                          type: string
+                        lastPowerUpOrRestart:
+                          description: Gateway device last power up or restart timestamp, false if no timestamp available.
+                          type:
+                            - string
+                            - boolean
+                        machineSerialNumber:
+                          description: Gateway device serial number.
+                          type:
+                            - 'null'
+                            - string
+
+                        # Venus OS gateway specific fields
+                        remoteOnLan:
+                          description: Remote on LAN address, only for Venus OS devices.
+                          type: string
+                        autoUpdate:
+                          description: Auto update setting, only for Venus OS devices.
+                          type: string
+                          enum:
+                            - On
+                            - Off
+                            - Check
+                        updateTo:
+                          description: Maxiumum version to update to, only for Venus OS devices.
+                          type: string
+                          enum:
+                            - Official release
+                            - Release-candidate
+                            - Testing
+                            - Develop
+                        vncSshAuth:
+                          description: True if the Venus OS gateway has SSH authentication enabled.
+                          type: boolean
+                        vncStatus:
+                          description: Venus OS gateway internet setting.
+                          type: string
+                          enum:
+                            - Enabled
+                            - Disabled
+                        vncPort:
+                          description: Venus OS gateway remote VNC port.
+                          type: integer
+                        twoWayCommunication:
+                          description: True if the Venus OS gateway has two way communication enabled.
+                          type: boolean
+                        remoteSupportEnabled:
+                          description: True if the Venus OS gateway has remote support enabled.
+                          type: boolean
+                        remoteSupportPort:
+                          description: Venus OS gateway remote support connection port, or false if none.
+                          type:
+                            - integer
+                            - boolean
+                        remoteSupportIp:
+                          description: Venus OS gateway remote support connection ip.
+                          type: string
+                        remoteSupport:
+                          description: Venus OS gateway remote support status.
+                          type: string
+                          enum:
+                            - enabled_online
+                            - enabled_offline
+                            - disabled
+
+                        # VE.bus fields
+                        productId:
+                          description: VE.bus device product id, false if none.
+                          type:
+                            - string
+                            - boolean
+                        vmc:
+                          description: VE.bus device connection. Either VE.Bus, VE.Can or false.
+                          type:
+                            - string
+                            - boolean
+                        vid:
+                          description: VE.bus device hardware configuration.
+                          type: object
+                          properties:
+                            enumValue:
+                              description: Pure enum value.
+                              type: string
+                              enum:
+                                - Single unit
+                                - Two units configured as split-phase
+                                - Two units configured in parallel
+                                - Three units configured in parallel
+                                - three phase system, one unit per phase
+                                - three phase system, two units per phase
+                                - three phase system, three units per phase
+                                - three phase system, four units per phase
+                                - three phase system, five units per phase
+                            devicesPerPhase:
+                              description: Units per phase.
+                              type: object
+                              properties:
+                                L1:
+                                  type: integer
+                                L2:
+                                  type: integer
+                                L3:
+                                  type: integer
+                              required:
+                                - L1
+                                - L2
+                                - L3
+                          required:
+                            - enumValue
+                            - devicesPerPhase
+
+                        # IO Extender specific fields
+                        tempSensorConnected:
+                          description: IO Extender device temperature sensor connection, true if connected.
+                          type: boolean
+
+                        # PV Inverter specific fields
+                        froniusDeviceType:
+                          description: PV Inverter Fronius device type.
+                          type: string
+                        pL:
+                          description: PV Inverter device position, false if none available.
+                          type:
+                            - string
+                            - boolean
+                        pdV:
+                          description: PV Inverter device data manager version.
+                          type: string
+
+                        # Digital Input specific fields
+                        inputType:
+                          description: Digital Input device type, false if not available.
+                          type:
+                            - string
+                            - boolean
+                        inputState:
+                          description: Digital Input device state, false if not available.
+                          type:
+                            - string
+                            - false
+                      required:
+                        - name
+                        - customName
+                        - productCode
+                        - idSite
+                        - lastConnection
+                        - settings
+                required:
+                  - devices
+            required:
+              - success
+              - records
+    '403':
+      description: Not authorized to view devices for this installation.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

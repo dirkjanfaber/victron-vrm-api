@@ -1,0 +1,50 @@
+post:
+  operationId: installations/idSite/clear-alarm
+  summary: Clear alarm
+  description: Clears alarms and marks them as cleared by the user in Event Logs.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: ID of the installation.
+      in: path
+      required: true
+      schema:
+        type: string
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            alarmId:
+              description: ID of the alarm that needs to be cleared.
+              type: number
+              required: true
+              example: 630
+
+  responses:
+    '200':
+      description: Alarm cleared successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              idSite:
+                description: ID of the installation.
+                type: string
+            required:
+              - success
+              - idSite
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

@@ -1,0 +1,101 @@
+post:
+  summary: Set custom EV charging schedule for current session
+  description: |
+    Sets a custom EV charging schedule that applies only to the current charging session.
+    This schedule is stored in Redis and will be cleared when the vehicle is plugged in again.
+    
+    The custom schedule allows overriding the default hand-off time and target SOC for a single
+    charging session without modifying the permanent vehicle DESS settings.
+    
+    Note: If the car reports its own target SOC via Enode (isTargetSocEditable is false),
+    the targetSoc parameter will be rejected.
+  tags:
+    - Installations
+  parameters:
+    - name: idSite
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - $ref: '../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/CustomEvScheduleRequest'
+  responses:
+    '200':
+      description: Successfully stored custom EV schedule.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: true
+    '400':
+      description: Bad request - target SOC is managed by car app and cannot be modified.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '422':
+      description: Validation error - invalid parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    '500':
+      description: Server error - failed to store custom EV schedule.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    CustomEvScheduleRequest:
+      type: object
+      required:
+        - idVehicle
+      properties:
+        idVehicle:
+          description: The unique identifier of the vehicle.
+          type: string
+        timestamp:
+          description: |
+            Unix timestamp (seconds) for when charging should be complete.
+            If not provided, it will be computed from handOffTime.
+          type: integer
+          minimum: 0
+        targetSoc:
+          description: |
+            Target state of charge percentage (0-100).
+            Only settable when isTargetSocEditable is true (car does not report target SOC via Enode).
+            If not provided, the default from vehicle DESS settings will be used.
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        handOffTime:
+          description: |
+            The time by which charging should be complete (HH:MM format, 24-hour).
+            If timestamp is not provided, this will be converted to a timestamp.
+            At least one of timestamp or handOffTime must be provided.
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: '07:00'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        errors:
+          type: string
+        error_code:
+          type:
+            - 'null'
+            - string

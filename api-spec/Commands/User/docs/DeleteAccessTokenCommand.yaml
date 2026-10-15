@@ -1,0 +1,53 @@
+delete:
+  operationId: users/idUser/accesstokens-delete
+  summary: Revoke an access token for a user.
+  description: Revokes one or more personal access token for a user.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idUser
+      description: User id.
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: idAccessToken
+      description: >-
+        Which token(s) to revoke. Either the numeric id of a single access
+        token, or one of the wildcards `all` (revoke every token belonging to
+        the user) or `expired` (revoke only the user's expired tokens; tokens
+        without an expiry are kept).
+      in: path
+      required: true
+      schema:
+        type: string
+        example: all
+  responses:
+    '200':
+      description: Token(s) revoked successfully
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: Whether the request was successful.
+                type: boolean
+              data:
+                type: object
+                properties:
+                  removed:
+                    description: The amount of token that have been revoked.
+                    type: integer
+                required:
+                  - removed
+            required:
+              - success
+              - data
+    '4xx':
+      description: Token creation failed, returns details about the error(s)
+      content:
+        application/json:
+          schema:
+            $ref: '../../../../docs/components.yaml#/components/schemas/generalError'

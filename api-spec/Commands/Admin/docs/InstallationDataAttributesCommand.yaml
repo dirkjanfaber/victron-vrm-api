@@ -1,0 +1,134 @@
+get:
+  operationId: installation-data-attributes
+  summary: Find installations by data attributes
+  description: Returns a user's installations & last known value, matching up to five data-attribute conditions.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: query
+      in: query
+      description: |
+        Comma-separated filter string using data-attribute codes and comparisons (e.g. `bs>=50,au=(1,2),IV1!`).
+        Non-admin users can include up to 5 conditions; exceeding this limit returns a validation error.
+        
+        Allowed operations:
+        - `foo` and `foo!` - attribute has data or not
+        - `foo=1`, `foo>=1`, `foo="bar"` - attribute-value comparisons
+        - `foo AND bar>=1` (same as `foo,bar>=1`) - site has multiple conditions
+        - `foo=(1 OR 3 OR 5)` - attribute is equal to 1, 3 or 5
+      required: true
+      schema:
+        type: string
+    - name: page
+      in: query
+      description: Result page (1-indexed).
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    - name: count
+      in: query
+      description: Number of records per page (default 100, maximum 1000).
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 1000
+        default: 100
+  responses:
+    '200':
+      description: Request was processed successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: Indicates whether the query was executed successfully.
+                type: boolean
+              records:
+                description: Installations that match all provided conditions.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idSite:
+                      description: Identifier of the installation.
+                      type: integer
+                    description:
+                      description: Name of the installation.
+                      type: string
+                    lastTimestamp:
+                      description: Unix timestamp (seconds) of the most recent datapoint.
+                      type: integer
+                  additionalProperties:
+                    description: Attribute values for the requested codes, exposed as `value_{code}` keys.
+                    type:
+                      - 'null'
+                      - string
+                      - number
+                      - integer
+              attributes:
+                description: Metadata for the data attributes included in the response.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    idDataAttribute:
+                      description: Identifier of the data attribute.
+                      type: integer
+                    code:
+                      description: Attribute code used in the query.
+                      type: string
+                    dataType:
+                      description: Data type of the attribute value.
+                      type: string
+                    formatWithUnit:
+                      description: Optional format string including unit information.
+                      type:
+                        - 'null'
+                        - string
+                  required:
+                    - idDataAttribute
+                    - code
+                    - dataType
+            required:
+              - success
+              - records
+              - attributes
+    '401':
+      description: Unauthorized, returns details about the error(s).
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+    '422':
+      description: Validation failed, usually because too many conditions were supplied.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: Indicates that the request was rejected.
+                type: boolean
+              error_code:
+                description: Machine-readable error code.
+                type:
+                  - 'null'
+                  - string
+              errors:
+                description: Human-readable validation messages.
+                type: array
+                items:
+                  type: string
+              num_records:
+                description: Always zero when validation fails.
+                type: integer
+            required:
+              - success
+              - errors
+              - error_code
+              - num_records

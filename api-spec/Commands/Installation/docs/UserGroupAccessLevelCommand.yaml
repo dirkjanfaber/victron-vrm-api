@@ -1,0 +1,75 @@
+post:
+  operationId: installations/idSite/user-group-access-level
+  summary: Update or remove a user group's access to an installation
+  description: |-
+    Updates the access level for a user group on the specified installation. If `accessLevel` is set to `null`, the user group is unlinked from the installation entirely. Requires full control or technician access on the installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: integer
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - idUserGroup
+            - accessLevel
+          properties:
+            idUserGroup:
+              description: ID of the user group to update.
+              type: integer
+              example: 10
+            accessLevel:
+              description: |-
+                New access level for the user group. Set to `null` to unlink the group from the installation.
+                - `0` = monitoring
+                - `1` = full control
+                - `2` = technician
+              type:
+                - integer
+                - 'null'
+              enum: [0, 1, 2, null]
+              example: 2
+        examples:
+          update:
+            summary: Update user group access level to technician.
+            value:
+              idUserGroup: 10
+              accessLevel: 2
+          unlink:
+            summary: Unlink user group from the installation.
+            value:
+              idUserGroup: 10
+              accessLevel: null
+  responses:
+    '200':
+      description: Access level updated successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the access level was successfully updated.
+                type: boolean
+                example: true
+    '403':
+      description: Insufficient access to modify this installation.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+    '404':
+      description: Installation not found.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

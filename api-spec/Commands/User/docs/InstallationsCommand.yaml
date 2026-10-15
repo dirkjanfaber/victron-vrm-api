@@ -1,0 +1,446 @@
+get:
+  operationId: users/idUser/installations
+  summary: All installations/sites for a given user
+  description: Retrieves a list of installations to which the user is connected. Normal users can only retrieve their own installations, dealers only those of their linked customers and admins those of all users.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idUser
+      description: User id.
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: extended
+      description: If 1, include all optional response values.
+      in: query
+      required: false
+      schema:
+        type: integer
+    - name: idSite
+      description: Id of the site we want to retrieve.
+      in: query
+      required: false
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Successfully retrieved installations.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              records:
+                description: The retrieved installations, empty if none.
+                type: array
+                items:
+                  type: object
+                  description: A single installation.
+                  properties:
+                    idSite:
+                      type: integer
+                    accessLevel:
+                      description: The access level of the requesting user.
+                      type: integer
+                    owner:
+                      description: True if the requesting user owns this installation.
+                      type: boolean
+                    is_admin:
+                      description: True if the requesting user is an admin for this installation.
+                      type: boolean
+                    name:
+                      type: string
+                    identifier:
+                      description: Installation identifier.
+                      type: string
+                    idUser:
+                      description: Installation owner id.
+                      type: integer
+                    pvMax:
+                      description: Maximum PV for this installation.
+                      type: integer
+                    timezone:
+                      description: Installation local timezone.
+                      type: string
+                    phonenumber:
+                      description: Installation phone number.
+                      type:
+                        - 'null'
+                        - string
+                    notes:
+                      description: Installation notes.
+                      type:
+                        - 'null'
+                        - string
+                    geofence:
+                      description: Installation geofence, in json format.
+                      type:
+                        - 'null'
+                        - string
+                    geofenceEnabled:
+                      description: True if the geofence is enabled.
+                      type: boolean
+                    realtimeUpdates:
+                      description: True if realtime updates are enabled.
+                      type: boolean
+                    restrictNodeRed:
+                      description: True if restrict is enabled.
+                      type: boolean
+                    hasMains:
+                      description: 1 if the installation has mains, else 0.
+                      type: integer
+                    hasGenerator:
+                      description: 1 if the installation has a generator, else 0.
+                      type: integer
+                    noDataAlarmTimeout:
+                      description: How many seconds after no installation data is received the alarm should go off.
+                      type:
+                        - 'null'
+                        - integer
+                    alarmMonitoring:
+                      description: If alarms and warnings should be sent. When 0 nothing is sent out, when 1 only alarms and when 2 both alarms and warnings.
+                      type: integer
+                    invalidVRMAuthTokenUsedInLogRequest:
+                      description: a UNIX timestamp if an invalid token was used for logging, else 0.
+                      type: integer
+                    syscreated:
+                      description: Installation creation timestamp, UNIX format.
+                      type: integer
+                    shared:
+                      description: True if sitesharing is enabled.
+                      type: boolean
+                    device_icon:
+                      description: Installation icon.
+                      type: string
+
+                    # following parameters are only returned when extended is on, reflected in required of parent object
+                    alarm:
+                      description: True if there is an active alarm.
+                      type: boolean
+                    last_timestamp:
+                      description: Timestamp of the most recently received data (UNIX format).
+                      type: integer
+                    current_time:
+                      description: Local time for the installation in 24h format (hh:mm).
+                      type: string
+                    timezone_offset:
+                      description: How many seconds the installation is ahead of UTC.
+                      type: integer
+                    demo_mode:
+                      description: True if the installation is in demo mode.
+                      type: boolean
+                    mqtt_webhost:
+                      description: >
+                        Installation MQTT websocket host. Normally a per-identifier
+                        cluster host; for users in the geo-distributed MQTT rollout it
+                        is the single near-me broker domain instead.
+                      type: string
+                    mqtt_host:
+                      description: Installation MQTT host, as a URL.
+                      type: string
+                    high_workload:
+                      description: True if the D-Bus round trip time is higher than the threshold.
+                      type: boolean
+                    is_on_grid:
+                      description: True if the installation is on-grid (based on attributes 251 and 252), false if off-grid.
+                      type: boolean
+                    minimum_soc:
+                      description: The minimum SOC for this installation, expressed as a percentage.
+                      type: integer
+                    current_alarms:
+                      description: A list of the active alarms for this installation.
+                      type: array
+                      items:
+                        description: The description of the alarm.
+                        type: string
+                    num_alarms:
+                      description: The amount of active alarms.
+                      type: integer
+                    avatar_url:
+                      description: The url for this site's avatar.
+                      type:
+                        - 'null'
+                        - string
+                    tags:
+                      description: Installation tags.
+                      type: array
+                      items:
+                        description: A single tag.
+                        type: object
+                        properties:
+                          idTag:
+                            description: Tag id.
+                            type: integer
+                          name:
+                            description: Tag name.
+                            type: string
+                          automatic:
+                            description: False this tag was created by a user.
+                            type: boolean
+                        required:
+                          - idTag
+                          - name
+                          - automatic
+                    images:
+                      description: Installation images.
+                      type: array
+                      items:
+                        description: A single image.
+                        type: object
+                        properties:
+                          idSiteImage:
+                            description: Image id.
+                            type: integer
+                          imageName:
+                            description: Image name.
+                            type: string
+                          url:
+                            description: Image url.
+                            type: string
+                        required:
+                          - idSiteImage
+                          - imageName
+                          - url
+                    view_permissions:
+                      description: Installation view permissions for the requesting user.
+                      type: object
+                      properties:
+                        update_settings:
+                          description: True if the requesting user can modify general settings.
+                          type: boolean
+                        use_ocpp:
+                          description: True if the requesting user may use the OCPP feature for this installation - see and operate its OCPP server (closed beta - VRM admins plus the users listed in ocpp.beta_users).
+                          type: boolean
+                        settings:
+                          description: True if the requesting user can view general settings.
+                          type: boolean
+                        diagnostics:
+                          description: True if the requesting user can view diagnostics.
+                          type: boolean
+                        share:
+                          description: True if the requesting user can modify site share settings.
+                          type: boolean
+                        vnc:
+                          description: True if the requesting user can view VNC.
+                          type: boolean
+                        mqtt_rpc:
+                          description: True if the requesting user can view MQTT RPC.
+                          type: boolean
+                        vebus:
+                          description: True if the requesting user can view VNC.
+                          type: boolean
+                        twoway:
+                          description: True if the installation has two way communication.
+                          type: boolean
+                        exact_location:
+                          description: True if the requesting user can view the exact location.
+                          type: boolean
+                        nodered:
+                          description: True if the installation has Node RED.
+                          type: boolean
+                        nodered_dash:
+                          description: True if the installation has a Node RED Dashboard.
+                          type: boolean
+                        signalk:
+                          description: True if the installation has SignalK.
+                          type: boolean
+                      required:
+                        - update_settings
+                        - use_ocpp
+                        - settings
+                        - diagnostics
+                        - share
+                        - vnc
+                        - mqtt_rpc
+                        - vebus
+                        - twoway
+                        - exact_location
+                        - nodered
+                        - nodered_dash
+                        - signalk
+                    extended:
+                      description: Extended data about this installation.
+                      type: array
+                      items:
+                        anyOf:
+                          - description: A data attribute.
+                            type: object
+                            properties:
+                              idDataAttribute:
+                                description: Data attribute id.
+                                type: integer
+                              code:
+                                description: Data attribute code.
+                                type: string
+                              description:
+                                description: Data attribute description.
+                                type: string
+                              formatWithUnit:
+                                description: Data attribute format string (e.g. "%.2F V").
+                                type: string
+                              dataType:
+                                description: Data attribute type.
+                                type: string
+                                enum:
+                                  - string
+                                  - float
+                                  - enum
+                              textValue:
+                                description: If the dataType is 'enum', this contains the corresponding text value for that enum.
+                                type: string
+                              instance:
+                                description: The instance to which this attribute data belongs.
+                                type: string
+                              timestamp:
+                                description: The timestamp at which this data was received (UNIX).
+                                type: string
+                              dbusServiceType:
+                                description: Data attribute D-Bus service type.
+                                type: string
+                              dbusPath:
+                                description: Data attribute D-Bus path.
+                                type: string
+                              rawValue:
+                                description: Data attribute last data raw value.
+                                type: string
+                              formattedValue:
+                                description: Data attribute formatted value.
+                                type: string
+                              dataAttributeEnumValues:
+                                description: Possible values for this enum.
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    nameEnum:
+                                      type: string
+                                    valueEnum:
+                                      type: integer
+                                  required:
+                                    - nameEnum
+                                    - valueEnum
+                            required:
+                              - idDataAttribute
+                              - code
+                              - description
+                              - formatWithUnit
+                              - dataType
+                              - textValue
+                              - instance
+                              - timestamp
+                              - dbusServiceType
+                              - dbusPath
+                              - rawValue
+                              - formattedValue
+                          - description: Site summary data.
+                            type: object
+                            properties:
+                              code:
+                                description: Summary data code.
+                                type: string
+                              description:
+                                description: Summary data description.
+                                type: string
+                              rawValue:
+                                description: Summary data last raw value.
+                                type:
+                                  - 'null'
+                                  - number
+                              formattedValue:
+                                description: Summary data formatted value.
+                                type: string
+                              textValue:
+                                description: If the dataType is 'enum', this contains the corresponding text value for that enum.
+                                type:
+                                  - 'null'
+                                  - string
+                              formatWithUnit:
+                                description: Summary data format string (e.g. "%.2F V").
+                                type: string
+                              idDataAttribute:
+                                description: Corresponding data attribute id.
+                                type:
+                                  - 'null'
+                                  - integer
+                              dataAttributes:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    instance:
+                                      description: The instance to which this attribute data belongs.
+                                      type: integer
+                                    dbusServiceType:
+                                      description: Data attribute D-Bus service type.
+                                      type: string
+                                    dbusPath:
+                                      description: Data attribute D-Bus path.
+                                      type: string
+                                  required:
+                                    - instance
+                                    - dbusServiceType
+                                    - dbusPath
+                            required:
+                              - code
+                              - dataAttributes
+                              - description
+                              - formattedValue
+                              - formatWithUnit
+                              - rawValue
+                              - textValue
+                              - idDataAttribute
+
+                  required:
+                    - idSite
+                    - accessLevel
+                    - owner
+                    - is_admin
+                    - name
+                    - identifier
+                    - idUser
+                    - pvMax
+                    - timezone
+                    - phonenumber
+                    - notes
+                    - geofence
+                    - geofenceEnabled
+                    - realtimeUpdates
+                    - restrictNodeRed
+                    - hasMains
+                    - hasGenerator
+                    - noDataAlarmTimeout
+                    - alarmMonitoring
+                    - invalidVRMAuthTokenUsedInLogRequest
+                    - syscreated
+                    - shared
+                    - device_icon
+            required:
+              - success
+              - records
+    '403':
+      description: Not authorized to view installations for this user.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              errors:
+                description: Any errors that occurred.
+                type: string
+              error_code:
+                description: The error code, if applicable.
+                type:
+                  - 'null'
+                  - string
+            required:
+              - success
+              - errors
+              - error_code

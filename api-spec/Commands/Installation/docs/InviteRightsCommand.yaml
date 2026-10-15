@@ -1,0 +1,84 @@
+post:
+  operationId: installations/idSite/invite-rights
+  summary: Update access levels for pending invites
+  description: |-
+    Updates the access levels for one or more pending invitations on a specific installation. The `email` and `accessLevel` arrays must have matching indices. Only invites that already exist for the installation are updated. Requires full control or technician access on the installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: integer
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - email
+            - accessLevel
+          properties:
+            email:
+              description: Array of email addresses corresponding to pending invites. Must match the length of `accessLevel`.
+              type: array
+              items:
+                type: string
+              example: ["andrew@example.com", "bob@example.com"]
+            accessLevel:
+              description: |-
+                Array of access levels corresponding to each email in `email`.
+                - `0` = monitoring
+                - `1` = full control
+                - `2` = technician
+              type: array
+              items:
+                type: integer
+                enum: [0, 1, 2]
+              example: [1, 0]
+        examples:
+          string:
+            summary: Update invite access levels for two pending invites.
+            value:
+              email: ["andrew@example.com", "bob@example.com"]
+              accessLevel: [1, 0]
+  responses:
+    '200':
+      description: Invite access levels updated.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the update was processed.
+                type: boolean
+                example: true
+              records:
+                description: Map of email addresses to update results.
+                type: object
+                additionalProperties:
+                  type: boolean
+                example:
+                  "andrew@example.com": true
+                  "bob@example.com": true
+              error_code:
+                description: |-
+                  Error code if the request failed. Possible values:
+                  - `accesslevel_and_invite_keys_required`: Both `accessLevel` and `email` arrays are required.
+                type: string
+              errors:
+                description: Human-readable error messages.
+                type: array
+                items:
+                  type: string
+    '403':
+      description: Insufficient access to modify this installation.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

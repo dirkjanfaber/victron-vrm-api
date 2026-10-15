@@ -1,0 +1,134 @@
+get:
+  operationId: installations/idSite/diagnostics
+  summary: Diagnostic data for an installation
+  description: Retrieves log data for an installation. This endpoint is only accessible to users with access to the installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: string
+    - name: count
+      description: How many records to fetch, 100 if not specified.
+      in: query
+      required: false
+      schema:
+        type: integer
+    - name: page
+      description: Which page to fetch, 1 if not specified.
+      in: query
+      required: false
+      schema:
+        type: integer
+  responses:
+    '200':
+      description: Successfully retrieved logging data.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              records:
+                description: Fetched logging data.
+                type: object
+                properties:
+                  idSite:
+                    description: Installation id.
+                    type: integer
+                  timestamp:
+                    description: Timestamp at which this data was logged.
+                    type: integer
+                  Device:
+                    description: Logging device name.
+                    type: string
+                  instance:
+                    description: Log data instance.
+                    type: integer
+                  idDataAttribute:
+                    description: Log data attribute id.
+                    type: integer
+                  description:
+                    description: Log data description.
+                    type: string
+                  formatWithUnit:
+                    description: Data attribute string format.
+                    type: string
+                  dbusServiceType:
+                    description: Device DBus Service type.
+                    type:
+                      - 'null'
+                      - string
+                  dbusPath:
+                    description: Device DBus path.
+                    type:
+                      - 'null'
+                      - string
+                  code:
+                    description: Data attribute code.
+                    type: string
+                  bitmask:
+                    description: 1 if the data attribute is a bitmask, else 0.
+                    type: integer
+                  formattedValue:
+                    description: Log data value formatted as a string.
+                    type: string
+                  rawValue:
+                    description: Log data raw value.
+                    type:
+                      - string
+                      - integer
+                  id:
+                    description: Log data id.
+                    type: integer
+
+                  # Only for enum attributes
+                  dataAttributeEnumValues:
+                    description: Data attribute enum values, only for data attributes of type enum.
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        nameEnum:
+                          description: Enum name.
+                          type: string
+                        valueEnum:
+                          description: Numeric enum value.
+                          type: integer
+                      required:
+                        - nameEnum
+                        - valueEnum
+                required:
+                  - idSite
+                  - timestamp
+                  - Device
+                  - instance
+                  - idDataAttribute
+                  - description
+                  - formatWithUnit
+                  - dbusServiceType
+                  - dbusPath
+                  - code
+                  - bitmask
+                  - formattedValue
+                  - rawValue
+                  - id
+              num_records:
+                description: Amount of log records available.
+                type: integer
+            required:
+              - success
+              - records
+              - num_records
+    '403':
+      description: Not authorized to get log data for this installation.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

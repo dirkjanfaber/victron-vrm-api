@@ -1,0 +1,182 @@
+components:
+  operations:
+    get:
+      operationId: installations/idSite/stats
+      summary: Installation stats
+      tags:
+        - Installations
+      description: |
+        Retrieves installation stats for the specified period, or one day if none specified. If the datatype is set to custom, one or more attributes can be provided using the attributeCodes[] parameter.
+
+        There is a maximum allowed time period for each interval, which is:
+        * 31 days for 15 minutes
+        * 31 days for hours
+        * 180 days for days
+        * 140 days for weeks
+        * 24 months for months
+        * 5 years for years
+      parameters:
+        - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+        - name: idSite
+          description: Installation id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: start
+          description: Timestamp from which to fetch data, defaults to one day ago.
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: end
+          description: Timestamp to which to fetch data, defaults to now.
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: type
+          description: |
+            Type of data to fetch, defaults to live_feed. If set to custom, the attributeCodes[] parameter must be provided.
+
+            * `venus` - The full set of power and energy series shown on the VRM dashboard: grid, AC input/output, genset, inverter power, battery state, DC power, consumption, solar yield, AC loads, temperature, EV charger, AC meter, PV inverter, heat pump and grid meter.
+            * `live_feed` - (default) Live overview series: total consumption, total solar yield, battery state of charge and voltage, DC power, output current, energy to/from grid and total genset energy.
+            * `consumption` - Consumed energy split by source: from PV, battery, genset and grid, plus EV charger, heat pump and AC system energy.
+            * `solar_yield` - Solar production split by destination: total solar yield and PV to consumers, battery and grid.
+            * `kwh` - Energy (kWh) counters.
+            * `generator` - Genset energy: genset to consumers and genset to battery.
+            * `generator-runtime` - Accumulated generator run-time.
+            * `custom` - Series for the attributes given via the attributeCodes[] parameter.
+            * `forecast` - Solar yield and consumption forecasts, including heat pump and EV charger consumption forecasts.
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - venus
+              - dc_inputs
+              - live_feed
+              - consumption
+              - solar_yield
+              - kwh
+              - generator
+              - generator-runtime
+              - custom
+              - forecast
+        - name: interval
+          description: Time between retrieved data points, defaults to hours.
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              - 15mins
+              - hours
+              - 2hours
+              - days
+              - weeks
+              - months
+              - years
+        - name: attributeCodes[]
+          description: Attribute codes for which to retrieve series, repeated for each attribute. Required at least once if datatype is set to custom.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: show_instance
+          description: If included, attributes will be grouped by instance.
+          in: query
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successfully retrieved statistics.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    description: True if the request was successful.
+                    type: boolean
+                  records:
+                    oneOf:
+                      - $ref: '#/components/schemas/statsList'
+                      - description: List of instances, with the key or index being the instance id.
+                        type:
+                          - object
+                          - array
+                        items:
+                          $ref: '#/components/schemas/statsListWithInstance'
+                        additionalProperties:
+                          $ref: '#/components/schemas/statsListWithInstance'
+                  totals:
+                    oneOf:
+                      - $ref: '#/components/schemas/totalsList'
+                      - description: List of instances, with the key or index being the instance id.
+                        type:
+                          - object
+                          - array
+                        items:
+                          $ref: '#/components/schemas/totalsListWithInstance'
+                        additionalProperties:
+                          $ref: '#/components/schemas/totalsListWithInstance'
+                required:
+                  - success
+                  - records
+                  - totals
+        '4xx':
+          description: Request unsuccessful.
+          content:
+            application/json:
+              schema:
+                $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+  schemas:
+    statsList:
+      description: Statistics for each data attribute.
+      type: object
+      additionalProperties:
+        anyOf:
+          - description: Data points for statistic with this key.
+            type: array
+            items:
+              description: An array containing first the timestamp, then the mean value. If available, the minimum and then the maximum will be added to the end of this array.
+              type: array
+              items:
+                type: number
+          - description: Statistic without data within the given timeframe.
+            type: boolean
+    statsListWithInstance:
+      description: Statistics for a specific instance
+      type: object
+      properties:
+        stats:
+          $ref: '#/components/schemas/statsList'
+        instance:
+          description: The instance this data belongs to.
+          type: integer
+      required:
+        - stats
+        - instance
+
+    totalsList:
+      description: Total for each data attribute.
+      type: object
+      additionalProperties:
+        description: Total for statistic with this key, or false if there is no data for this statistic within the given timeframe.
+        type:
+          - number
+          - boolean
+    totalsListWithInstance:
+      description: Totals for a specific instance
+      type: object
+      properties:
+        totals:
+          $ref: '#/components/schemas/totalsList'
+        instance:
+          description: The instance this data belongs to.
+          type: integer
+      required:
+        - totals
+        - instance

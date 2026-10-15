@@ -1,0 +1,438 @@
+get:
+  summary: Dynamic ESS configuration
+  description:
+  tags:
+    - Installations
+  parameters:
+    - name: id
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  responses:
+    '200':
+      description: Successfully updated the Dynamic ESS configuration for this installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              idSite:
+                description: The ID of the updated installation.
+                type: integer
+              data:
+                description: Contains the updated configuration for the installation.
+                $ref: '#/components/schemas/DynamicEssConfiguration'
+              vehicle_data:
+                description: |
+                  Map of VIN to per-vehicle DESS data, keyed by Vehicle Identification Number.
+                  Each entry exposes both `defaults` (the user's stored values, source of truth
+                  for the Settings page form when editable) and `effective` (the values currently
+                  in force, taking session overrides and evts into account).
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/VehicleDataEntry'
+    '403':
+      description: User is not authorized to access or modify this installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: False as the request was unsuccessful.
+                type: boolean
+              errors:
+                description: User is not authorized for this operation.
+                type: string
+              error_code:
+                description: The error code, if applicable.
+                type:
+                  - 'null'
+                  - string
+            required:
+              - success
+              - errors
+              - error_code
+    '404':
+      description: Installation not found.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              errors:
+                description: Installation with the given ID was not found.
+                type: string
+              error_code:
+                description: The error code, if applicable.
+                type:
+                  - 'null'
+                  - string
+            required:
+              - success
+              - errors
+              - error_code
+
+post:
+  summary: Dynamic ESS configuration
+  description:
+  tags:
+    - Installations
+  parameters:
+    - name: id
+      in: path
+      description: The ID of the installation
+      required: true
+      schema:
+        type: integer
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: '#/components/schemas/DynamicEssConfiguration'
+  responses:
+    '200':
+      description: Successfully updated the Dynamic ESS configuration for this installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              idSite:
+                description: The ID of the updated installation.
+                type: integer
+              data:
+                description: Contains the updated configuration for the installation.
+                $ref: '#/components/schemas/DynamicEssConfiguration'
+              vehicle_data:
+                description: |
+                  Map of VIN to per-vehicle DESS data, keyed by Vehicle Identification Number.
+                  Each entry exposes both `defaults` (the user's stored values, source of truth
+                  for the Settings page form when editable) and `effective` (the values currently
+                  in force, taking session overrides and evts into account).
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/VehicleDataEntry'
+    '403':
+      description: User is not authorized to access or modify this installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: False as the request was unsuccessful.
+                type: boolean
+              errors:
+                description: User is not authorized for this operation.
+                type: string
+              error_code:
+                description: The error code, if applicable.
+                type:
+                  - 'null'
+                  - string
+            required:
+              - success
+              - errors
+              - error_code
+    '404':
+      description: Installation not found.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              errors:
+                description: Installation with the given ID was not found.
+                type: string
+              error_code:
+                description: The error code, if applicable.
+                type:
+                  - 'null'
+                  - string
+            required:
+              - success
+              - errors
+              - error_code
+
+components:
+  schemas:
+    PriceSchedule:
+      type: array
+      items:
+        type: object
+        required:
+          - days
+          - schedule
+        properties:
+          days:
+            type: array
+            items:
+              type: number
+              description: Weekday, 0-indexed starting on Monday
+              example: 0
+          schedule:
+            type: array
+            items:
+              type: object
+              required:
+                - from
+                - to
+                - price
+              properties:
+                from:
+                  type: string
+                  example: '00:00'
+                  description: From timestamp (inclusive), whole hours only
+                to:
+                  type: string
+                  example: '05:00'
+                  description: From timestamp (exclusive), whole hours only
+                price:
+                  type: number
+                  example: '0.41'
+                  description: Energy price for this timeslot
+
+    DynamicEssConfiguration:
+      type: object
+      required:
+        - batteryCapacity
+        - batteryCosts
+        - batteryFlowRestriction
+        - buyPriceType
+        - chargePower
+        - dischargePower
+        - gridSell
+        - isOn
+        - maxPowerFromGrid
+        - maxPowerToGrid
+        - sellPriceType
+      properties:
+        batteryCapacity:
+          type: number
+          description: Battery capacity of the system in kWh
+          example: 10
+        batteryCosts:
+          type: number
+          description: 'Battery cycle costs per kWh - You can calculate this value using this formula: battery price / (amount of battery cycles * battery capacity)'
+          example: 0.02
+        batteryFlowRestriction:
+          type: string
+          enum: [unrestricted, noExport, noImport]
+          example: unrestricted
+          description: >
+            Do you need to disable grid charging or discharging?
+             * `unrestricted` - No
+             * `noExport` - Disable discharging battery to grid
+             * `noImport` - Disable charging battery from grid
+        batteryPrice:
+          type: number
+          description: Battery price
+          example: 250
+        buyEnergyProviderId:
+          type: number
+          description: Identifier of the energy provider for buying energy (see /energy-providers)
+          example: 1
+        buyPriceFormula:
+          type: string
+          description: A formula to apply to the raw dynamic energy prices, where p is the raw price.
+          example: 1.21*p+0.04
+        buyPriceSchedule:
+          $ref: '#/components/schemas/PriceSchedule'
+        buyPriceType:
+          type: number
+          enum: [0, 1]
+          example: 1
+          description: Whether or not you have dynamic buy prices
+        chargePower:
+          type: number
+          example: 10
+          description: Maximum battery charging power in kW
+        dischargePower:
+          type: number
+          example: 10
+          description: Maximum battery discharging power in kW
+        gridSell:
+          type: number
+          enum: [0, 1]
+          description: Whether or not you can sell energy to the grid.
+          example: 1
+        idBiddingZone:
+          type: number
+          description: Identifier of the EU bidding zone (see /bidding-zones)
+          example: 1
+        isDessSocDifferent:
+          type: boolean
+          description: Whether or not you want to have a separate minimum SOC for Dynamic ESS
+          example: false
+        isGreenModeOn:
+          type: boolean
+          description: Whether or not you want to have green mode turned on for Dynamic ESS
+          example: false
+        isOn:
+          type: boolean
+          description: Whether or not you want to enable Dynamic ESS in VRM
+          example: true
+        maxPowerFromGrid:
+          type: number
+          example: 10
+          description: Maximum power from the grid in kW
+        maxPowerToGrid:
+          type: number
+          example: 10
+          description: Maximum power to the grid in kW
+        sellEnergyProviderId:
+          type: number
+          description: Identifier of the energy provider for buying energy (see /energy-providers)
+          example: 1
+        sellPriceSchedule:
+          $ref: '#/components/schemas/PriceSchedule'
+        sellPriceFormula:
+          type: string
+          description: A formula to apply to the raw dynamic energy prices, where p is the raw price.
+          example: 1.21*p+0.04
+        sellPriceType:
+          type: number
+          enum: [0, 1]
+          example: 1
+          description: Whether or not you have dynamic sell prices
+        isPeriodicFullChargeOn:
+          type: boolean
+          description: Whether or not do you want to periodically charge your battery to 100% in order to extend battery life
+          example: true
+        periodicFullChargeDuration:
+          type: positive number or null
+          description: How many hours should your battery stay at 100% during the periodic recharge
+          example: 2
+        periodicFullChargeInterval:
+          type: positive number or null
+          description: How often should the battery be fully charged (in days)
+          example: 14
+
+    VehicleDataEntry:
+      description: |
+        Per-vehicle DESS data. Stored fields (targetSOC, handOffTime, optimalChargingEnabled,
+        chargeNowTriggeredAt) are absent when no vehicleDessSettings row exists for the
+        vehicle on this site — only `idVehicle`, `instance`, `defaults`, `effective`, and
+        the EV-attribute fields are guaranteed to be present.
+      type: object
+      properties:
+        idVehicle:
+          description: The unique identifier of the vehicle.
+          type: string
+        instance:
+          description: The Electric Vehicle (EV) instance.
+          type: integer
+          nullable: true
+        targetSOC:
+          description: The user's stored default target SOC (only present when a vehicleDessSettings row exists).
+          type: integer
+          minimum: 0
+          maximum: 100
+        handOffTime:
+          description: The user's stored default hand-off time (HH:MM, 24-hour). Only present when a vehicleDessSettings row exists.
+          type: string
+        optimalChargingEnabled:
+          description: Whether optimal charging is enabled for this vehicle. Only present when a vehicleDessSettings row exists.
+          type: boolean
+        chargeNowTriggeredAt:
+          description: Unix timestamp when charge-now was last triggered.
+          type: integer
+          nullable: true
+        customName:
+          description: Custom name for the vehicle from EV charger attributes.
+          type: string
+          nullable: true
+        customMaxChargeRate:
+          description: Custom maximum charge rate override in kW. Falls back to the EV attribute value when not user-configured.
+          type: number
+          nullable: true
+        customBatteryCapacity:
+          description: Custom battery capacity override in kWh. Falls back to the EV attribute value when not user-configured.
+          type: number
+          nullable: true
+        defaults:
+          description: |
+            The user's stored defaults — the source of truth for the Settings page form
+            when the field is editable. Saving the form should write these values back
+            via /vehicle-dess-settings. When no vehicleDessSettings row exists, both
+            properties are null.
+          type: object
+          properties:
+            targetSOC:
+              description: The user's stored default target SOC.
+              type: integer
+              minimum: 0
+              maximum: 100
+              nullable: true
+            handOffTime:
+              description: The user's stored default hand-off time (HH:MM, 24-hour).
+              type: string
+              nullable: true
+        effective:
+          description: |
+            The values currently in force, taking session overrides and evts into account.
+            Display targetSoc here when isTargetSocEditable is false (evts wins, read-only).
+            When isTargetSocEditable is true, the Settings page form should bind to
+            defaults.targetSOC, not effective.targetSoc — otherwise saving will overwrite
+            the persistent default with a transient session override.
+          type: object
+          properties:
+            targetSoc:
+              description: |
+                Effective target SOC. evts > active session override > stored default > 80.
+              type: integer
+              minimum: 0
+              maximum: 100
+            handOffTimestamp:
+              description: |
+                Effective hand-off timestamp (Unix seconds). Active session timestamp when a
+                non-OUTDATED session exists, otherwise computed from handOffTime in the site
+                timezone.
+              type: integer
+              nullable: true
+            isTargetSocEditable:
+              description: |
+                False when the car is reporting its own target SOC via Enode (evts present)
+                — users should change it in their vehicle app instead of VRM.
+              type: boolean
+            hasCustomSchedule:
+              description: True when a non-OUTDATED active EV charging session exists.
+              type: boolean
+        targetSoc:
+          deprecated: true
+          description: |
+            Deprecated. Use `effective.targetSoc` instead. Backwards-compat shim — will be
+            removed once frontend consumers migrate to the nested defaults/effective shape.
+          type: integer
+          minimum: 0
+          maximum: 100
+        isTargetSocEditable:
+          deprecated: true
+          description: Deprecated. Use `effective.isTargetSocEditable` instead.
+          type: boolean
+        handOffTimestamp:
+          deprecated: true
+          description: Deprecated. Use `effective.handOffTimestamp` instead.
+          type: integer
+          nullable: true
+        hasCustomSchedule:
+          deprecated: true
+          description: Deprecated. Use `effective.hasCustomSchedule` instead.
+          type: boolean

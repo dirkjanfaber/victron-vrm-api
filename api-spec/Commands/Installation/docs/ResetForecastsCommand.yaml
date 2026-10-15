@@ -1,0 +1,75 @@
+post:
+  summary: Reset installation forecasts
+  description: Logs the current timestamp with the resetType in influx. The forecasting model then ingores all data before this timestamp, effectively treating the installation as if it's a new one
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            resetType:
+              type: number
+              required: true
+              example: 0
+
+  responses:
+    '200':
+      description: Forecasts were successfully reset
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+    '400':
+      description: Not enough information given in request. Either idSite or resetType is missing.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: False, because the request couldn't complete
+                type: boolean
+
+get:
+  summary: Retrieves the timestamp of the last forecasts reset
+  description: Queries influx for the last time the forecasts for this installation were reset. Returns either the timestamp, or 0 if the forecasts were never reset.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: number
+    
+  responses:
+    '200':
+      description: InfluxDB was queried successfully and the timestamp was returned
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              last_reset:
+                description: The timestamp of the last reset, or 0 if the forecasts were never reset
+                type: integer

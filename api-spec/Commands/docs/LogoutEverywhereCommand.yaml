@@ -1,0 +1,45 @@
+post:
+  operationId: users/idUser/logout-everywhere-post
+  summary: Log out everywhere except the current session.
+  description: >-
+    Revokes all of the user's other JWT bearer tokens, keeping only the token used for this
+    request valid, and ends the user's keycloak sessions. Effectively "log out everywhere else".
+    API access tokens are not affected. Not available while impersonating another user or for
+    shared/demo sessions.
+
+
+    For a user migrated to keycloak this also ends the keycloak session of the current device,
+    because keycloak can only be asked to end all of a user's sessions. The current JWT stays
+    valid but can no longer be refreshed, so the current device is logged out once it expires.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idUser
+      description: User id.
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    '200':
+      description: Other sessions revoked successfully.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: >-
+                  Whether the logout was applied in full. The JWT bearer tokens are always revoked;
+                  false means the keycloak sessions could not be ended as well, so the other devices
+                  may be able to re-authenticate without being asked for a password.
+                type: boolean
+            required:
+              - success
+    '4xx':
+      description: Request failed, returns details about the error(s).
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

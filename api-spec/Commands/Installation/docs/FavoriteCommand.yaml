@@ -1,0 +1,49 @@
+post:
+  summary: Set favorite
+  description: Mark or unmark a site as favorite
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation id
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            favorite:
+              type: number
+              description: Status of favorite (1 to mark it as favorite, 0 to unmark it).
+              example: 1
+  responses:
+    '200':
+      description: Successfully marking the site as favorite
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+                example: true
+              idSite:
+                description: Installation id for the site that was marked as favorite.
+                type: number
+                example: 1234
+              data:
+                description: Data given in the POST request
+                type: array
+                example: ["favorite": 1]
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

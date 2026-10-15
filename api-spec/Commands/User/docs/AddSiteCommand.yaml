@@ -1,0 +1,113 @@
+post:
+  operationId: users/idUser/addsite
+  summary: Adds a new site
+  description: Adds a new site to the user. An email will be sent when the procedure is done.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            installation_identifier:
+              description: Installation identifier.
+              type: string
+            idUserGroup:
+              description: Optional ID of a user group (team) to own the new site. The requesting user must be a member of the team, and the site must be unclaimed. Cannot be combined with idSiteGroup. Omit both idUserGroup and idSiteGroup to link the site to the requesting user.
+              type: integer
+            idSiteGroup:
+              description: Optional ID of an installation group to add the new site to, instead of linking it to the requesting user. Group members get access through the group. The requesting user must own the installation group or be an admin of it (directly or through a team), and the site must be unclaimed. Cannot be combined with idUserGroup.
+              type: integer
+          required:
+            - installation_identifier
+        examples:
+          user:
+            summary: Add a site linked to the requesting user (default).
+            value:
+              installation_identifier: <installation_identifier>
+          team:
+            summary: Add a site and assign ownership to a team.
+            value:
+              installation_identifier: <installation_identifier>
+              idUserGroup: 10
+          installationGroup:
+            summary: Add a site to an installation group.
+            value:
+              installation_identifier: <installation_identifier>
+              idSiteGroup: 20
+
+  responses:
+    '200':
+      description: |
+        Request processed. Note that validation failures are also returned with HTTP 200, with `success` set to false and an `error_code`. Possible error codes include:
+        - `validation_error`: both idUserGroup and idSiteGroup were supplied.
+        - `user_group_membership_required`: the requesting user is not a member of the given team.
+        - `site_group_membership_required`: the requesting user does not own or manage the given installation group.
+        - `site_already_has_admins`: idUserGroup or idSiteGroup was supplied for a site that is already claimed.
+        - `admin_mail_sent`: the site already has admins; an access request was emailed to them instead.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - title: Site added
+                type: object
+                properties:
+                  success:
+                    description: True if the site was added.
+                    type: boolean
+                    const: true
+                  idSite:
+                    description: ID of the added site.
+                    type: integer
+                  description:
+                    description: Name of the added site.
+                    type: string
+                  status_code:
+                    description: Always `site_added`.
+                    type: string
+                    const: site_added
+                  idUserGroup:
+                    description: The team the site was assigned to. Only present when idUserGroup was supplied in the request.
+                    type: integer
+                  idSiteGroup:
+                    description: The installation group the site was added to. Only present when idSiteGroup was supplied in the request.
+                    type: integer
+                required:
+                  - success
+                  - idSite
+                  - description
+                  - status_code
+              - title: Site not added
+                allOf:
+                  - $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+                  - type: object
+                    properties:
+                      idSite:
+                        description: ID of the site. Only present when the site is already linked to the requesting user.
+                        type: integer
+          examples:
+            added:
+              summary: Site added to an installation group.
+              value:
+                success: true
+                idSite: 12345
+                description: My installation
+                status_code: site_added
+                idSiteGroup: 20
+            notAllowed:
+              summary: Requesting user does not manage the installation group.
+              value:
+                success: false
+                error_code: site_group_membership_required
+                errors:
+                  - You can only assign an installation group you own or manage.
+    '4xx':
+      description: The request could not be processed (e.g. unauthorized or rate limited).
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

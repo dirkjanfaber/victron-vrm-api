@@ -1,0 +1,48 @@
+post:
+  operationId: users/idUser/get-site-id
+  summary: Returns site id given site identifier 
+  description: Retrieves the site id from user's installations given site identifier. Admins can retrieve any installation.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            installation_identifier: 
+              description: Installation identifier.
+              type: string
+          required:
+            - installation_identifier
+
+  responses:
+    '200':
+      description: Successfully retrieved installation.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              records:
+                description: Id of the retrieved site 
+                type: object 
+                properties:
+                  site_id:
+                    type: string 
+                    description: installation id
+            required:
+              - success
+              - records
+    '4xx':
+      description: Token creation failed, returns details about the error(s)
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

@@ -1,0 +1,493 @@
+get:
+  summary: Get Alarms (configured alarm rules)
+  description: |-
+    Returns the **configured** alarm rules for a specific installation (thresholds, eligible recipients, available data attributes), together with all data required to create new alarms.
+
+    This endpoint does NOT return the historical fault / alarm event log. If you need the history of triggered alarms (e.g. grid lost, voltage / frequency faults, phase rotation, inverter errors, with start / end timestamps and durations) use [`GET /installations/{idSite}/alarm-log`](/operations/installations/idSite/alarm-log) instead.
+
+    An empty `alarms: []` array here simply means no alarm rules have been configured for the installation; it does not mean that no faults have occurred.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: number
+  responses:
+    '200':
+      description: Retrieves all alarms from an installation, eligible users for those alarms and available data attributes.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              rateLimited:
+                description: 
+                type: boolean
+              alarms:
+                description: All alarms that may trigger on this installation
+                type: array
+                items:
+                  $ref: '#/components/schemas/FloatAlarm'
+              devices:
+                description: All devices linked to this installation
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+              users:
+                description: All users for this installation that may or may not receive notifications (mail, SMS)
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+              attributes:
+                description: All data attributes that can be used for setting up alarms
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attribute'
+
+    '4xx':
+      description: Alarms not available
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+post:
+  summary: Add Alarm
+  description: Adds an alarm to an installation. Note that there are two different types of alarms; alarms on enums and alarms on numbers (floats).
+    Note that for floats the AlarmEnabled and NotifyAfterSeconds use PascalCase and for enums they use camelCase. You'll get a warning if the wrong case is used.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            idDataAttribute:
+              type: number
+              required: true
+              example: 630
+            instance:
+              type: number
+              required: true
+              example: 0
+            AlarmEnabled:
+              type: number
+              required: true
+              example: 1
+            NotifyAfterSeconds:
+              type: number
+              required: true
+              example: 60
+            highAlarm:
+              type: number
+              example: 2.0
+            highAlarmHysteresis:
+              type: number
+              example: 2.0
+            lowAlarm:
+              type: number
+              example: 0.0
+            lowAlarmHysteresis:
+              type: number
+              example: 0.2
+            enumValues:
+              type: list
+              example: [0, 4, 6]
+        examples:
+          float:
+            summary: An alarm for numbers
+            value:
+              AlarmEnabled: 1
+              NotifyAfterSeconds: 60
+              highAlarm: 2.0
+              highAlarmHysteresis: 2.0
+              idDataAttribute: 630
+              instance: 0
+              lowAlarm: 0.0
+              lowAlarmHysteresis: 0.2
+          enum:
+            summary: An alarm for numbers
+            value:
+              instance: 0
+              idDataAttribute: 185
+              enumValues: [0]
+              notifyAfterSeconds: 3600
+              alarmEnabled: 1
+
+  responses:
+    '200':
+      description: Successfully added an alarm.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              idSite:
+                description: installation ID
+                type: integer
+              data:
+                # $ref: '#/components/schemas/data'
+                description: Description of added alarm
+                type: object
+                properties:
+                  AlarmEnabled:
+                    type: number
+                    example: 1
+                  NotifyAfterSeconds:
+                    type: number
+                    example: 60
+                  highAlarm:
+                    type: number
+                    example: 2.0
+                  highAlarmHysteresis:
+                    type: number
+                    example: 2.0
+                  idDataAttribute:
+                    type: number
+                    example: 630
+                  instance:
+                    type: number
+                    example: 0
+                  lowAlarm:
+                    type: number
+                    example: 0.0
+                  lowAlarmHysteresis:
+                    type: number
+                    example: 0.2
+                  idDataAttributeLimit:
+                    type: integer
+                    example: 76571
+
+# TODO: extract properties from POST and PUT and ref them
+delete:
+  summary: Delete Alarm 
+  description: Deletes an alarm already linked to an installation.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            idDataAttribute:
+              type: number
+              required: true
+              example: 630
+            instance:
+              type: number
+              required: true
+              example: 0
+  responses:
+    '200':
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              idSite:
+                description: installation ID
+                type: integer
+    '4xx':
+      description: Could not delete alarm 
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+
+put:
+  summary: Edit Alarm
+  description: Edits an alarm already linked to an installation. Note that there are two different types of alarms; alarms on enums and alarms on numbers (floats).
+    Note that for floats the AlarmEnabled and NotifyAfterSeconds use PascalCase and for enums they use camelCase. You'll get a warning if the wrong case is used.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: Installation ID
+      in: path
+      required: true
+      schema:
+        type: number
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          properties:
+            idDataAttribute:
+              type: number
+              required: true
+              example: 630
+            instance:
+              type: number
+              required: true
+              example: 0
+            AlarmEnabled:
+              type: number
+              required: true
+              example: 1
+            NotifyAfterSeconds:
+              type: number
+              required: true
+              example: 60
+            highAlarm:
+              type: number
+              example: 2.0
+            highAlarmHysteresis:
+              type: number
+              example: 2.0
+            lowAlarm:
+              type: number
+              example: 0.0
+            lowAlarmHysteresis:
+              type: number
+              example: 0.2
+            enumValues:
+              type: list
+              example: [0, 4, 6]
+        examples:
+          float:
+            summary: An alarm for numbers
+            value:
+              AlarmEnabled: 1
+              NotifyAfterSeconds: 60
+              highAlarm: 2.0
+              highAlarmHysteresis: 2.0
+              idDataAttribute: 630
+              instance: 0
+              lowAlarm: 0.0
+              lowAlarmHysteresis: 0.2
+          enum:
+            summary: An alarm for numbers
+            value:
+              instance: 0
+              idDataAttribute: 185
+              enumValues: [0]
+              notifyAfterSeconds: 3600
+              alarmEnabled: 1
+
+  responses:
+    '200':
+      description: Successfully added an alarm.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              idSite:
+                description: installation ID
+                type: integer
+              data:
+                # $ref: '#/components/schemas/data'
+                description: Description of added alarm
+                type: object
+                properties:
+                  AlarmEnabled:
+                    type: number
+                    example: 1
+                  NotifyAfterSeconds:
+                    type: number
+                    example: 60
+                  highAlarm:
+                    type: number
+                    example: 2.0
+                  highAlarmHysteresis:
+                    type: number
+                    example: 2.0
+                  idDataAttribute:
+                    type: number
+                    example: 630
+                  instance:
+                    type: number
+                    example: 0
+                  lowAlarm:
+                    type: number
+                    example: 0.0
+                  lowAlarmHysteresis:
+                    type: number
+                    example: 0.2
+                  idDataAttributeLimit:
+                    type: integer
+ 
+    '4xx':
+      description: Alarm not added
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+
+components:
+  schemas:
+    Attribute:
+      type: object
+      properties:
+        idDataAttribute: 
+          type: number
+          example: 1215
+        code: 
+          type: string
+          example: "bPOR"
+        description:
+          type: string
+          example: "Off reason"
+        targetTable:
+          type: string
+          example: "logData"
+        idDeviceType:
+          type: int
+          example: 33
+        formatWithUnit:
+          type: string
+          example: "%s"
+        dataType:
+          type: string
+          example: "enum"
+        enumValues:
+          type: string
+          example: []
+
+    FloatAlarm:
+      type: object
+      properties:
+        AlarmEnabled:
+          type: number
+          example: 1
+        NotifyAfterSeconds:
+          type: number
+          example: 60
+        highAlarm:
+          type: number
+          example: 2.0
+        highAlarmHysteresis:
+          type: number
+          example: 2.0
+        idDataAttribute:
+          type: number
+          example: 630
+        instance:
+          type: number
+          example: 0
+        lowAlarm:
+          type: number
+          example: 0.0
+        lowAlarmHysteresis:
+          type: number
+          example: 0.2
+        idDataAttributeLimit:
+          type: integer
+          example: 76571
+
+    User:
+      type: object
+      properties:
+        idUser:
+          type: integer
+          example: 174862
+        idSite:
+          type: integer
+          example: 32223
+        accessLevel:
+          type: integer
+          example: 0
+        receivesAlarmNotifications:
+          type: integer
+          example: 0
+        receivesReports:
+          type: integer
+          example: 0
+        email:
+          type: string
+          example: user@email.com
+        name:
+          type: string
+          example: John Doe
+        avatar_url:
+          type: string
+          example: https://www.gravatar.com/avatar/09821a2342asdf098234asdf8jhg3459?s=80&d=404&r=g
+        muted:
+          type: boolean
+          example: false
+
+    Device:
+      type: object
+      properties:
+        idSite:
+          type: integer
+          example: 32223
+        instance:
+          type: integer
+          example: 0
+        lastConnection:
+          type: integer
+          example: 1682696559
+        secondsAgo:
+          type: integer
+          example: 27
+        isValid:
+          type: integer
+          example: 1
+        idDeviceType:
+          type: integer
+          example: 0
+        deviceName:
+          type: string
+          example: Gateway
+        productIdAsReceived:
+          type: integer
+          example: 2
+        productName:
+          type: string
+          example: Color Control GX
+        customProductName:
+          type: string
+          example: Color Control GX
+        firmwareVersion:
+          type: string
+          example: v3.00~29
+        connection:
+          type: string
+          example: 
+        customName:
+          type: string
+          example: null
+        identifier:
+          type: string
+          example: 000000a0a000
