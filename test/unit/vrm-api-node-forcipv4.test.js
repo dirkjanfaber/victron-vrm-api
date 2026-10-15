@@ -41,7 +41,7 @@ describe('vrm-api node forceIpv4 propagation', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: jest.fn().mockResolvedValue({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } })
+      text: jest.fn().mockResolvedValue(JSON.stringify({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } }))
     })
 
     helper.load([configNode, vrmApiNode], flow, { config1: { token: TOKEN } }, () => {
@@ -74,7 +74,7 @@ describe('vrm-api node forceIpv4 propagation', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: jest.fn().mockResolvedValue({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } })
+      text: jest.fn().mockResolvedValue(JSON.stringify({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } }))
     })
 
     helper.load([configNode, vrmApiNode], flow, { config1: { token: TOKEN } }, () => {

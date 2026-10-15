@@ -52,7 +52,7 @@ describe('Consumption sub-type status', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: jest.fn().mockResolvedValue(liveFeedResponse)
+      text: jest.fn().mockResolvedValue(JSON.stringify(liveFeedResponse))
     })
 
     helper.load([configNode, vrmApiNode], makeFlow(attribute), credentials, () => {

@@ -37,7 +37,7 @@ describe('msg.url Override Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ user: { id: 123, email: 'test@example.com' } })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ user: { id: 123, email: 'test@example.com' } }))
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -74,7 +74,7 @@ describe('msg.url Override Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ custom: 'response' })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ custom: 'response' }))
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -121,7 +121,7 @@ describe('msg.url Override Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ created: 'response' })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ created: 'response' }))
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -169,7 +169,7 @@ describe('msg.url Override Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ updated: 'response' })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ updated: 'response' }))
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -217,7 +217,7 @@ describe('msg.url Override Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ custom: 'response' })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ custom: 'response' }))
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -265,7 +265,7 @@ describe('msg.url Override Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ external: 'api response' })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ external: 'api response' }))
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -316,7 +316,7 @@ describe('msg.url Override Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ success: true, records: {}, totals: {} })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ success: true, records: {}, totals: {} }))
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {
@@ -354,7 +354,7 @@ describe('msg.url Override Functionality', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ override: 'success' })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ override: 'success' }))
       })
 
       helper.load([configNode, vrmApiNode], flow, credentials, () => {

@@ -41,7 +41,13 @@ class VRMAPIService {
 
     try {
       const response = await fetch(url, options)
-      const data = await response.json()
+      // Proxy error pages and empty bodies are not JSON; keep the raw text
+      // so the status still reaches the caller, as it did with axios
+      const text = await response.text()
+      let data = text
+      try {
+        data = JSON.parse(text)
+      } catch (err) {}
 
       debug(`Response ${response.status}:`, data)
 

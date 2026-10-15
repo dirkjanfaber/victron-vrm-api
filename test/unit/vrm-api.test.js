@@ -5,7 +5,7 @@ function mockFetch (data, status = 200) {
   global.fetch = jest.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
-    json: jest.fn().mockResolvedValue(data)
+    text: jest.fn().mockResolvedValue(JSON.stringify(data))
   })
 }
 
@@ -363,6 +363,34 @@ describe('VRMAPIService Unit Tests', () => {
   })
 
   describe('API Call Methods', () => {
+    function mockFetchText (text, status) {
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: status >= 200 && status < 300,
+        status,
+        text: jest.fn().mockResolvedValue(text)
+      })
+    }
+
+    it('should keep the status and raw body of a non-JSON error page', async () => {
+      mockFetchText('<html><body>502 Bad Gateway</body></html>', 502)
+
+      const result = await service.callInstallationsAPI('123456', 'system-overview', 'GET')
+
+      expect(result.success).toBe(false)
+      expect(result.status).toBe(502)
+      expect(result.data).toBe('<html><body>502 Bad Gateway</body></html>')
+    })
+
+    it('should treat an empty successful response as success', async () => {
+      mockFetchText('', 204)
+
+      const result = await service.callInstallationsAPI('123456', 'system-overview', 'GET')
+
+      expect(result.success).toBe(true)
+      expect(result.status).toBe(204)
+      expect(result.data).toBe('')
+    })
+
     it('should call installations API with correct URL', async () => {
       mockFetch({ success: true })
 
@@ -430,7 +458,7 @@ describe('VRMAPIService Unit Tests', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 404,
-        json: jest.fn().mockResolvedValue({ error: 'Not found' })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ error: 'Not found' }))
       })
 
       const result = await service.callInstallationsAPI('999999', 'basic', 'GET')

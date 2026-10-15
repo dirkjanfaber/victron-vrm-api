@@ -37,7 +37,7 @@ describe('VRMAPIService IPv4 Configuration', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ success: true, user: { id: 123 } })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ success: true, user: { id: 123 } }))
       })
 
       const service = new VRMAPIService('test_token', { forceIpv4: true })
@@ -52,7 +52,7 @@ describe('VRMAPIService IPv4 Configuration', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: jest.fn().mockResolvedValue({ success: true, user: { id: 123 } })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ success: true, user: { id: 123 } }))
       })
 
       const service = new VRMAPIService('test_token', { forceIpv4: false })

@@ -27,7 +27,7 @@ function mockFetchError (status) {
   global.fetch = jest.fn().mockResolvedValue({
     ok: false,
     status,
-    json: jest.fn().mockResolvedValue({ error: 'error' })
+    text: jest.fn().mockResolvedValue(JSON.stringify({ error: 'error' }))
   })
 }
 
@@ -114,7 +114,7 @@ describe('Token trimming', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: jest.fn().mockResolvedValue({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } })
+      text: jest.fn().mockResolvedValue(JSON.stringify({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } }))
     })
 
     helper.load([configNode, vrmApiNode], flow, { config1: { token: TOKEN + '\n' } }, () => {
@@ -148,7 +148,7 @@ describe('Token trimming', () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       status: 200,
-      json: jest.fn().mockResolvedValue({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } })
+      text: jest.fn().mockResolvedValue(JSON.stringify({ success: true, user: { id: 1, name: 'Test', email: 'test@example.com' } }))
     })
 
     helper.load([configNode, vrmApiNode], flow, { config1: { token: '  ' + TOKEN + '  ' } }, () => {

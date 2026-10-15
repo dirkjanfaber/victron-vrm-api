@@ -11,7 +11,7 @@ function mockFetch (data, status = 200) {
   global.fetch = jest.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
-    json: jest.fn().mockResolvedValue(data)
+    text: jest.fn().mockResolvedValue(JSON.stringify(data))
   })
 }
 
@@ -80,7 +80,7 @@ describe('Message Property Preservation', () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 401,
-        json: jest.fn().mockResolvedValue({ error: 'Unauthorized' })
+        text: jest.fn().mockResolvedValue(JSON.stringify({ error: 'Unauthorized' }))
       })
 
       const result = await service.callInstallationsAPI('12345', 'stats')

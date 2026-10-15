@@ -8,7 +8,7 @@ function mockFetch (data, status = 200) {
   global.fetch = jest.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
-    json: jest.fn().mockResolvedValue(data)
+    text: jest.fn().mockResolvedValue(JSON.stringify(data))
   })
 }
 
