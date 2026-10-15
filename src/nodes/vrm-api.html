@@ -73,6 +73,11 @@
         defaults: {
             vrm: {value: "", type: "config-vrm-api", required: false},
             name: { value: "" },
+            // Not editable: only nodes added from the palette get this value,
+            // existing flows load without it and keep their old behaviour.
+            // Read elsewhere through this._def, not a global: the stable and
+            // alpha editor scripts share one global scope
+            version: { value: 2 },
             api_type: { value: "", validate: RED.validators.regex(/^(users|installations|widgets|dynamic-ess)$/)},
 
             // users
@@ -181,6 +186,23 @@
             // Set initial output count
             updateOutputs();
 
+            // Only offer the update where the old behaviour differs from the
+            // latest: version 2 rounds "now" to the quarter for 15 minute stats
+            const updateVersionNotice = () => {
+                const isOutdated = !(this.version >= this._def.defaults.version.value) &&
+                    $('#node-input-api_type').val() === 'installations' &&
+                    $('#node-input-installations').val() === 'stats' &&
+                    $('#node-input-stats_interval').val() === '15mins';
+                $('#vrm-api-version-notice').toggle(isOutdated);
+            };
+            $('#node-input-api_type, #node-input-installations, #node-input-stats_interval').on('change', updateVersionNotice);
+            updateVersionNotice();
+
+            $('#vrm-api-version-update').on('click', function () {
+                $(this).data('requested', true).hide();
+                $('#vrm-api-version-notice-text').text('This node will use the latest behaviour when you click Done.');
+            });
+
             flatpickr("#node-input-gps_start", {
                 enableTime: true,
                 dateFormat: "Y-m-d H:i"
@@ -189,12 +211,23 @@
                 enableTime: true,
                 dateFormat: "Y-m-d H:i"
             })
+        },
+        oneditsave: function oneditsave() {
+            // Set here rather than through an input, so nodes saved without
+            // pressing "Update to latest" keep having no version at all
+            if ($('#vrm-api-version-update').data('requested')) {
+                this.version = this._def.defaults.version.value;
+            }
         }
     });
 </script>
 
 <script type="text/html" data-template-name="vrm-api">
     <input type="hidden" id="node-input-outputs">
+    <div class="form-row form-tips" id="vrm-api-version-notice">
+        <span id="vrm-api-version-notice-text">With the 15 minutes interval, this node rounds "now" to the hour. Newer VRM API nodes round "now" to the current 15 minutes.</span>
+        <button type="button" id="vrm-api-version-update" class="red-ui-button red-ui-button-small">Update to latest</button>
+    </div>
     <div class="form-row">
         <label for="node-input-name"><i class="fa fa-tag"></i> Name</label>
         <input type="text" id="node-input-name" placeholder="Name">

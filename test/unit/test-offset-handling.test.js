@@ -138,9 +138,22 @@ describe('Offset handling for stats_end (PR #36)', () => {
 
       const flooredNow = nowTs - (nowTs % 3600)
 
-      // Both should be "now"
+      // VRM returns nothing for an empty window but includes the record at
+      // `start` when end is one second later (issue #69)
       expect(result.start).toBe(flooredNow)
-      expect(result.end).toBe(flooredNow)
+      expect(result.end).toBe(flooredNow + 1)
+    })
+
+    it('should not widen a window where end is before start', () => {
+      const config = {
+        attribute: 'Dc/0/Power',
+        stats_start: '0',
+        stats_end: '-3600'
+      }
+
+      const result = buildStatsParameters(config)
+
+      expect(result.end).toBe(result.start - 3600)
     })
   })
 
