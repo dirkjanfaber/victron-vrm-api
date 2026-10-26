@@ -43,7 +43,7 @@
   "devDependencies": {
     "dotenv": "^17.3.1",
     "jest": "^30.2.0",
-    "node-red": "^4.1.2",
+    "node-red": "^5.0.9",
     "node-red-node-test-helper": "^0.3.4",
     "standard": "^17.1.0"
   },
