@@ -41,7 +41,7 @@
     "debug": "^4.4.1"
   },
   "devDependencies": {
-    "dotenv": "^17.3.1",
+    "dotenv": "^18.0.9",
     "jest": "^30.2.0",
     "node-red": "^4.1.2",
     "node-red-node-test-helper": "^0.3.4",
