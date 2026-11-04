@@ -252,9 +252,10 @@ get:
                           description: True if the Venus OS gateway has remote support enabled.
                           type: boolean
                         remoteSupportPort:
-                          description: Venus OS gateway remote support connection port, or false if none.
+                          description: Venus OS gateway remote support connection port, or false if none. Returned as a string when the value exceeds the integer range.
                           type:
                             - integer
+                            - string
                             - boolean
                         remoteSupportIp:
                           description: Venus OS gateway remote support connection ip.
