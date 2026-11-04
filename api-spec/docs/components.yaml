@@ -55,3 +55,54 @@ components:
         token:
           summary: Authenticate with a access token.
           value: Token <token_value>
+    adminPage:
+      name: page
+      in: query
+      description: Page number (1-indexed). Values below 1 are treated as 1.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    adminCount:
+      name: count
+      in: query
+      description: |
+        Number of records per page. There is no upper bound for admin endpoints, so any page size can be requested
+        (e.g. `count=100000` to fetch everything in one go). Values of 0, negative or non-numeric values fall back to 10.
+
+        Very large pages are expensive: the whole page is built in memory and serialized in one response,
+        so prefer paging for tables that grow without limit (installations, users).
+        `(page - 1) * count` must stay below 9223372036854775807, otherwise the request fails.
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 100
+    adminSorting:
+      name: sorting
+      in: query
+      description: |
+        Sort order as `sorting[<field>]=asc|desc`; multiple fields are allowed. Any value other than `asc` sorts descending.
+        Fields that are not sortable for the endpoint are silently ignored.
+      required: false
+      style: deepObject
+      explode: true
+      schema:
+        type: object
+        additionalProperties:
+          type: string
+          enum: [asc, desc]
+    adminFilter:
+      name: filter
+      in: query
+      description: |
+        Filters as `filter[<field>]=<value>`; all filters are combined with AND. Filters on exact-match fields compare with `=`,
+        all other fields do a substring match (`LIKE %value%`). Unknown fields are silently ignored.
+      required: false
+      style: deepObject
+      explode: true
+      schema:
+        type: object
+        additionalProperties:
+          type: string
