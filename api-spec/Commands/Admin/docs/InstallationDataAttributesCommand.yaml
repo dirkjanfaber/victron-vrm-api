@@ -30,12 +30,11 @@ get:
         default: 1
     - name: count
       in: query
-      description: Number of records per page (default 100, maximum 1000).
+      description: Number of records per page (default 100). Capped at 1000 for non-admin users; unbounded for admins.
       required: false
       schema:
         type: integer
         minimum: 1
-        maximum: 1000
         default: 100
   responses:
     '200':
@@ -94,6 +93,9 @@ get:
                     - idDataAttribute
                     - code
                     - dataType
+              num_records:
+                description: Total number of matching installations, ignoring pagination.
+                type: integer
             required:
               - success
               - records
