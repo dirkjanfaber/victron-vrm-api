@@ -1,0 +1,76 @@
+post:
+  operationId: installations/idSite/transfer-site
+  summary: Replace GX
+  description: |-
+    Replaces the GX device (Venus OS gateway) linked to this installation with another, already-registered GX device. This is the same operation performed by the "Replace GX" wizard in the VRM UI, exposed here for scripted fleet management and third-party tooling.
+
+    The installation identified by `idSite` keeps its history, settings and ownership; its link to a physical GX is swapped from its current device to the replacement device identified by `identifier`. If the replacement device already has its own installation in VRM, that installation is kept but its identifier is marked as a used replacement so it no longer conflicts.
+
+    Before swapping, the API verifies that:
+    - The caller has full control access on both the source and the replacement installation (both must be administered by the same account).
+    - The replacement GX is currently online (checked live via a ping, not just based on when it last reported data). This check is best-effort: if the check itself is inconclusive (e.g. a messaging timeout) rather than a confirmed "offline" response, the transfer is allowed to proceed rather than being blocked by an unrelated infrastructure hiccup.
+
+    **This call does not reboot the GX device.** It only re-links the installation to the replacement device. If you use this endpoint, reboot the replacement GX yourself afterwards so it reloads its VRM connection settings. The VRM UI wizard may do this reboot for you; this endpoint does not.
+  tags:
+    - Installations
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idSite
+      description: ID of the installation whose GX device is being replaced.
+      in: path
+      required: true
+      schema:
+        type: integer
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          type: object
+          required:
+            - identifier
+          properties:
+            identifier:
+              description: Identifier of the replacement GX device (its unique VRM identifier, typically its MAC address). It must already be known to VRM and must currently be online.
+              type: string
+              example: 'b827eb16f1f6'
+  responses:
+    '200':
+      description: Transfer result.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the GX device was successfully replaced.
+                type: boolean
+              error_code:
+                description: |-
+                  Error code if the request failed. Possible values:
+                  - `invalid_data`: `identifier` or the installation id is missing or malformed.
+                  - `replacement_not_found`: No installation is registered for the given replacement `identifier`.
+                  - `transfer_prohibited`: You cannot transfer to the same site, or you don't have full control access on both the source and replacement installation.
+                  - `replacement_offline`: The replacement GX was confirmed offline. It must be online before it can be used as a replacement.
+                  - `transfer_failed`: The swap itself failed, for example because it was already transferred.
+                type:
+                  - 'null'
+                  - string
+              errors:
+                description: Human-readable error messages.
+                type: array
+                items:
+                  type: string
+    '429':
+      description: |-
+        Too many requests. Rate limited to the same bulk-site-action allowance as adding installations (max 10 requests per minute, 20 per 10 minutes, 200 per day per client), to allow scripted fleet-wide replacements while still bounding abuse. Check the `Retry-After` response header for how long to wait.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'
+    '4xx':
+      description: Request unsuccessful.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

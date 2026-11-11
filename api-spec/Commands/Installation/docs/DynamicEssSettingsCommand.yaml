@@ -359,6 +359,10 @@ components:
           description: Custom name for the vehicle from EV charger attributes.
           type: string
           nullable: true
+        name:
+          description: Display name for the vehicle. The custom name, else "Brand Model". Null when neither is known.
+          type: string
+          nullable: true
         customMaxChargeRate:
           description: Custom maximum charge rate override in kW. Falls back to the EV attribute value when not user-configured.
           type: number
