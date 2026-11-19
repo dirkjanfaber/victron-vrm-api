@@ -90,6 +90,8 @@ paths:
     $ref: '../Commands/Installation/docs/UnlinkUserCommand.yaml'
   /installations/{idSite}/unlink:
     $ref: '../Commands/Installation/docs/UnlinkCommand.yaml'
+  /installations/{idSite}/transfer-site:
+    $ref: '../Commands/Installation/docs/TransferCommand.yaml'
   /installations/{idSite}/user-rights:
     $ref: '../Commands/Installation/docs/UserRightsCommand.yaml'
   /installations/{idSite}/invite-rights:
@@ -110,11 +112,3 @@ paths:
     $ref: '../Commands/docs/DataAttributesCommand.yaml'
   /installations/{idSite}/favorite:
     $ref: '../Commands/Installation/docs/FavoriteCommand.yaml'
-
-  # Admin
-  /admin/devices:
-    $ref: '../Commands/Admin/docs/DevicesCommand.yaml'
-  /admin/installation-data-attributes-count:
-    $ref: '../Commands/Admin/docs/InstallationDataAttributesCountCommand.yaml'
-  /admin/search-download:
-    $ref: '../Commands/Admin/docs/InstallationSearchDownloadCommand.yaml'
