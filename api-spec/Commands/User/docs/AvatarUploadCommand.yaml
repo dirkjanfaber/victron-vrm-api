@@ -1,0 +1,67 @@
+post:
+  operationId: users/idUser/avatar-upload
+  summary: Uploads a custom avatar
+  description: >-
+    Uploads a custom avatar for the user. The image is centre-cropped to a square, converted to webp
+    and stored at 256x256. A custom avatar takes precedence over the Gravatar image that is otherwise
+    derived from the user's email address. Users may only set their own avatar.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  requestBody:
+    required: true
+    content:
+      multipart/form-data:
+        schema:
+          type: object
+          properties:
+            data:
+              description: >-
+                The image file. Allowed types are image/png, image/jpeg, image/webp, image/heic and image/heif.
+                Maximum size is 2 MiB, maximum aspect ratio is 3:1 and maximum dimensions are 5000x5000.
+              type: string
+              format: binary
+          required:
+            - data
+  responses:
+    '200':
+      description: >-
+        Avatar uploaded successfully, or rejected by validation. Validation failures are returned with
+        HTTP 200 and success set to false.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              data:
+                description: The stored avatar. Only present when success is true.
+                type: object
+                properties:
+                  imageName:
+                    description: Filename of the stored avatar.
+                    type: string
+                  avatar_url:
+                    description: Public URL of the stored avatar.
+                    type: string
+              error_code:
+                description: >-
+                  Present when success is false. One of upload_error (the file was missing or failed
+                  validation) or forbidden (the avatar belongs to another user).
+                type: string
+              errors:
+                description: Human readable validation messages. Present when success is false.
+                type: array
+                items:
+                  type: string
+            required:
+              - success
+    '4xx':
+      description: The avatar could not be uploaded.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

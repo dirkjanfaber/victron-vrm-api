@@ -1,0 +1,39 @@
+post:
+  operationId: users/idUser/avatar-delete
+  summary: Removes the custom avatar
+  description: >-
+    Removes the user's custom avatar. After removal the avatar_url falls back to the Gravatar image
+    derived from the user's email address. The request succeeds when no custom avatar is set.
+    Users may only remove their own avatar.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+  responses:
+    '200':
+      description: Avatar removed successfully, or no custom avatar was set.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              error_code:
+                description: >-
+                  Present when success is false. Set to forbidden when the avatar belongs to another user.
+                type: string
+              errors:
+                description: Human readable messages. Present when success is false.
+                type: array
+                items:
+                  type: string
+            required:
+              - success
+    '4xx':
+      description: The avatar could not be removed.
+      content:
+        application/json:
+          schema:
+            $ref: '../../../docs/components.yaml#/components/schemas/generalError'

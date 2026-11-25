@@ -1,0 +1,120 @@
+get:
+  operationId: users/idUser/groups-overview
+  summary: Return the teams and installation groups of a user
+  description: Lists the teams and installation groups the user is part of, each with the ids of its installations.
+  tags:
+    - Users
+  parameters:
+    - $ref: '../../../docs/components.yaml#/components/parameters/authorization'
+    - name: idUser
+      description: Id of the user
+      in: path
+      required: true
+      schema:
+        type: number
+  responses:
+    '200':
+      description: Successfully retrieved teams and installation groups.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                description: True if the request was successful.
+                type: boolean
+              teams:
+                description: Teams the user is a member of.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      example: 42
+                    name:
+                      type: string
+                      example: "Installers BV"
+                    isAdmin:
+                      description: True if the user is a manager of the team.
+                      type: boolean
+                      example: true
+                    isOwner:
+                      description: True if the user owns the team.
+                      type: boolean
+                      example: false
+                    siteIds:
+                      description: Installations of the team, including those of installation groups linked to the team.
+                      type: array
+                      items:
+                        type: number
+                      example: [101, 102]
+                    directSiteCount:
+                      description: Number of installations linked to the team directly, not through an installation group.
+                      type: number
+                      example: 1
+                    memberCount:
+                      description: Number of members of the team, including the owner. Pending invitations are not counted.
+                      type: number
+                      example: 4
+              installationGroups:
+                description: Installation groups the user owns, is a member of, or reaches through a team.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: number
+                      example: 123
+                    name:
+                      type: string
+                      example: "Boats NL"
+                    groupType:
+                      type: string
+                      enum: [installation, microgrid]
+                      example: installation
+                    isOwner:
+                      description: True if the user owns the installation group.
+                      type: boolean
+                      example: false
+                    isDirectUser:
+                      description: True if the user is added to the installation group directly.
+                      type: boolean
+                      example: true
+                    isAdmin:
+                      description: True if the user is a direct manager of the installation group.
+                      type: boolean
+                      example: false
+                    viaTeams:
+                      description: The user's own teams linked to the installation group.
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          id:
+                            type: number
+                            example: 42
+                          name:
+                            type: string
+                            example: "Installers BV"
+                          isAdmin:
+                            description: True if the team is linked as manager.
+                            type: boolean
+                            example: true
+                    siteIds:
+                      type: array
+                      items:
+                        type: number
+                      example: [205, 310]
+                    directUserCount:
+                      description: Number of users added to the installation group directly.
+                      type: number
+                      example: 2
+                    teamUserCount:
+                      description: Number of other users with access through linked teams, not counting direct users.
+                      type: number
+                      example: 5
+            required:
+              - success
+              - teams
+              - installationGroups
