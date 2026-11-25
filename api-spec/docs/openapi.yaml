@@ -38,12 +38,18 @@ paths:
     $ref: '../Commands/User/docs/DeleteAccessTokenCommand.yaml'
   /users/{idUser}/get-site-id:
     $ref: '../Commands/User/docs/GetSiteIdCommand.yaml'
+  /users/{idUser}/avatar-upload:
+    $ref: '../Commands/User/docs/AvatarUploadCommand.yaml'
+  /users/{idUser}/avatar-delete:
+    $ref: '../Commands/User/docs/AvatarDeleteCommand.yaml'
   /users/me:
     $ref: '../Commands/User/docs/InfoMeCommand.yaml'
   /users/{idUser}/search:
     $ref: '../Commands/User/docs/SearchCommand.yaml'
   /users/{idUser}/invites:
     $ref: '../Commands/User/docs/InvitesCommand.yaml'
+  /users/{idUser}/groups-overview:
+    $ref: '../Commands/User/docs/GroupsOverviewCommand.yaml'
   /users/{idUser}/logout-everywhere:
     $ref: '../Commands/docs/LogoutEverywhereCommand.yaml'
 
@@ -90,6 +96,8 @@ paths:
     $ref: '../Commands/Installation/docs/UnlinkUserCommand.yaml'
   /installations/{idSite}/unlink:
     $ref: '../Commands/Installation/docs/UnlinkCommand.yaml'
+  /installations/{idSite}/transfer-site:
+    $ref: '../Commands/Installation/docs/TransferCommand.yaml'
   /installations/{idSite}/user-rights:
     $ref: '../Commands/Installation/docs/UserRightsCommand.yaml'
   /installations/{idSite}/invite-rights:
@@ -110,11 +118,3 @@ paths:
     $ref: '../Commands/docs/DataAttributesCommand.yaml'
   /installations/{idSite}/favorite:
     $ref: '../Commands/Installation/docs/FavoriteCommand.yaml'
-
-  # Admin
-  /admin/devices:
-    $ref: '../Commands/Admin/docs/DevicesCommand.yaml'
-  /admin/installation-data-attributes-count:
-    $ref: '../Commands/Admin/docs/InstallationDataAttributesCountCommand.yaml'
-  /admin/search-download:
-    $ref: '../Commands/Admin/docs/InstallationSearchDownloadCommand.yaml'
